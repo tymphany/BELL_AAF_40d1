@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project path="">
+    <file path="../../QCC5126-AB_DEV-BRD-R2-AA/filesystems/subsys0_config2.htf"/>
+    <file path="../../QCC5126-AB_DEV-BRD-R2-AA/filesystems/subsys0_config5.htf"/>
+    <file path="../../../../../system/bin/qcc512x_rom_v21/patches/config/subsys0_config1.hcf"/>
+    <file path="../../../../../system/bin/qcc512x_rom_v21/patches/subsys0_patch0_fw000005DC.hcf"/>
+    <file path="../../../../../system/bin/qcc512x_rom_v21/patches/subsys6_patch0_fw000005DC.hcf"/>
+    <configurations>
+        <configuration name="filesystem" options="build|deploy">
+            <devkitConfiguration>filesystem</devkitConfiguration>
+            <devkitGroup>kitres://{CE02C436-164B-46AA-8938-497C1665BEAE}</devkitGroup>
+            <deployProject>deploy</deployProject>
+            <property name="TYPE">curator_config</property>
+            <property name="system_label">QCC512X_ROM_V21_CONFIG</property>
+            <property name="CHIP_TYPE">qcc512x_rom_v21</property>
+            <property name="HYDRACORE_CONFIG_SDB_FILE">../../../../../adk/bin/qcc512x_rom_v21/hydracore_config.sdb</property>
+        </configuration>
+    </configurations>
+</project>

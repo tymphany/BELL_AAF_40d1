@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project path="">
+    <file path="../../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_aec_reference.edkcs"/>
+    <file path="../../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_anc_tuning.edkcs"/>
+    <file path="../../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_aptx_demux.edkcs"/>
+    <file path="../../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_async_wbs.edkcs"/>
+    <file path="../../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_cvc_fbc.edkcs"/>
+    <file path="../../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_opus_celt_encode.edkcs"/>
+    <file path="../../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_switched_passthrough_consumer.edkcs"/>
+    <configurations>
+        <configuration name="filesystem" options="build|deploy">
+            <devkitConfiguration>filesystem</devkitConfiguration>
+            <devkitGroup>kitres://{CE02C436-164B-46AA-8938-497C1665BEAE}</devkitGroup>
+            <deployProject>deploy</deployProject>
+            <property name="FS_ROOT">..\customer_ro_filesystem</property>
+            <property name="TYPE">customer_ro</property>
+            <property name="system_label">QCC512X_CONFIG</property>
+            <property name="CHIP_TYPE">qcc512x_qcc302x</property>
+        </configuration>
+    </configurations>
+</project>

@@ -1,0 +1,67 @@
+#ifndef __GATT_GAA_MEDIA_SERVER_DB_DBI__
+#define __GATT_GAA_MEDIA_SERVER_DB_DBI__
+
+#include "gatt_gaa_media_server_uuids.h"
+
+
+primary_service { 
+
+
+	uuid : UUID_GAA_MEDIA_SERVICE,
+    name : "GAA_MEDIA_SERVICE",
+     
+    characteristic {  
+        uuid        : UUID_GAA_MEDIA_ACTIVE_APP_CHAR, 
+        name        :"GAA_MEDIA_ACTIVE_APP_CHAR",  
+        flags       : [ FLAG_IRQ],  
+        properties  : [ write, notify ,read], 
+        value       : 0x0,
+
+		client_config {
+        flags : [FLAG_IRQ, FLAG_ENCR_W],
+            name : "GAA_MEDIA_ACTIVE_APP_CLIENT_C_CFG"
+        }		
+    },
+	characteristic {  
+        uuid        : UUID_GAA_MEDIA_COMMAND_CHAR,  
+        name        : "GAA_MEDIA_COMMAND_CHAR",  
+        flags       : [ FLAG_IRQ ],  
+        properties  : [ notify, write],  
+        value       : 0x0,  
+		
+		client_config {
+        flags : [FLAG_IRQ, FLAG_ENCR_W],
+            name : "GAA_MEDIA_COMMAND_CLIENT_C_CFG"
+        }
+    },
+	
+	characteristic {  
+        uuid        : UUID_GAA_MEDIA_STATUS_CHAR,  
+        name        : "GAA_MEDIA_STATUS_CHAR",  
+        flags       : [ FLAG_IRQ ],  
+        properties  : [ notify, write],  
+        value       : 0x0,  
+		
+		client_config {
+        flags : [FLAG_IRQ, FLAG_ENCR_W],
+            name : "GAA_MEDIA_STATUS_CLIENT_C_CFG"
+        }
+    },
+	
+	characteristic {  
+        uuid        : UUID_GAA_MEDIA_BROADCAST_CHAR,  
+        name        : "GAA_MEDIA_BROADCAST_CHAR",  
+        flags       : [ FLAG_IRQ ],  
+        properties  : [ notify, write],  
+        value       : 0x0,  
+		
+		client_config {
+        flags : [FLAG_IRQ, FLAG_ENCR_W],
+            name : "GAA_MEDIA_BROADCAST_CLIENT_C_CFG"
+        }
+    }
+},
+
+
+#endif /* __GATT_GAA_MEDIA_SERVER_DB_DBI__ */
+

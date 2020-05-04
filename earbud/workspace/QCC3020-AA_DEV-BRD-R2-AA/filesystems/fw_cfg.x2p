@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project path="">
+    <file path="../../QCC3020-AA_DEV-BRD-R2-AA/filesystems/subsys1_config1.htf"/>
+    <file path="../../QCC3020-AA_DEV-BRD-R2-AA/filesystems/subsys3_config2.htf"/>
+    <file path="../../QCC3020-AA_DEV-BRD-R2-AA/filesystems/subsys3_config3.htf"/>
+    <file path="../../QCC3020-AA_DEV-BRD-R2-AA/filesystems/subsys7_config2.htf"/>
+    <file path="../../QCC3020-AA_DEV-BRD-R2-AA/filesystems/subsys7_config4.htf"/>
+    <file path="../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/output/stre_rom_v02_release/build/patchbin/subsys3_patch0_fw000012B2.hcf"/>
+    <file path="../../../../bluetooth/bin/qcc512x_qcc302x/patches/vfbga90/subsys1_patch0_fw000033EF.hcf"/>
+    <configurations>
+        <configuration name="filesystem" options="build|deploy">
+            <devkitConfiguration>filesystem</devkitConfiguration>
+            <devkitGroup>kitres://{CE02C436-164B-46AA-8938-497C1665BEAE}</devkitGroup>
+            <deployProject>deploy</deployProject>
+            <property name="TYPE">firmware_config</property>
+            <property name="system_label">QCC512X_CONFIG</property>
+            <property name="CHIP_TYPE">qcc512x_qcc302x</property>
+            <property name="HYDRACORE_CONFIG_SDB_FILE">../../../../adk/bin/qcc512x_qcc302x/hydracore_config.sdb</property>
+        </configuration>
+    </configurations>
+</project>

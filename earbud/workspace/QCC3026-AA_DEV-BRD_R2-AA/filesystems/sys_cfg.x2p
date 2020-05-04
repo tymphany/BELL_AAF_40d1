@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project path="E:/QCC5121/EVK/qcc512x-qcc302x-40d1/earbud/workspace/QCC3026-AA_DEV-BRD_R2-AA/filesystems/" name="sys_cfg" type="auto">
+    <file path="../../../../system/bin/qcc512x_qcc302x/patches/config/subsys0_config1.hcf"/>
+    <file path="../../../../system/bin/qcc512x_qcc302x/patches/subsys0_patch0_fw00000503.hcf"/>
+    <file path="../../../../system/bin/qcc512x_qcc302x/patches/subsys6_patch0_fw00000503.hcf"/>
+    <configurations defaultKit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}">
+        <configuration name="filesystem" kit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}" options="build|deploy|default">
+            <devkitConfiguration>filesystem</devkitConfiguration>
+            <devkitPath>C:/qtil/ADK_Toolkit_0.9.1.9_x64</devkitPath>
+            <devkitGroup>kitres://{ce02c436-164b-46aa-8938-497c1665beae}</devkitGroup>
+            <deployProject>deploy</deployProject>
+            <devkitRevision>1576251075</devkitRevision>
+            <property name="CHIP_TYPE">qcc512x_qcc302x</property>
+            <property name="HYDRACORE_CONFIG_SDB_FILE">../../../../adk/bin/qcc512x_qcc302x/hydracore_config.sdb</property>
+            <property name="TYPE">curator_config</property>
+            <property name="system_label">QCC512X_CONFIG</property>
+        </configuration>
+    </configurations>
+    <file path="subsys0_config2.htf"/>
+    <file path="subsys0_config5.htf"/>
+</project>

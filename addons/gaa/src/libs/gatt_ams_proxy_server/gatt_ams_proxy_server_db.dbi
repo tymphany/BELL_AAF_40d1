@@ -1,0 +1,62 @@
+#ifndef __GATT_AMS_PROXY_SERVER_DB_DBI__
+#define __GATT_AMS_PROXY_SERVER_DB_DBI__
+
+#include "gatt_ams_proxy_server_uuids.h"
+
+#define ADD_AMS_PROXY_SERVICE(ID)
+primary_service {
+    uuid : UUID_AMS_PROXY_SERVICE,
+    name : "AMS_PROXY_SERVICE",
+
+    characteristic {
+        uuid        : UUID_AMS_PROXY_REMOTE_COMMAND_CHAR,
+        name        :"AMS_PROXY_REMOTE_COMMAND_CHAR",
+        flags       : [ FLAG_IRQ],
+        properties  : [ write, notify ],
+        value       : 0x0,
+
+        client_config {
+        flags : [FLAG_IRQ, FLAG_ENCR_W],
+            name : "AMS_PROXY_REMOTE_COMMAND_CLIENT_C_CFG"
+        }
+    },
+    characteristic {
+        uuid        : UUID_AMS_PROXY_ENTITY_UPDATE_CHAR,
+        name        : "AMS_PROXY_ENTITY_UPDATE_CHAR",
+        flags       : [ FLAG_IRQ ],
+        properties  : [ notify, write],
+        value       : 0x0,
+
+        client_config {
+        flags : [FLAG_IRQ, FLAG_ENCR_W],
+            name : "AMS_PROXY_ENTITY_UPDATE_CLIENT_C_CFG"
+        }
+    },
+
+    characteristic {
+        uuid        : UUID_AMS_PROXY_ENTITY_ATTRIBUTE_CHAR,
+        name        : "AMS_PROXY_ENTITY_ATTRIBUTE_CHAR",
+        flags       : [ FLAG_IRQ ],
+        properties  : [ read, write],
+        value       : 0x0
+    },
+
+    characteristic {
+        uuid        : UUID_AMS_PROXY_READY_CHAR,
+        name        : "AMS_PROXY_READY_CHAR",
+        flags       : [ FLAG_IRQ ],
+        properties  : [ read, notify],
+        value       : 0x0,
+
+        client_config {
+        flags : [FLAG_IRQ, FLAG_ENCR_W],
+            name : "AMS_PROXY_READY_CLIENT_C_CFG"
+        }
+    }
+}
+
+#if defined(GATT_DBI_LIB)
+ADD_AMS_PROXY_SERVICE()
+#endif /* GATT_DBI_LIB */
+
+#endif /* __GATT_AMS_PROXY_SERVER_DB_DBI__ */

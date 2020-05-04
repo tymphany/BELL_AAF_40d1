@@ -1,0 +1,64 @@
+############################################################################
+# Copyright (c) 2015 Qualcomm Technologies International, Ltd.
+# All Rights Reserved.
+# Qualcomm Technologies International, Ltd. Confidential and Proprietary.
+# Notifications and licenses are retained for attribution purposes only
+############################################################################
+# Configuration to build an image for Stre V02 silicon running from ROM.
+
+%include config.stre_rom_common
+
+#Install the CELT encoder capability
+#%include config.MODIFY_CELT_ENCODE
+
+#Install the CELT encoder capability
+#%include config.MODIFY_CELT_DECODE
+
+#Install the OP_CLIENT adaptor
+%include config.MODIFY_OP_CLIENT_ADAPTOR
+
+#Install aov interface
+%include config.MODIFY_AOV_INTERFACE
+
+#Install always on voice component
+%include config.MODIFY_AOV
+
+#Install always on voice component
+%include config.MODIFY_CLK_MGR
+
+# Include FILE
+%include config.MODIFY_FILE_HYDRA
+
+# Enable dual core support
+%include config.MODIFY_STRE_DUAL_CORE
+
+#Install the VAD operator
+%include config.MODIFY_VAD
+
+#Install the QVA phrase recognition operator
+%include config.MODIFY_QVA
+
+#Install the VA_GRAPH_MANAGER operator
+%include config.MODIFY_VA_GRAPH_MANAGER
+
+#install ANC tuning operator
+#%include config.MODIFY_ANC_TUNING
+
+#install efuse
+%include config.MODIFY_EFUSE_FLEXROM_FEATURES
+
+#Install the CONVERT_FROM_AUDIO capability
+%include config.MODIFY_CONVERT_FROM_AUDIO
+
+# Install CVC-related capabilities everywhere.
+# (Licensing is enabled, so that's OK.)
+%include config.MODIFY_INSTALL_CVC_MODULES
+%include config.MODIFY_INSTALL_CVC_CAPABILITIES_STRETTO
+
+%cpp
+AVOID_DEEP_CALL_STACK
+
+%build
+CHIP_VER = v02
+DOWNLOAD_CELT_LIBS=../lib/celt/celt
+

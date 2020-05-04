@@ -1,0 +1,13 @@
+file=curator2
+
+# Action to take when a panic or subsystem watchdog occurs.
+# Halt all subsystems except System, keeping USB debug access.
+# These settings should be removed from production software.
+ResetOnAppPanicOrWatchdog = false
+HaltAllSubsystemsOnPanic = true
+
+# Also configure the chip for TBridge core dumping after any Curator panic.
+# do NOT set these if TBridge connection is not available.
+# These settings should be removed from production software.
+ChipWatchdogIntervals = [03E8 1770 0000]
+ChipInactiveWatchdogIntervals = [03E8 1770 0000]

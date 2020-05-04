@@ -1,0 +1,61 @@
+#ifndef __GATT_ANCS_PROXY_SERVER_DB_DBI__
+#define __GATT_ANCS_PROXY_SERVER_DB_DBI__
+
+#include "gatt_ancs_proxy_server_uuids.h"
+
+
+primary_service {
+    uuid : UUID_ANCS_PROXY_SERVICE,
+    name : "ANCS_PROXY_SERVICE",
+
+    characteristic {
+        uuid        : UUID_ANCS_PROXY_NOTIFICATION_SOURCE_CHAR,
+        name        :"ANCS_PROXY_NOTIFICATION_SOURCE_CHAR",
+        flags       : [ FLAG_IRQ],
+        properties  : [ notify ],
+        value       : 0x0,
+
+        client_config {
+        flags : [FLAG_IRQ, FLAG_ENCR_W],
+            name : "ANCS_PROXY_NOTIFICATION_SOURCE_CHAR_CLIENT_C_CFG"
+        }
+    },
+    characteristic {
+        uuid        : UUID_ANCS_PROXY_CONTROL_POINT_CHAR,
+        name        : "ANCS_PROXY_CONTROL_POINT_CHAR",
+        flags       : [ FLAG_IRQ ],
+        properties  : [ write],
+        value       : 0x0
+    },
+
+    characteristic {
+        uuid        : UUID_ANCS_PROXY_DATA_SOURCE_CHAR,
+        name        : "ANCS_PROXY_DATA_SOURCE_CHAR",
+        flags       : [ FLAG_IRQ ],
+        properties  : [ notify],
+        value       : 0x0,
+
+        client_config {
+        flags : [FLAG_IRQ, FLAG_ENCR_W],
+            name : "ANCS_PROXY_DATA_SOURCE_CHAR_CLIENT_C_CFG"
+        }
+    },
+
+    characteristic {
+        uuid        : UUID_ANCS_PROXY_READY_CHAR,
+        name        : "ANCS_PROXY_READY_CHAR",
+        flags       : [ FLAG_IRQ ],
+        properties  : [ read, notify],
+        value       : 0x0,
+
+        client_config {
+        flags : [FLAG_IRQ, FLAG_ENCR_W],
+            name : "ANCS_PROXY_READY_CLIENT_C_CFG"
+        }
+    }
+},
+
+
+
+#endif /* __GATT_ANCS_PROXY_SERVER_DB_DBI__ */
+

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="deploy" path="" type="auto">
+    <configurations defaultKit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}">
+        <configuration name="deploy" kit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}" options="deploy|default">
+            <devkitConfiguration>application</devkitConfiguration>
+            <devkitPath>C:/qtil/ADK_Toolkit_0.9.1.9_x64</devkitPath>
+            <devkitGroup>kitres://{ce02c436-164b-46aa-8938-497c1665beae}</devkitGroup>
+            <deployProject></deployProject>
+            <devkitRevision>1576251075</devkitRevision>
+            <property name="BUILD_ID">sdk://tools/ubuild/maker/buildid/examples/timestamp.py</property>
+            <property name="CHIP_TYPE">${chip_name}</property>
+            <property name="DBG_CORE">app\p1</property>
+            <property name="DEFAULT_LIBS">usb_early_init</property>
+            <property name="DEFS">__KALIMBA__ HAVE_32BIT_DATA_WIDTH INSTALL_HYDRA_LOG BLUELAB HYDRACORE</property>
+            <property name="EXTRA_WARNINGS">FALSE</property>
+            <property name="INCPATHS">../../../../installed_libs/include/profiles/default_${chip_name} sdk://apps/installed_libs/include/firmware_${chip_name} sdk://apps/installed_libs/include/firmware_${chip_name}/app sdk://apps/installed_libs/include/standard</property>
+            <property name="LIBPATHS">../../../../installed_libs/lib/default_${chip_name}/native sdk://apps/installed_libs/lib/os/${chip_name}</property>
+            <property name="PRESERVED_LIBS">${chip_name}</property>
+            <property name="PRIVATE_DEFS"></property>
+            <property name="PRIVATE_INCPATHS"></property>
+            <property name="STRIP_SYMBOLS">FALSE</property>
+        </configuration>
+    </configurations>
+</project>

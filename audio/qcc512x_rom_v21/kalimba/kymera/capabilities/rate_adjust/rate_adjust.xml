@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- Copyright (c) 2017 Qualcomm Technologies International, Ltd. -->
+<ns1:UnifiedParameterSchema xmlns:ns1="com.csr.cps.3">
+	<Version>
+		<Revision>$Id$</Revision>
+		<ChangeList>$Change$</ChangeList>
+		<ChangeDate>$Date$</ChangeDate>
+		<UserID>$Author$</UserID>
+	</Version>
+<!--
+		**************** CAPABILITY ****************
+								 only one per file!
+-->
+  <CodeBase>
+    <BaseName>rate_adjust</BaseName>
+    <CompileConfig/>
+    <ModeStatistic/>
+  </CodeBase>
+<!--
+		***************** VARIANTS ******************
+-->
+  <Capability>
+    <CapabilityID>0x00B3</CapabilityID>
+    <AlternativeCapabilityID>0x407C</AlternativeCapabilityID>
+    <VariantID>RATE_ADJUST</VariantID >
+    <CapabilityName>Standalone Rate Adjust operator </CapabilityName>
+    <ProductName>Rate adjust 1.0</ProductName>
+    <SampleRate>0</SampleRate>
+    <VersionMajor> 1</VersionMajor>
+  </Capability>
+
+</ns1:UnifiedParameterSchema>

@@ -1,0 +1,21 @@
+############################################################################
+# CONFIDENTIAL
+#
+# Copyright (c) 2017 Qualcomm Technologies International, Ltd.
+#
+############################################################################
+# Definitions required to build the Switched Passthrough Consumer
+
+#
+# Capabilities we want to include on the chip
+# This list gets turned into a set of defines of the form INSTALL_OPERATOR_XXXX
+#
+%list CFG_CAPABILITIES
+TEST_ASYNC_WBS_LINK
+
+# List of global include paths
+%list ALL_INCDIRS
+
+# List of libraries to build
+%list CFG_LIBS
+capabilities/test_async_wbs_link/test_async_wbs_link

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project path="">
+    <file path="../../QCC3020-AA_DEV-BRD-R2-AA/filesystems/aec_reference_config.htf"/>
+    <file path="../../QCC3020-AA_DEV-BRD-R2-AA/filesystems/anc_tuning_config.htf"/>
+    <file path="../../QCC3020-AA_DEV-BRD-R2-AA/filesystems/cvc_config.htf"/>
+    <file path="../../QCC3020-AA_DEV-BRD-R2-AA/filesystems/subsys7_psflash.htf"/>
+    <configurations>
+        <configuration name="filesystem" options="build|deploy">
+            <devkitConfiguration>filesystem</devkitConfiguration>
+            <devkitGroup>kitres://{CE02C436-164B-46AA-8938-497C1665BEAE}</devkitGroup>
+            <deployProject>deploy</deployProject>
+            <property name="TYPE">user_ps</property>
+            <property name="system_label">QCC512X_CONFIG</property>
+            <property name="CHIP_TYPE">qcc512x_qcc302x</property>
+        </configuration>
+    </configurations>
+</project>

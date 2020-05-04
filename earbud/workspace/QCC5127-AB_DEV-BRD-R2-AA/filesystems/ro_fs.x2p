@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project path="">
+    <file path="../../../prompts/connected.sbc"/>
+    <file path="../../../prompts/disconnected.sbc"/>
+    <file path="../../../prompts/pairing.sbc"/>
+    <file path="../../../prompts/pairing_failed.sbc"/>
+    <file path="../../../prompts/pairing_successful.sbc"/>
+    <file path="../../../prompts/power_off.sbc"/>
+    <file path="../../../prompts/power_on.sbc"/>
+    <file path="../../../../audio/qcc512x_rom_v21/kalimba_ROM_5951/kymera/prebuilt_dkcs/stre_rom_v21_release/download_anc_tuning.edkcs"/>
+    <file path="../../../../audio/qcc512x_rom_v21/kalimba_ROM_5951/kymera/prebuilt_dkcs/stre_rom_v21_release/download_cvc_fbc.edkcs"/>
+    <file path="../../../../audio/qcc512x_rom_v21/kalimba_ROM_5951/kymera/prebuilt_dkcs/stre_rom_v21_release/download_opus_celt_encode.edkcs"/>
+    <file path="../../../../audio/qcc512x_rom_v21/kalimba_ROM_5951/kymera/prebuilt_dkcs/stre_rom_v21_release/download_usb_audio.edkcs"/>
+    <file path="../../../../audio/qcc512x_rom_v21/kalimba_ROM_5951/kymera/prebuilt_dkcs/stre_rom_v21_release/download_volume_control.edkcs"/>
+    <configurations>
+        <configuration name="filesystem" options="build|deploy">
+            <devkitConfiguration>filesystem</devkitConfiguration>
+            <devkitGroup>kitres://{CE02C436-164B-46AA-8938-497C1665BEAE}</devkitGroup>
+            <deployProject>deploy</deployProject>
+            <property name="FS_ROOT">..\customer_ro_filesystem</property>
+            <property name="TYPE">customer_ro</property>
+            <property name="system_label">QCC512X_ROM_V21_CONFIG</property>
+            <property name="CHIP_TYPE">qcc512x_rom_v21</property>
+        </configuration>
+    </configurations>
+</project>

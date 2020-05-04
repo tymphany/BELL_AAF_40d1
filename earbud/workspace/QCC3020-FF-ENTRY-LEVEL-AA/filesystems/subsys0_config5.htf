@@ -1,0 +1,7 @@
+file=curator5
+ 
+# Set pull down enable on PIO 32 to get the DAC on the CF376_CF212 platform unmuted
+PioPadControlElements = [20 08]
+
+# Allocate I2C PIOs to app subsystem
+PioSubsystemAllocationElements = [ ff 04 ff 04 ]

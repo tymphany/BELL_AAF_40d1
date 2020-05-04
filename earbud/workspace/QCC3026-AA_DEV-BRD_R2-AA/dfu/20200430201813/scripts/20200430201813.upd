@@ -1,0 +1,64 @@
+# Upgrade header identifier
+header_identifier APPUHDR5
+
+# Footer
+add_custom_footer E:\QCC5121\EVK\qcc512x-qcc302x-40d1\earbud\workspace\QCC3026-AA_DEV-BRD_R2-AA\dfu\20200430201813\output\footer.xuv
+
+# Device Variant
+user_header_value_str QCC512Xx
+
+# Upgrade version major: 1, minor 1
+user_header_value_8bit 0
+user_header_value_8bit 1
+user_header_value_8bit 0
+user_header_value_8bit 1
+# Compatible upgrades: 3
+user_header_value_8bit 0
+user_header_value_8bit 3
+# Compatible upgrade version major: 0, minor 65535
+user_header_value_8bit 0
+user_header_value_8bit 0
+user_header_value_8bit 255
+user_header_value_8bit 255
+# Compatible upgrade version major: 1, minor 65535
+user_header_value_8bit 0
+user_header_value_8bit 1
+user_header_value_8bit 255
+user_header_value_8bit 255
+# Compatible upgrade version major: 2, minor 65535
+user_header_value_8bit 0
+user_header_value_8bit 2
+user_header_value_8bit 255
+user_header_value_8bit 255
+# PS config version: 2
+user_header_value_8bit 0
+user_header_value_8bit 2
+# Prev PS config num: 2
+user_header_value_8bit 0
+user_header_value_8bit 2
+# Prev PS config version: 0
+user_header_value_8bit 0
+user_header_value_8bit 0
+# Prev PS config version: 1
+user_header_value_8bit 0
+user_header_value_8bit 1
+
+# Signing mode
+user_header_value_8bit 0
+
+user_header_value_8bit 0
+
+# Nonce
+partition 0 0 1 E:\QCC5121\EVK\qcc512x-qcc302x-40d1\earbud\workspace\QCC3026-AA_DEV-BRD_R2-AA\dfu\20200430201813\output\partition_0_nonce.xuv
+# Image Header P0
+partition 0 1 1 E:\QCC5121\EVK\qcc512x-qcc302x-40d1\earbud\workspace\QCC3026-AA_DEV-BRD_R2-AA\dfu\20200430201813\output\partition_1_image_header.xuv
+# Curator Filesystem
+partition 0 4 1 E:\QCC5121\EVK\qcc512x-qcc302x-40d1\earbud\workspace\QCC3026-AA_DEV-BRD_R2-AA\dfu\20200430201813\output\curator_config_filesystem.xuv
+# Apps P0 Image
+partition 0 5 1 E:\QCC5121\EVK\qcc512x-qcc302x-40d1\earbud\workspace\QCC3026-AA_DEV-BRD_R2-AA\dfu\20200430201813\output\app_p0.xuv
+# Apps read-only config filesystem
+partition 0 6 1 E:\QCC5121\EVK\qcc512x-qcc302x-40d1\earbud\workspace\QCC3026-AA_DEV-BRD_R2-AA\dfu\20200430201813\output\firmware_config_filesystem.xuv
+# Apps read-only filesystem
+partition 0 7 1 E:\QCC5121\EVK\qcc512x-qcc302x-40d1\earbud\workspace\QCC3026-AA_DEV-BRD_R2-AA\dfu\20200430201813\output\customer_ro_filesystem.xuv
+# Apps P1 Image
+partition 0 9 1 E:\QCC5121\EVK\qcc512x-qcc302x-40d1\earbud\workspace\QCC3026-AA_DEV-BRD_R2-AA\dfu\20200430201813\output\app_p1.xuv

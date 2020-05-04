@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspace>
+    <project path="" default="">
+        <dependencies>
+            <project name="gaa"/>
+        </dependencies>
+    </project>
+    <project name="gaa" path="../../../addons/gaa/projects/{CHIP_TYPE}/gaa.x2p" default="no">
+        <dependencies>
+             <project name="libs"/>
+        </dependencies>
+    </project>        
+</workspace>

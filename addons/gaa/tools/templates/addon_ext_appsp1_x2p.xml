@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project path="">
+    <configurations>
+        <configuration name="" options="">
+            <property name="DEFS">INCLUDE_GAA INCLUDE_GAA_LE INCLUDE_GATT_SERVICE_DISCOVERY INCLUDE_KYMERA_AEC</property>
+            <property name="INCPATHS">../../../addons/gaa/src/domains/bt/gatt/servers/gatt_server_gaa_comm ../../../addons/gaa/src/domains/bt/gatt/servers/gatt_server_gaa_media ../../../addons/gaa/src/domains/bt/gatt/servers/gatt_server_ams_proxy ../../../addons/gaa/src/domains/bt/gatt/servers/gatt_server_ancs_proxy ../../../addons/gaa/src/services/voice_ui/gaa ../../../addons/gaa/src/libs/gatt_gaa_comm_server ../../../addons/gaa/src/libs/gatt_gaa_media_server ../../../addons/gaa/src/libs/gatt_ams_proxy_server ../../../addons/gaa/src/libs/gatt_ancs_proxy_server</property>
+            <property name="LIBS">gaa_addon gatt_proxy_stream</property>
+        </configuration>
+    </configurations>
+</project>

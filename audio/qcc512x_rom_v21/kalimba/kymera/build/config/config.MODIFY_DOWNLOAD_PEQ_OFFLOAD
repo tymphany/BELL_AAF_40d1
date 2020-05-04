@@ -1,0 +1,31 @@
+############################################################################
+# CONFIDENTIAL
+#
+# Copyright (c) 2015 - 2017 Qualcomm Technologies International, Ltd.
+#
+############################################################################
+# Definitions required to build the downloadable PEQ
+%cpp
+BASE_MULTI_CHAN_OFFLOAD
+PEQ_OFFLOAD
+
+#
+# Capabilities to include in the build
+#
+%list CFG_CAPABILITIES
+PEQ
+
+%list ALL_SRCDIRS
+capabilities/peq
+capabilities/base_multi_chan_op
+
+
+# List of global include paths
+%list ALL_INCDIRS
+
+
+# List of libraries to build
+%list CFG_LIBS
+capabilities/base_multi_chan_op/base_multi_chan_op
+capabilities/peq/peq
+

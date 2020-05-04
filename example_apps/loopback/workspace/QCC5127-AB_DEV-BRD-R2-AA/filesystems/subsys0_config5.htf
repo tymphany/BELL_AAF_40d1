@@ -1,0 +1,4 @@
+file=curator5
+ 
+# Allocate I2C PIOs to app subsystem
+PioSubsystemAllocationElements = [ 28 04 29 04 ]

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project path="E:/QCC5121/EVK/qcc512x-qcc302x-40d1/earbud/workspace/QCC3026-AA_DEV-BRD_R2-AA/filesystems/" name="dev_cfg" type="auto">
+    <configurations defaultKit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}">
+        <configuration name="filesystem" kit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}" options="build|deploy|default">
+            <devkitConfiguration>filesystem</devkitConfiguration>
+            <devkitPath>C:/qtil/ADK_Toolkit_0.9.1.9_x64</devkitPath>
+            <devkitGroup>kitres://{ce02c436-164b-46aa-8938-497c1665beae}</devkitGroup>
+            <deployProject>deploy</deployProject>
+            <devkitRevision>1576251075</devkitRevision>
+            <property name="CHIP_TYPE">qcc512x_qcc302x</property>
+            <property name="HYDRACORE_CONFIG_SDB_FILE">../../../../adk/bin/qcc512x_qcc302x/hydracore_config.sdb</property>
+            <property name="TYPE">device_config</property>
+            <property name="system_label">QCC512X_CONFIG</property>
+        </configuration>
+    </configurations>
+    <file path="subsys0_config3.htf"/>
+    <file path="subsys1_config2.htf"/>
+    <file path="subsys7_config3.htf"/>
+    <file path="subsys7_config9.hcf"/>
+</project>

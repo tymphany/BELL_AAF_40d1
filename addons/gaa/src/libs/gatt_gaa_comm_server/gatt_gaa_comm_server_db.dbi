@@ -1,0 +1,57 @@
+#ifndef __GATT_GAA_COMM_SERVER_DB_DBI__
+#define __GATT_GAA_COMM_SERVER_DB_DBI__
+
+#include "gatt_gaa_comm_server_uuids.h"
+
+
+//#define UUID_GATT_GAA_COMM_SERVICE                           0xFE59BFA87FE34A059D9499FADC69FAFF
+//#define UUID_GATT_GAA_INCOMING_CONTROL_CHANNEL_CHAR          0x104C022E48D64DD28737F8AC5489C5D4
+//#define UUID_GATT_GAA_OUTGOING_CONTROL_CHANNEL_CHAR          0x69745240EC294899A2A8CF78FD214303
+//#define UUID_GATT_GAA_AUDIO_DATA_OUTPUT_CHANNEL_CHAR         0x70EFDF0043754A9E912D63522566D947
+
+
+primary_service { 
+    uuid : UUID_GATT_GAA_COMM_SERVICE, 
+    name : "GAA_COMM_SERVICE", 
+     
+    characteristic {  
+        uuid        : UUID_GATT_GAA_INCOMING_CONTROL_CHANNEL_CHAR, 
+        name        : "GAA_INCOMING_CONTROL_CHANNEL_CHAR",  
+        flags       : [ FLAG_IRQ],  
+        properties  : [ write ], 
+        value       : 0x0		
+    },  
+
+    characteristic {  
+        uuid        : UUID_GATT_GAA_OUTGOING_CONTROL_CHANNEL_CHAR,  
+        name        : "GAA_OUTGOING_CONTROL_CHANNEL_CHAR",  
+        flags       : [ FLAG_IRQ ],  
+        properties  : [ notify],  
+        value       : 0x0,
+		
+		client_config {
+        flags : [FLAG_IRQ, FLAG_ENCR_W],
+            name : "GAA_OUTGOING_CONTROL_CHANNEL_CHAR_CLIENT_C_CFG"
+        }
+	},	
+
+
+    characteristic {  
+        uuid        : UUID_GATT_GAA_AUDIO_DATA_OUTPUT_CHANNEL_CHAR,  
+        name        : "GAA_AUDIO_DATA_OUTPUT_CHANNEL_CHAR",  
+        flags       : [ FLAG_IRQ ],  
+        properties  : [ notify],  
+        value       : 0x0,
+		
+		client_config {
+        flags : [FLAG_IRQ, FLAG_ENCR_W],
+            name : "GAA_AUDIO_DATA_OUTPUT_CHANNEL_CHAR_C_CFG"
+        }
+	}	
+
+},
+
+
+
+#endif /* __GATT_GAA_COMM_SERVER_DB_DBI__ */
+

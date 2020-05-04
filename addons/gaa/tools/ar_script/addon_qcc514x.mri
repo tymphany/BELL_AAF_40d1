@@ -1,0 +1,5 @@
+CREATE .\build\lib\libgaa_addon.a
+ADDLIB .\build\lib\libgaa.a
+ADDLIB ..\..\src\services\voice_ui\gaa\gsound\qcc514x\libgsound.pa
+SAVE
+END

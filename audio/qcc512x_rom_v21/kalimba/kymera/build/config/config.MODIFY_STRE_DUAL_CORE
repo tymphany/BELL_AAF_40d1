@@ -1,0 +1,29 @@
+############################################################################
+# CONFIDENTIAL
+#
+# Copyright (c) 2015 - 2017 Qualcomm Technologies International, Ltd.
+#
+############################################################################
+# Definitions for dual core builds
+
+%include config.MODIFY_CRESCENDO_DUAL_CORE_COMMON
+
+# Enable thread offload feature
+%include config.MODIFY_THREAD_OFFLOAD
+
+# Enable thread offload support for required capabilities
+%include config.MODIFY_OFFLOAD_STRE_CAPABILITIES
+
+%cpp
+# Install the second processor suppor and second core code in a single image.
+INSTALL_DUAL_CORE_SUPPORT
+AUDIO_SECOND_CORE
+
+# Set preferential owner
+INSTALL_PREFOWNER_DUALCORE
+
+%build
+
+BUILD_SECONDARY_CORE=$(if $(TEST_BUILD),$(TEST_BUILD_DUAL_CORE),true)
+BUILD_DUAL_CORE=$(if $(TEST_BUILD),$(TEST_BUILD_DUAL_CORE),true)
+BUILD_METADATA_DUALCORE=true

@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+    <group name="kitres://{ce02c436-164b-46aa-8938-497c1665beae}/prebuilt_image/default">
+        <item name="Run on Device">
+            <item name="run">device://trb/usb2trb/164227/qcc3026</item>
+        </item>
+    </group>
+    <group name="kitres://{ce02c436-164b-46aa-8938-497c1665beae}/kse/default"/>
+</settings>

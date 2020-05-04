@@ -1,0 +1,13 @@
+############################################################################
+# Copyright 2017 Qualcomm Technologies International, Ltd.
+############################################################################
+# Configuration to build an image for Stre V02 emulator running from ROM.
+
+%include config.stre_rom
+
+%cpp
+# Write some extra registers to make the S13299 AUDIO card usable
+INSTALL_EMU_AUDIO_SUPPORT
+
+%build
+CHIP_VER=d01

@@ -1,0 +1,85 @@
+############################################################################
+# CONFIDENTIAL
+#
+# Copyright (c) 2014 - 2017 Qualcomm Technologies International, Ltd.
+#
+############################################################################
+# Crescendo ROM config common for both cores with no dual core enabled.
+# This is also the de facto top-level config that most others inherit
+# from. Think carefully before making changes here.
+
+%include config.COMMON_CHIP_BASE_CRESCENDO
+%include config.COMMON_CHIP_STRETTO
+%include config.COMMON_CAPABILITIES
+%include config.MODIFY_STRETTO_ROM
+
+# Use Heap memory, and select Crescendo heap sizes including PM heap
+%include config.MODIFY_HEAP_STRE
+
+# Include TTP support
+%include config.MODIFY_TIMED_PLAYBACK
+%include config.MODIFY_TIMESTAMPED
+
+# Include Mixer, Splitter, Compander capabilities
+%include config.MODIFY_MIXER
+%include config.MODIFY_SPLITTER
+%include config.MODIFY_COMPANDER
+
+#Install the source sync capability
+%include config.MODIFY_SOURCE_SYNC
+
+#Install the ringtone generator
+%include config.MODIFY_RINGTONE_GENERATOR
+
+#Install the IIR_RESAMPLER capability
+%include config.MODIFY_IIR_RESAMPLER
+
+# Install Resampler
+%include config.MODIFY_RESAMPLER
+
+#Install the Programmable EQ capability
+%include config.MODIFY_PEQ
+
+#Install the Bass Enhancement capability
+%include config.MODIFY_DBE
+
+#Install the VSE capability
+%include config.MODIFY_VSE
+
+#Install the crossover capability
+%include config.MODIFY_XOVER
+
+%include config.MODIFY_INSTALL_VOLUME
+
+#Install support for Persistent Storage
+%include config.MODIFY_PS_FOR_ACCMD
+
+#Install support for Direct Flash Access
+#%include config.MODIFY_DIRECT_FLASH_ACCESS
+
+#Install the Switched Passthrough Consumer capability
+%include config.MODIFY_SWITCHED_PASSTHROUGH_CONSUMER
+
+# Include A2DP - Currently only on P0
+%include config.MODIFY_A2DP_HYDRA
+
+#Install the sco feature - Only on P0
+%include config.MODIFY_SCO_HYDRA
+
+#Install the asynchronous wbs capability
+%include config.MODIFY_ASYNC_WBS
+
+#Install the SBC encoder capability
+%include config.MODIFY_SBC_ENCODE
+
+# Add capability download feature
+%include config.MODIFY_CAP_DOWNLOAD_MGR_CRESCENDO
+
+#Install ANC
+%include config.MODIFY_ANC
+
+#include SPDIF endpoints
+%include config.MODIFY_SPDIF_STRETTO
+
+#include USB endpoints
+%include config.MODIFY_USB_AUDIO_STRETTO

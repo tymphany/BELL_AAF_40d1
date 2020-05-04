@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project path="">
+    <file path="../../../../addons/gaa/prompts/mic_open.sbc"/>
+    <file path="../../../../addons/gaa/prompts/mic_close.sbc"/>
+    <file path="../../../../addons/gaa/prompts/bt_va_not_connected.sbc"/>
+</project>

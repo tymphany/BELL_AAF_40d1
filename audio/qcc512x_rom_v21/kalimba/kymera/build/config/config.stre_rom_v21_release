@@ -1,0 +1,9 @@
+#CONFIDENTIAL
+#
+# Copyright (c) 2016 - 2018 Qualcomm Technologies International, Ltd.
+#
+############################################################################
+# Stre top-level config that builds private libraries with obfuscation
+
+%include config.stre_rom_v21
+%include config.MODIFY_HYDRA_RELEASE
