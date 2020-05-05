@@ -1,4 +1,5 @@
 file=app4
 
 # Route I2C (SCL, SDA) to PIOs
-I2CPios = [ 14 15 ]
+#ENABLE_TYM_PLATFORM
+#I2CPios = [ff ff]

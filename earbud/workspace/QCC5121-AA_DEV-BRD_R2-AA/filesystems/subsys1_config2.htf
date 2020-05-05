@@ -3,5 +3,82 @@ file=bt2
 # Change bluetooth address and device name to appropriate values
 # The FeatureLicenseKey found in subsys7_config3.htf is
 # supported for the 16 addresses from 00025b00ff00 to 00025b00ff0f.
-pskey_bdaddr = {0x00ff00,0x5b,0x2}
-pskey_device_name = "QCC5121"
+#pskey_bdaddr = {0x00ff00,0x5b,0x2}
+#pskey_device_name = "QCC5121"
+#Starting Address: 9C0DAC000136
+#Ending Address: 9C0DAC00051D
+#Number of Bluetooth Addresses: 1000
+#FeatureLicenseKey = [ 38 38 85 AC C4 FC 7A 52 3F AC DB 13 1E 8B 3D 1B 3D A9 30 2B 67 B2 5E 51 CC E9 58 E2 25 69 99 A2 17 96 8C 1E 5A 74 33 1E C8 2C 08 D5 36 B2 54 1B 76 E0 63 0C CB 82 3E 6C 0B E9 40 AC 89 E3 0F 2E ]
+#ENABLE_TYM_PLATFORM
+pskey_bdaddr={0x000136,0xAC,0x9C0D}
+pskey_device_name = "RHA TrueControl"
+# Bluetooth radio power table
+PSKEY_BT_POWER_TABLE_V2 = { \
+  { \
+      \
+      { \
+         9 /* tx_atten */ , -3 /* tx_pwr_mag */ , 3 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      },  \
+      { \
+         9 /* tx_atten */ , -3 /* tx_pwr_mag */ , 3 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      }, -16 /* dBm */  \
+  },  \
+  { \
+      \
+      { \
+         9 /* tx_atten */ , 5 /* tx_pwr_mag */ , 3 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      },  \
+      { \
+         9 /* tx_atten */ , 5 /* tx_pwr_mag */ , 3 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      }, -12 /* dBm */  \
+  },  \
+  { \
+      \
+      { \
+         9 /* tx_atten */ , 1 /* tx_pwr_mag */ , 2 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      },  \
+      { \
+         9 /* tx_atten */ , 1 /* tx_pwr_mag */ , 2 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      }, -8 /* dBm */  \
+  },  \
+  { \
+      \
+      { \
+         9 /* tx_atten */ , -3 /* tx_pwr_mag */ , 1 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      },  \
+      { \
+         9 /* tx_atten */ , -3 /* tx_pwr_mag */ , 1 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      }, -4 /* dBm */  \
+  },  \
+  { \
+      \
+      { \
+         9 /* tx_atten */ , 4 /* tx_pwr_mag */ , 1 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      },  \
+      { \
+         9 /* tx_atten */ , 4 /* tx_pwr_mag */ , 1 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      }, 0 /* dBm */  \
+  },  \
+  { \
+      \
+      { \
+         9 /* tx_atten */ , 2 /* tx_pwr_mag */ , 0 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      },  \
+      { \
+         9 /* tx_atten */ , 2 /* tx_pwr_mag */ , 0 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      }, 4 /* dBm */  \
+  },  \
+  { \
+      \
+      { \
+         0 /* tx_atten */ , 7 /* tx_pwr_mag */ , 0 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      },  \
+      { \
+         0 /* tx_atten */ , 5 /* tx_pwr_mag */ , 0 /* tx_pwr_exp */ , 0 /* is_edr */ , 0x00 /* flags */  \
+      }, 10 /* dBm */  \
+  }}
+
+# Maximum transmit power
+PSKEY_LC_MAX_TX_POWER = 10
+
+

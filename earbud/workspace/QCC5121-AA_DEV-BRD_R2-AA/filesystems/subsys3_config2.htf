@@ -5,9 +5,11 @@ Pcm1PioConfig = [3E 3D 36 3A 38]
 
 DigMic0G722FilterEnable = true
 DigMic0G722FirEnable = true
-DigMic0ChanSwap = false
+#ENABLE_TYM_PLATFORM
+DigMic0ChanSwap = true
 DigMic0ClockRate = 4000
-DigMic0PioConfig = [ff ff]
+#ENABLE_TYM_PLATFORM
+DigMic0PioConfig = [02 03]
 
 DigMic1G722FilterEnable = true
 DigMic1G722FirEnable = true
@@ -20,6 +22,10 @@ DigMic2G722FirEnable = true
 DigMic2ChanSwap = false
 DigMic2ClockRate = 4000
 DigMic2PioConfig = [ff ff]
+
+#ENABLE_TYM_PLATFORM ABAmplifier
+#Codec0UseClassABAmplifier = false
+Codec0UseClassABAmplifier = true
 
 CodecOutputDisableTimeout = 28000000
 

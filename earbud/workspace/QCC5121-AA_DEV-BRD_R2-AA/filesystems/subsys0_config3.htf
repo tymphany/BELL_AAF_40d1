@@ -2,5 +2,7 @@ file=curator3
 
 # Crystal trim.  Currently set to default values - modify as indicated by board
 # label.
-XtalLoadCapacitance = 11
+#ENABLE_TYM_PLATFORM
+#XtalLoadCapacitance = 11
+XtalLoadCapacitance = 0x09
 XtalFreqTrim = 0

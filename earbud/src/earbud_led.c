@@ -25,9 +25,18 @@ const led_manager_hw_config_t earbud_led_config =
     .led1_pio = CHIP_LED_1_PIO,
     .led2_pio = CHIP_LED_2_PIO,
 };
+#elif defined(ENABLE_TYM_PLATFORM)
+{
+    .number_of_leds = 0,
+    .leds_use_pio = FALSE,
+    .led0_pio = 0,
+    .led1_pio = 0,
+    .led2_pio = 0,
+};
 #else
 #error LED config not correctly defined.
 #endif
+
 
 /*!@{ \name Definition of LEDs, and basic colour combinations
 

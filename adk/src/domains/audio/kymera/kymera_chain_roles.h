@@ -127,6 +127,17 @@ typedef enum chain_operator_roles
 
     /*! VA graph manager operator */
     OPR_VA_GRAPH_MANAGER,
+#ifdef ENABLE_TYM_PLATFORM
+    OPR_CVC_DUMMY_BUFFER,
+    /*! USER EQ */
+    OPR_USER_EQ,
+
+    /*! SPEAKER EQ1 */
+    OPR_SPEAKER_EQ1,
+
+    /*! SPEAKER EQ2 */
+    OPR_SPEAKER_EQ2,
+#endif
 } chain_operator_role_t;
 
 /*! These names may be used in chain endpoint definitions.
