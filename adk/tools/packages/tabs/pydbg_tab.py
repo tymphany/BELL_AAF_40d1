@@ -177,14 +177,21 @@ def get_elf_path_for_std_project(project_file, devkit):
 
     project_tree = ElementTree.parse(project_file)
     project_root = project_tree.getroot()
-
+    chip_type = "none"
     for configuration in project_root.iter('configuration'):
         if 'default' in configuration.get('options'):
             config_name = configuration.get('name')
 
+        # get chip type, which is the build dir suffix
+        for prop in configuration.iter('property'):
+            if prop.get('name') == "CHIP_TYPE":
+                chip_type = prop.text
+                break
+        
     project_path = os.path.dirname(os.path.abspath(project_file))
-    fsprefix  = util.get_fsprefix(devkit)
-    build_dir = "depend_" + config_name + "_" + fsprefix
+    #fsprefix  = util.get_fsprefix(devkit)
+    #build_dir = "depend_" + config_name + "_" + fsprefix
+    build_dir = "depend_" + config_name + "_" + chip_type
     elf_dir = os.path.join(project_path, build_dir)
     # Now look for any files with a .elf extension
     elf_files = glob.glob(os.path.join(elf_dir, "*.elf"))

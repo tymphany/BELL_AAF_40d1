@@ -19,5 +19,7 @@ USBRemoteWakeDisable = True
 #
 # If the minimum delay required by the flash part is not stated in its datasheet
 # please contact the flash manufacturer for clarification.
+#ENABLE_TYM_PLATFORM
+SiflashSuspendResumeCommands = 0xB030B030
 
 SiflashResumeToSuspendDelay = 1000
