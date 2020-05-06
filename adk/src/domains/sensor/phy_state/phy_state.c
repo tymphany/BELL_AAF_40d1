@@ -22,7 +22,6 @@
 #include <input_event_manager.h>
 #include <ps.h>
 #include "ui.h"
-#include "earbud_config.h"
 #include "tym_anc_config.h"
 #include "tym_touch_config.h"
 #include "earbud_tym_util.h"
@@ -48,6 +47,7 @@
 #include "earbud_tym_gaia.h"
 #include "handset_service_protected.h"
 #include "earbud_test.h"
+#include "multidevice.h"
 #endif
 /*! Message creation macro for phyiscal state module. */
 #define MAKE_PHYSTATE_MESSAGE(TYPE) TYPE##_T *message = PanicUnlessNew(TYPE##_T);
@@ -876,7 +876,7 @@ void appPhyStateTapx1(void)
     }
     else
     {
-        if(appConfigIsLeft())
+        if(Multidevice_IsLeft())
         {
             appPhyStateCustomIdTapx1(uiseq_left_tapx1);
             //LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel_ambient);
@@ -933,7 +933,7 @@ void appPhyStateTapx2(void)
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
     }
-    else if(appConfigIsLeft())
+    else if(Multidevice_IsLeft())
     {
         appPhyStateCustomIdTapx2(uiseq_left_tapx2);
         //ANC on/off
@@ -949,7 +949,7 @@ void appPhyStateTapx2(void)
 /*! \brief tapx3 ui*/
 void appPhyStateTapx3(void)
 {
-    bool left = appConfigIsLeft();
+    bool left = Multidevice_IsLeft();
     uint8 id = uifunc_disable;
     if(left)
     {

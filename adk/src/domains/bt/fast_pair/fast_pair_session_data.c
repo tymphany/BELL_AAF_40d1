@@ -33,8 +33,13 @@ typedef struct fastpair_account_key_info
     uint8 account_keys[FAST_PAIR_ACCOUNT_KEY_LEN * MAX_FAST_PAIR_ACCOUNT_KEYS];
 } fastpair_account_key_info_t;
 
+#ifdef ENABLE_TYM_PLATFORM
+/* Fast Pair model id */
+const uint32 model_id = 0x3727DB;
+#else
 /* Fast Pair model id */
 const uint32 model_id = 0x9D893B;
+#endif
 
 /* Fast Pair seed */
 const uint16 seed[FAST_PAIR_PRIVATE_KEY_LEN/2] = {0x11ac, 0x5a6e, 0x0e49, 0x5aa3, 0xe3e0, 0xbb20, 0xac0e, 0xf136, 0x5dfb, 0x5282, 0x002b, 0x37f2, 0x28f1,

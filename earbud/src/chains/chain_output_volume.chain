@@ -16,6 +16,23 @@
         <source name="OUT" terminal="0"/>
     </operator>
 
+    <!--ENABLE_TYM_PLATFORM-->
+    <operator name="OPR_USER_EQ" id="CAP_ID_PEQ">
+    <sink name="IN" terminal="0"/>
+    <source name="OUT" terminal="0"/>
+    </operator>
+
+    <operator name="OPR_SPEAKER_EQ1" id="CAP_ID_PEQ">
+    <sink name="IN" terminal="0"/>
+    <source name="OUT" terminal="0"/>
+    </operator>
+
+    <operator name="OPR_SPEAKER_EQ2" id="CAP_ID_PEQ">
+    <sink name="IN" terminal="0"/>
+    <source name="OUT" terminal="0"/>
+    </operator>
+    <!--End of ENABLE_TYM_PLATFORM-->
+
     <operator name="OPR_VOLUME_CONTROL" id="EB_CAP_ID_VOL_CTRL_VOL">
         <sink name="MAIN_IN" terminal="0"/>
         <sink name="AUX_IN" terminal="1"/>
@@ -25,7 +42,13 @@
     <input sink="OPR_LATENCY_BUFFER.IN" role="EPR_SINK_MIXER_MAIN_IN"/>
     <input sink="OPR_VOLUME_CONTROL.AUX_IN" role="EPR_VOLUME_AUX"/>
     <connection source="OPR_LATENCY_BUFFER.OUT" sink="OPR_SOURCE_SYNC.IN"/>
-    <connection source="OPR_SOURCE_SYNC.OUT" sink="OPR_VOLUME_CONTROL.MAIN_IN"/>
+    <!--connection source="OPR_SOURCE_SYNC.OUT" sink="OPR_VOLUME_CONTROL.MAIN_IN"/-->
+    <!--ENABLE_TYM_PLATFORM-->
+    <connection source="OPR_SOURCE_SYNC.OUT" sink="OPR_USER_EQ.IN"/>
+    <connection source="OPR_USER_EQ.OUT" sink="OPR_SPEAKER_EQ1.IN"/>
+    <connection source="OPR_SPEAKER_EQ1.OUT" sink="OPR_SPEAKER_EQ2.IN"/>
+    <connection source="OPR_SPEAKER_EQ2.OUT" sink="OPR_VOLUME_CONTROL.MAIN_IN"/>
+    <!--End of ENABLE_TYM_PLATFORM-->
     <output source="OPR_VOLUME_CONTROL.OUT" role="EPR_SOURCE_MIXER_OUT"/>
 
 </chain>

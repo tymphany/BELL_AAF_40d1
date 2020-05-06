@@ -40,7 +40,11 @@
 
 //!@{ @name ANC configuration */
 #define appConfigAncPathEnable()                (feed_forward_mode_left_only)
+#ifdef ENABLE_TYM_PLATFORM
+#define appConfigAncFeedForwardMic()            (microphone_2)
+#else
 #define appConfigAncFeedForwardMic()            (microphone_1)
+#endif
 #define appConfigAncFeedBackMic()               (microphone_none)
 #define appConfigAncMicGainStepSize()           (5)
 #define appConfigAncSidetoneGain()              (10)
@@ -145,8 +149,13 @@
 /*! Minimum volume gain in dB */
 #define appConfigMinVolumedB() (-45)
 
+#ifdef ENABLE_TYM_PLATFORM
+/*! Maximum volume gain in dB */
+#define appConfigMaxVolumedB() (-3) /*set max volume dB*/
+#else
 /*! Maximum volume gain in dB */
 #define appConfigMaxVolumedB() (0)
+#endif
 
 /*! This enables support for rendering a 50/50 mono mix of the left/right
     decoded aptX channels when only one earbud is in ear. This feature requires

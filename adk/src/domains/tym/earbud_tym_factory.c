@@ -16,7 +16,7 @@
 #include <byte_utils.h>
 #include <vmal.h> //for vmal operator
 #include <audio_voice_common.h> //for cvc mic
-#include "adk_log.h"
+#include <logging.h>
 #include "earbud_tym_factory.h"
 #include "connection_manager.h" //set can connect for pairing
 #include "pairing.h" // for discovery
@@ -45,6 +45,7 @@
 #include "kymera_private.h"
 #include "earbud_test.h"
 #include "earbud_tym_cc_communication.h"
+#include "multidevice.h"
 /* ------------------------ Defines ------------------------ */
 
 #define xprint(x)            DEBUG_LOG(x)
@@ -756,7 +757,7 @@ void factory_twspair(void *dataptr)
 /*! \brief  factory pair tws role */
 void factory_twsrole(void *dataptr)
 {
-    bool left = appConfigIsLeft();
+    bool left = Multidevice_IsLeft();
     bool primary = appSmIsPrimary();
     UNUSED(dataptr);  
     if (primary == TRUE)
@@ -1005,7 +1006,6 @@ void dmicstart(audio_channel chan1,audio_channel chan2)
     PanicFalse(SourceConfigure(src_b, STREAM_DIGITAL_MIC_INDIVIDUAL_SIDETONE_GAIN, 0));
 
 	/* sink is codec speaker output */
-#ifdef EVT3_BOARD
 	//left channel 
     snk_a = StreamAudioSink(AUDIO_HARDWARE_CODEC, AUDIO_INSTANCE_0, AUDIO_CHANNEL_A);
     
@@ -1014,20 +1014,6 @@ void dmicstart(audio_channel chan1,audio_channel chan2)
     /*channel B is none */
     // right channel 
     snk_b = StreamAudioSink(AUDIO_HARDWARE_CODEC, AUDIO_INSTANCE_0, AUDIO_CHANNEL_B);
-#else	
-    if(appConfigIsLeft())	
-        snk_a = StreamAudioSink(AUDIO_HARDWARE_CODEC, AUDIO_INSTANCE_0, AUDIO_CHANNEL_A);
-    else
-        snk_a = StreamAudioSink(AUDIO_HARDWARE_CODEC, AUDIO_INSTANCE_0, AUDIO_CHANNEL_B);
-		
-	PanicFalse(SinkConfigure(snk_a, STREAM_CODEC_OUTPUT_RATE, FACTORY_SAMPLE_RATE));
-	PanicFalse(SinkConfigure(snk_a, STREAM_AUDIO_SAMPLE_SIZE, 16));	
-    /*channel B is none */
-    if(appConfigIsLeft())	
-        snk_b = StreamAudioSink(AUDIO_HARDWARE_CODEC, AUDIO_INSTANCE_0, AUDIO_CHANNEL_B);
-    else
-        snk_b = StreamAudioSink(AUDIO_HARDWARE_CODEC, AUDIO_INSTANCE_0, AUDIO_CHANNEL_A);
-#endif
 	 /* Now create the operator for routing the audio */
     passthrough = PanicZero(VmalOperatorCreate(CAP_ID_BASIC_PASS));
     PanicZero(VmalOperatorMessage(passthrough, set_gain, 6, NULL, 0));

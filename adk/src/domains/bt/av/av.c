@@ -53,6 +53,10 @@ Main AV task.
 #include "state_proxy.h"
 
 #include <connection_manager.h>
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_gaia.h"
+#endif
+
 /* Remove these once feature_if.h has been updated */
 #define APTX_ADAPTIVE (40)
 #define APTX_ADAPTIVE_MONO (41)
@@ -516,6 +520,16 @@ static void appAvInstanceHandleAvAvrcpPlayStatusChangedInd(avInstanceTaskData *t
             {
                 DEBUG_LOG("appAvInstanceHandleAvAvrcpPlayStatusChangedInd, send play status %u to %p", ind->play_status, theInst);
                 appAvAvrcpPlayStatusNotification(theInst, ind->play_status);
+#ifdef ENABLE_TYM_PLATFORM
+                if(ind->play_status == avrcp_play_status_playing)
+                {
+                    bell_gaia_play_pause_notify_event(1);
+                }
+                else if((ind->play_status == avrcp_play_status_stopped) || (ind->play_status == avrcp_play_status_paused))
+                {
+                    bell_gaia_play_pause_notify_event(0);
+                }
+#endif
             }
         }
     }
@@ -2515,6 +2529,7 @@ static bool appAvVolumeRepeat(int16 step)
     /* Handle volume change locally */
     if (appAvVolumeChange(step))
     {
+#ifndef ENABLE_TYM_PLATFORM /*don't repeat volume*/
         MAKE_AV_MESSAGE(AV_INTERNAL_VOLUME_REPEAT);
 
         /* Send repeat message later */
@@ -2522,7 +2537,7 @@ static bool appAvVolumeRepeat(int16 step)
         MessageSendLater(&AvGetTaskData()->task, step > 0 ? AV_INTERNAL_VOLUME_UP_REPEAT : AV_INTERNAL_VOLUME_DOWN_REPEAT,
                          message, AVRCP_CONFIG_VOLUME_REPEAT_TIME);
         AvGetTaskData()->bitfields.volume_repeat = 1;
-
+#endif
         /* Return indicating volume changed */
         return TRUE;
     }

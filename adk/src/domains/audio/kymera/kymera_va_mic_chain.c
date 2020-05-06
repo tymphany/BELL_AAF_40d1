@@ -11,6 +11,9 @@
 #include "kymera_private.h"
 #include "kymera_aec.h"
 #include "kymera_va_common.h"
+#ifdef ENABLE_TYM_PLATFORM
+#include "gain_utils.h"
+#endif
 
 #define PANIC(...) do{DEBUG_LOG(__VA_ARGS__); Panic();}while(0);
 #define METADATA_REFRAMING_SIZE (384)
@@ -319,12 +322,26 @@ static void kymera_ChainWake(Operator *array, unsigned length_of_array)
     ChainWake(va_mic_chain, &operators_to_exclude);
 }
 
+#ifdef ENABLE_TYM_PLATFORM
+static void kymera_ConfigurePassGain(void)
+{
+    int32 db = 20; /* need tuning */
+    int32 value = GainIn60thdB(db);
+    Operator passthrough = kymera_GetChainOperator(OPR_CVC_DUMMY_BUFFER);
+    PanicFalse(passthrough);
+    OperatorsSetPassthroughGain(passthrough,value);
+}
+#endif
+
 void Kymera_CreateVaMicChain(const va_mic_chain_create_params_t *params)
 {
     PanicFalse(params != NULL);
     chain_output_sample_rate = params->operators_params.mic_sample_rate;
     kymera_CreateChain(&params->chain_params);
     kymera_ConfigureChain(&params->operators_params);
+#ifdef ENABLE_TYM_PLATFORM
+    kymera_ConfigurePassGain();
+#endif
     kymera_ConnectChain(&params->operators_params);
 }
 

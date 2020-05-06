@@ -246,7 +246,12 @@ void FastPair_HandleMessage(Task task, MessageId id, Message message)
             PHY_STATE_CHANGED_IND_T* msg = (PHY_STATE_CHANGED_IND_T *)message;
             if(msg->new_state == PHY_STATE_IN_CASE)
             {
-                fastPair_PowerOff();
+#ifdef ENABLE_TYM_PLATFORM
+                if (appPhyStateGetPowerState() == FALSE)
+                    fastPair_PowerOff();
+#else
+                    fastPair_PowerOff();
+#endif
             }
         }
         break;

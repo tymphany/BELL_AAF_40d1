@@ -59,13 +59,23 @@ static const gatt_connect_observer_callback_t gatt_battery_connect_observer_call
     .OnConnection = gattServerBattery_AddClient,
     .OnDisconnection = gattServerBattery_RemoveClient
 };
-
+#ifdef ENABLE_TYM_PLATFORM
+/*unuse gatt battery le advert*/
+const le_adv_data_callback_t gatt_battery_le_advert_callback =
+{
+    .GetNumberOfItems = gattServerBattery_NumberOfAdvItems,
+    .GetItem = gattServerBattery_GetAdvDataItems,
+    .ReleaseItems = gattServerBattery_ReleaseAdvDataItems
+};
+#else
 static const le_adv_data_callback_t gatt_battery_le_advert_callback =
 {
     .GetNumberOfItems = gattServerBattery_NumberOfAdvItems,
     .GetItem = gattServerBattery_GetAdvDataItems,
     .ReleaseItems = gattServerBattery_ReleaseAdvDataItems
 };
+#endif
+
 
 static const uint8 gatt_battery_advert_data[SIZE_BATTERY_ADVERT] = { \
     SIZE_BATTERY_ADVERT - 1, \
@@ -416,8 +426,11 @@ static void gattServerBattery_SetupAdvertising(void)
 {
     gatt_battery_advert.size = SIZE_BATTERY_ADVERT;
     gatt_battery_advert.data = gatt_battery_advert_data;
-
+#ifdef ENABLE_TYM_PLATFORM
+    DEBUG_LOG("remove battery le advert");
+#else
     LeAdvertisingManager_Register(NULL, &gatt_battery_le_advert_callback);
+#endif
 }
 
 

@@ -26,7 +26,7 @@
 #include "peer_signalling.h"
 #include "earbud_config.h"
 #include "proximity.h"
-
+#include "multidevice.h"
 /* Todo
 #include "sink_tym_anc.h"
 #include "sink_tym_main.h"

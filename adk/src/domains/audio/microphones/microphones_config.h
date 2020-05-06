@@ -9,6 +9,30 @@
 #ifndef MICROPHONES_CONFIG_H_
 #define MICROPHONES_CONFIG_H_
 
+
+#ifdef ENABLE_TYM_PLATFORM
+
+//!@{ @name Parameters for microphone 0 - Left analog MIC */
+#define appConfigMic0Bias()                     (BIAS_CONFIG_DISABLE)
+#define appConfigMic0BiasVoltage()              (3) /* 1.9v */
+#define appConfigMic0Pio()                      (0x02)
+#define appConfigMic0Gain()                     (0x5)
+#define appConfigMic0IsDigital()                (TRUE)//(TRUE)
+#define appConfigMic0AudioInstance()            (AUDIO_INSTANCE_0)
+#define appConfigMic0AudioChannel()             (AUDIO_CHANNEL_A)
+//!@}
+
+//!@{ @name Parameters for microphone 1 - Right analog MIC */
+#define appConfigMic1Bias()                     (BIAS_CONFIG_DISABLE)
+#define appConfigMic1BiasVoltage()              (3) /* 1.9v */
+#define appConfigMic1Pio()                      (0x03)
+#define appConfigMic1Gain()                     (0x5)
+#define appConfigMic1IsDigital()                (TRUE)//(TRUE)
+#define appConfigMic1AudioInstance()            (AUDIO_INSTANCE_0)
+#define appConfigMic1AudioChannel()             (AUDIO_CHANNEL_B)
+//!@}
+
+#else/*ENABLE_TYM_PLATFORM*/
 //!@{ @name Parameters for microphone 0 - Left analog MIC */
 #define appConfigMic0Bias()                     (BIAS_CONFIG_MIC_BIAS_0)
 #define appConfigMic0BiasVoltage()              (3) /* 1.9v */
@@ -28,7 +52,7 @@
 #define appConfigMic1AudioInstance()            (AUDIO_INSTANCE_0)
 #define appConfigMic1AudioChannel()             (AUDIO_CHANNEL_B)
 //!@}
-
+#endif/*ENABLE_TYM_PLATFORM*/
 #if defined(CORVUS_PG806)
 
 //!@{ @name Parameters for microphone 2 - HBL_L_FB Analog MIC connected to digital MIC ADC */

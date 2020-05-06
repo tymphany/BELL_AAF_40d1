@@ -33,8 +33,12 @@ fastpair_advert_data_t fastpair_advert;
 
 /*! Module Constants */
 #define FAST_PAIR_GFPS_IDENTIFIER 0xFE2C
-
+#ifdef ENABLE_TYM_PLATFORM
+#define FAST_PAIR_MODEL_IDENTIFIER   0x3727DB
+#else
 #define FAST_PAIR_MODEL_IDENTIFIER   0x9D893B
+#endif
+
 
 #define FAST_PAIR_ADV_ITEM_MODEL_ID 0 /*During BR/EDR Connectable and Discoverable*/
 #define FAST_PAIR_ADV_ITEM_BLOOM_FILTER_ID 0 /*During BR/EDR Connectable and Non-Discoverable*/
