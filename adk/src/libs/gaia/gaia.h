@@ -296,7 +296,9 @@ typedef enum
     GAIA_VA_ANSWER_END_IND,             /*!< Indication of end of voice response by the Host */
     GAIA_VA_CANCEL_CFM,                 /*!< Confirmation of a Voice Assistant cancellation request to the Host */
     GAIA_VA_CANCEL_IND,                 /*!< Indication of a Voice Assistant cancellation request from the Host */
+    #if 1 //ENABLE_TYM_PLATFORM
     GAIA_BATT_REPORT_IND,               /*!< REPORT_BATTERY REQUEST , ENABLE_TYM_PLATFORM */
+    #endif
     /* Library message limit */
     GAIA_MESSAGE_TOP
 } GaiaMessageId;

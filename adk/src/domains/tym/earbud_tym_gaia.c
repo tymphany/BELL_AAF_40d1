@@ -89,6 +89,9 @@ void bell_gaia_get_twslinkstate(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_get_psval(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_set_ir_config(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_get_play_pause_status(GAIA_UNHANDLED_COMMAND_IND_T *command);
+void bell_gaia_set_eq_control(GAIA_UNHANDLED_COMMAND_IND_T *command);
+void bell_gaia_get_eq_contorl(GAIA_UNHANDLED_COMMAND_IND_T *command);
+void bell_gaia_no_operation(GAIA_UNHANDLED_COMMAND_IND_T *command);
 
 
  /* -------------------------------------------------------------------------
@@ -667,7 +670,23 @@ void bell_gaia_get_play_pause_status(GAIA_UNHANDLED_COMMAND_IND_T *command)
     {
         tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_INVALID_PARAMETER);
     }
+}
 
+void bell_gaia_set_eq_control(GAIA_UNHANDLED_COMMAND_IND_T *command)
+{
+    //Todo : Not implement function yet
+    tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
+}
+
+void bell_gaia_get_eq_contorl(GAIA_UNHANDLED_COMMAND_IND_T *command)
+{
+    //Todo : Not implement function yet
+    tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
+}
+
+void bell_gaia_no_operation(GAIA_UNHANDLED_COMMAND_IND_T *command)
+{
+    tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
 }
 
  /* -------------------------------------------------------------------------
@@ -755,6 +774,15 @@ bool _bell_GAIAMessageHandle(Task task, const GAIA_UNHANDLED_COMMAND_IND_T *mess
         case BELL_GAIA_GET_PLAYPAUSE_STATUS_COMMAND:
             bell_gaia_get_play_pause_status(command);
             break;    
+        case BELL_GAIA_SET_EQ_CONTROL_COMMAND:
+            bell_gaia_set_eq_control(command);
+            break;
+        case BELL_GAIA_GET_EQ_CONTROL_COMMAND:
+            bell_gaia_get_eq_contorl(command);
+            break;
+        case BELL_GAIA_NO_OPERATION_COMMAND:
+            bell_gaia_no_operation(command);
+            break;
         case BELL_GAIA_GET_TWSLINK_COMMAND:
             bell_gaia_get_twslinkstate(command);
             break;

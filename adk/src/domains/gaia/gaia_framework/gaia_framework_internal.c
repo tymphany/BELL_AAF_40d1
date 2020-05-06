@@ -20,6 +20,10 @@ This is a minimal implementation that only supports upgrade.
 #include "gatt_handler.h"
 #include "gatt_handler_db_if.h"
 
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_gaia.h"
+#endif
+
 #include <panic.h>
 
 
@@ -252,7 +256,11 @@ static void gaiaFrameworkInternal_MessageHandler(Task task, MessageId id, Messag
             DEBUG_LOG("gaiaFrameworkInternal_MessageHandler GAIA_UNHANDLED_COMMAND_IND");
             GaiaFrameworkCommand_CommandHandler(task, (const GAIA_UNHANDLED_COMMAND_IND_T *) message);
             break;
-
+        #ifdef ENABLE_TYM_PLATFORM
+        case GAIA_BATT_REPORT_IND:
+            bell_gaia_set_report_battery_notify();
+            break;
+        #endif
         case GAIA_SEND_PACKET_CFM:               /* Confirmation that a GaiaSendPacket request has completed */
             {
                 const GAIA_SEND_PACKET_CFM_T *m = (const GAIA_SEND_PACKET_CFM_T *) message;

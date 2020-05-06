@@ -125,6 +125,7 @@ void GaiaFramework_SendError(uint8 feature_id, uint8 pdu_id, uint8 status_code);
 */
 void GaiaFramework_SendNotification(uint8 feature_id, uint8 notification_id, uint8 length, uint8 * payload);
 #ifdef ENABLE_TYM_PLATFORM
+bool tym_gaia_is_acknowledgement(uint16 command_id);
 void tym_gaia_send_simple_response(uint16 command_id,uint8 status);
 void tym_gaia_send_response(uint16 command_id,uint8 status,uint16 payload_length, uint8 *payload);
 void tym_gaia_send_notification(uint16 event, uint8 status, uint16 payload_length, uint8 *payload);

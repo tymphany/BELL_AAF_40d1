@@ -12,6 +12,9 @@
 #include <logging.h>
 #include <panic.h>
 
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_gaia.h"
+#endif
 
 #include "gaia_framework_feature.h"
 
@@ -81,6 +84,7 @@ void GaiaFrameworkCommand_CommandHandler(Task task, const GAIA_UNHANDLED_COMMAND
     }
     else if (command->vendor_id == GAIA_VENDOR_QTIL)
     {
+        #ifndef ENABLE_TYM_PLATFORM
         if ((command->command_id & GAIA_COMMAND_TYPE_MASK) == GAIA_COMMAND_GET_API_VERSION)
         {
             DEBUG_LOG("gaiaFramework_CommandHandler send Get API V2 reply with V3 version");
@@ -91,7 +95,57 @@ void GaiaFrameworkCommand_CommandHandler(Task task, const GAIA_UNHANDLED_COMMAND
             DEBUG_LOG("gaiaFramework_CommandHandler send V2 status not supported");
             gaiaFrameworkCommand_SendV2Response(command->vendor_id, command->command_id, GAIA_STATUS_NOT_SUPPORTED, 0, NULL);
         }
+        #else
+        switch(command->command_id & GAIA_COMMAND_TYPE_MASK)
+        {
+            case GAIA_COMMAND_TYPE_CONFIGURATION:
+                //Todo : Gaia v2 configuration command handler
+                DEBUG_LOG("appGaiaHandleCommand GAIA_COMMAND_TYPE_CONFIGURATION");
+                break;
+
+            case GAIA_COMMAND_TYPE_CONTROL:
+                DEBUG_LOG("appTYMHandleControlCommand GAIA_COMMAND_TYPE_CONTROL");
+                //Todo : Gaia v2 control command handler
+                //appTYMHandleControlCommand(task,command);
+                break;
+
+            case GAIA_COMMAND_TYPE_STATUS :
+                //Todo : Gaia v2 status command handler
+                #if 0
+                appGaiaHandleStatusCommand(task, command);
+                #else
+                if(command->command_id == GAIA_COMMAND_GET_API_VERSION)
+                {
+                    DEBUG_LOG("gaiaFramework_CommandHandler send Get API V2 reply with V3 version");
+                    gaiaFrameworkCommand_ReplyV2GetApiVersion(command);
+                }
+                #endif
+                break;
+
+            case GAIA_COMMAND_TYPE_NOTIFICATION:
+                if (command->command_id & GAIA_ACK_MASK)
+                {
+                    DEBUG_LOG("appGaiaHandleCommand NOTIFICATION ACK");
+                }
+                else
+                {
+                    DEBUG_LOG("appGaiaHandleCommand NOTIFICATION");
+                }
+                break;
+            default:
+                DEBUG_LOG("gaiaFramework_CommandHandler send V2 status not supported");
+                gaiaFrameworkCommand_SendV2Response(command->vendor_id, command->command_id, GAIA_STATUS_NOT_SUPPORTED, 0, NULL);
+                break;
+        }
+        #endif
     }
+    #ifdef ENABLE_TYM_PLATFORM
+    else if((command->vendor_id == BELL_VENDOR_QTIL) && (!tym_gaia_is_acknowledgement(command->command_id)))
+    {
+        if(!_bell_GAIAMessageHandle(task,command))
+            DEBUG_LOG("_bell_GAIAMessageHandle does not supported");
+    }
+    #endif
     else
     {
         /* Vendpor Specific command handler */
