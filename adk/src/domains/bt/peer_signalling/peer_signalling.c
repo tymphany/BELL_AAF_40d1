@@ -28,7 +28,12 @@
 #include <sink.h>
 #include <stream.h>
 #include <marshal.h>
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_sm.h"
+#include "earbud_tym_cc_communication.h"
+#include "earbud_tym_sync.h"
+#include "earbud_tym_gaia.h"
+#endif
 //#define DUMP_MARSHALL_DATA
 #ifdef DUMP_MARSHALL_DATA
 static void dump_buffer(const uint8* bufptr, size_t size)
@@ -156,6 +161,15 @@ static void appPeerSigEnterConnected(void)
     appPeerSigSendConnectConfirmation(peerSigStatusSuccess);
 
     appPeerSigStartInactivityTimer();
+#ifdef ENABLE_TYM_PLATFORM
+    if(appSmIsPrimary())
+    {
+       //sync bt status
+       tymSyncdata(btStatusCmd,tymGetBTStatus());
+    }
+    //peer device connect, report to ble app
+    bell_gaia_tws_link_notify_event();
+#endif
 }
 
 static void appPeerSigExitConnected(void)
@@ -217,6 +231,10 @@ static void appPeerSigEnterDisconnected(void)
     }
 
     peer_sig->lock &= ~peer_sig_lock_marshal;
+#ifdef ENABLE_TYM_PLATFORM
+    //peer device disconnect, report to ble app
+    bell_gaia_tws_link_notify_event();
+#endif
 }
 
 static void appPeerSigExitDisconnected(void)

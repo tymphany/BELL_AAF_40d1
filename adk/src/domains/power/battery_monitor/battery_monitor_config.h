@@ -9,14 +9,19 @@
 #ifndef BATTERY_MONITOR_CONFIG_H_
 #define BATTERY_MONITOR_CONFIG_H_
 
-
+#ifdef ENABLE_TYM_PLATFORM /*follow E.E. suggest */
+#define appConfigBatteryFullyCharged()      (4200)
+#define appConfigBatteryVoltageOk()         (3684)
+#define appConfigBatteryVoltageLow()        (3538)
+#define appConfigBatteryVoltageCritical()   (3450)
+#else
 //!@{ @name Battery voltage levels in milli-volts
 #define appConfigBatteryFullyCharged()      (4200)
 #define appConfigBatteryVoltageOk()         (3600)
 #define appConfigBatteryVoltageLow()        (3300)
 #define appConfigBatteryVoltageCritical()   (3000)
 //!@}
-
+#endif
 //!@{ @name Battery temperature limits in degrees Celsius.
 #define appConfigBatteryChargingTemperatureMax() 45
 #define appConfigBatteryChargingTemperatureMin() 0

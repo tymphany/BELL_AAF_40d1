@@ -160,10 +160,16 @@ static unsigned int txPower_AdvGetNumberOfItems(const le_adv_data_params_t * par
        2. TxPower is Optional and completeness_skip 
      */
     DEBUG_LOG_V_VERBOSE("txPower_AdvGetNumberOfItems: Completeness=%d", params->completeness);
+#ifdef ENABLE_TYM_PLATFORM /* follow Bell Specification TX power put in scan response */
+    if(((params->completeness == le_adv_data_completeness_full && tx_power_data.tx_power_mandatory) ||
+       (params->completeness == le_adv_data_completeness_can_be_skipped && !tx_power_data.tx_power_mandatory)) &&
+        (params->data_set != le_adv_data_set_peer) && (params->placement == le_adv_data_placement_scan_response) )
+#else
     if(((params->completeness == le_adv_data_completeness_full && tx_power_data.tx_power_mandatory) ||
        (params->completeness == le_adv_data_completeness_can_be_skipped && !tx_power_data.tx_power_mandatory)) &&
        (params->placement == le_adv_data_placement_advert) &&
        (params->data_set != le_adv_data_set_peer))
+#endif
     {
         return TX_POWER_NUM_ITEMS;
     }
@@ -179,11 +185,16 @@ static le_adv_data_item_t txPower_AdvertData(const le_adv_data_params_t * params
     le_adv_data_item_t adv_data_item={0};
 
     DEBUG_LOG_V_VERBOSE("txPower_AdvertData: Completeness=%d, number=%d", params->completeness, number);
-
+#ifdef ENABLE_TYM_PLATFORM /* follow Bell Specification TX power put in scan response */
+        if(((params->completeness == le_adv_data_completeness_full && tx_power_data.tx_power_mandatory) ||
+       (params->completeness == le_adv_data_completeness_can_be_skipped && !tx_power_data.tx_power_mandatory)) &&
+        (params->data_set != le_adv_data_set_peer)  && (params->placement == le_adv_data_placement_scan_response) )
+#else
     if(((params->completeness == le_adv_data_completeness_full && tx_power_data.tx_power_mandatory) ||
        (params->completeness == le_adv_data_completeness_can_be_skipped && !tx_power_data.tx_power_mandatory)) &&
        (params->placement == le_adv_data_placement_advert) &&
        (params->data_set != le_adv_data_set_peer))
+#endif
     {
         adv_data_item.size = TX_POWER_ADV_SIZE;
 

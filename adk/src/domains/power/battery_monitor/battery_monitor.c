@@ -101,12 +101,27 @@ static uint8 toPercentage(uint16 voltage)
     /* When unplug charger, voltage will drop so battery never reported full*/
     /* Define the offset value to avoid impression that battery never full */
     uint16 charged = appConfigBatteryFullyCharged() - CHARGED_BATTERY_FULL_OFFSET_mV;
+#ifdef ENABLE_TYM_PLATFORM
+    uint8 percent = 0;
+    int i;
+#endif
     if (voltage < critical)
         voltage = critical;
     else if (voltage > charged)
         voltage = charged;
-
+#ifdef ENABLE_TYM_PLATFORM
+    for(i = (BATT_TABLE_NUM-1);i >= 0;i--)
+    {
+        if(voltage >= disch_table[i])
+        {
+            percent = (i+1)*5;
+            break;
+        }
+    }
+    return percent;
+#else
     return (100UL * (uint32)(voltage - critical)) / (uint32)(charged - critical);
+#endif
 }
 
 static battery_level_state toState(uint16 voltage)
@@ -267,6 +282,16 @@ static void appBatteryServiceClients(batteryTaskData *battery)
                 battery_level_state new_state = toState(voltage);
                 if (stateUpdateIsRequired(client->last.state, new_state, voltage, hysteresis))
                 {
+#ifdef ENABLE_TYM_PLATFORM /* === play battery low prompt === */
+                    if(client->last.state > battery_level_critical)
+                    {
+                        if(new_state == battery_level_critical)
+                        {
+                            if(StateProxy_IsInCase() == FALSE)
+                                Ui_InjectUiInput(ui_input_prompt_battery_low);
+                        }
+                    }
+#endif
                     MESSAGE_MAKE(msg, MESSAGE_BATTERY_LEVEL_UPDATE_STATE_T);
                     msg->state = new_state;
                     client->last.state = new_state;
@@ -310,6 +335,9 @@ static bool appBatteryAdcResultHandler(batteryTaskData *battery, MessageAdcResul
                When wrapping to 0, jump over the initialisation index range. */
             if (battery->filter.index == BATTERY_FILTER_LEN)
             {
+#ifdef ENABLE_TYM_PLATFORM
+                MessageSend(&battery->task, MESSAGE_BATTERY_INTERNAL_PREDICT_TRIGGER, NULL);
+#endif
                 MessageSend(Init_GetInitTask(), MESSAGE_BATTERY_INIT_CFM, NULL);
             }
             if (battery->filter.index == 0)
@@ -354,7 +382,12 @@ static void appBatteryHandleMessage(Task task, MessageId id, Message message)
                 AdcReadRequest(&battery->task, adcsel_vref_hq_buff, 0, 0);
                 AdcReadRequest(&battery->task, adcsel_pmu_vbat_sns, 0, 0);
                 break;
-
+#ifdef ENABLE_TYM_PLATFORM
+            case MESSAGE_BATTERY_INTERNAL_PREDICT_TRIGGER:
+                appBatteryGetPredictVoltage();
+                MessageSendLater(&battery->task, MESSAGE_BATTERY_INTERNAL_PREDICT_TRIGGER, NULL, D_SEC(30));
+                break;
+#endif
             default:
                 /* An unexpected message has arrived - must handle it */
                 UnexpectedMessage_HandleMessage(id);
@@ -496,6 +529,11 @@ uint16 appBatteryGetQualcommVoltage(void)
         }
         return index == 0 ? 0 : accumulator / index;
     }
+}
+
+void appBatteryLowTest(void)
+{
+    stateUpdateIsRequired(battery_level_ok,battery_level_critical,4150,50);
 }
 #else
 

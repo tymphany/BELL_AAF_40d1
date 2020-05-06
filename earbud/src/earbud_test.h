@@ -1142,5 +1142,7 @@ bool appTestIsPreparingToSleep(void);
 #ifdef ENABLE_TYM_PLATFORM
 void appTestSwitchPresetEQ(uint8 eq);
 void appTestShipp(void);
+void appTestShowLog(void);
+void appTestDisableLog(void);
 #endif
 #endif /* EARBUD_TEST_H */

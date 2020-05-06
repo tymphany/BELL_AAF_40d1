@@ -9,7 +9,34 @@
 #ifndef CHARGER_MONITOR_CONFIG_H_
 #define CHARGER_MONITOR_CONFIG_H_
 
+#ifdef ENABLE_TYM_PLATFORM
+/*! The time to debounce charger state changes (ms).
+    The charger hardware will have a more limited range. */
+#define appConfigChargerStateChangeDebounce()          (128)
 
+/*! Trickle-charge current (mA) */
+#define appConfigChargerTrickleCurrent()               (9)
+
+/*! Pre-charge current (mA)*/
+#define appConfigChargerPreCurrent()                   (17)
+
+/*! Pre-charge to fast-charge threshold */
+#define appConfigChargerPreFastThresholdVoltage()      (2900)
+
+/*! Fast-charge current (mA) */
+#define appConfigChargerFastCurrent()                  (FAST_CHARGE_CURRENT)
+
+/*! Fast-charge (constant voltage) to standby transition point.
+    Percentage of the fast charge current */
+#define appConfigChargerTerminationCurrent()           (10)
+
+/*! Fast-charge Vfloat voltage */
+#define appConfigChargerTerminationVoltage()           (4200)
+
+/*! Standby to fast charge hysteresis (mV) */
+#define appConfigChargerStandbyFastVoltageHysteresis() (250)
+
+#else /* ENABLE_TYM_PLATFORM */
 /*! The time to debounce charger state changes (ms).
     The charger hardware will have a more limited range. */
 #define appConfigChargerStateChangeDebounce()          (128)
@@ -38,7 +65,7 @@
 
 /*! Standby to fast charge hysteresis (mV) */
 #define appConfigChargerStandbyFastVoltageHysteresis() (250)
-
+#endif
 /* Enable short timeouts for charger/battery platform testing */
 #ifdef CF133_BATT
 #define CHARGER_PRE_CHARGE_TIMEOUT_MS D_MIN(5)

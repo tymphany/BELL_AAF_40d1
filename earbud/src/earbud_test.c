@@ -2767,4 +2767,14 @@ void appTestShipp(void)
 {
     MessageSendLater(SmGetTask(), ui_input_shipping, NULL, D_SEC(1));
 }
+
+void appTestShowLog(void)
+{
+    debug_log_level__global = DEBUG_LOG_LEVEL_VERBOSE;
+}
+
+void appTestDisableLog(void)
+{
+    debug_log_level__global = DEBUG_LOG_LEVEL_INFO;
+}
 #endif

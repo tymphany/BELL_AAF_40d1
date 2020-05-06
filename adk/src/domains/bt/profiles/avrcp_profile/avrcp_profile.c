@@ -32,7 +32,11 @@
 #include "volume_messages.h"
 
 #include <connection_manager.h>
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "ui.h"
+#include "ui_prompts.h"
+#include "state_proxy.h"
+#endif
 /*! Macro for creating an AV message based on the message name */
 #define MAKE_AV_MESSAGE(TYPE) \
     TYPE##_T *message = PanicUnlessNew(TYPE##_T);
@@ -1456,7 +1460,12 @@ static void appAvrcpHandleAvrcpPassthroughConfirm(avInstanceTaskData *theInst, c
                 {
                     if (cfm->status != avrcp_success)
                     {
+#ifdef ENABLE_TYM_PLATFORM
+                        if(StateProxy_IsInCase() == FALSE)
+                            Ui_InjectUiInput(ui_input_prompt_volume_limit);
+#else
                         appAvSendUiMessageId(AV_VOLUME_LIMIT);
+#endif
                     }
                     else if (theInst->avrcp.bitfields.op_state || !theInst->avrcp.bitfields.op_repeat)
                     {
@@ -1469,7 +1478,12 @@ static void appAvrcpHandleAvrcpPassthroughConfirm(avInstanceTaskData *theInst, c
                 {
                     if (cfm->status != avrcp_success)
                     {
+#ifdef ENABLE_TYM_PLATFORM
+                        if(StateProxy_IsInCase() == FALSE)
+                            Ui_InjectUiInput(ui_input_prompt_volume_limit);
+#else
                         appAvSendUiMessageId(AV_VOLUME_LIMIT);
+#endif
                     }
                     else if (theInst->avrcp.bitfields.op_state || !theInst->avrcp.bitfields.op_repeat)
                     {

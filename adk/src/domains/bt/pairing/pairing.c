@@ -37,6 +37,11 @@
 #include <ps.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_sync.h"
+#include "ui.h"
+#include "ui_prompts.h"
+#endif
 
 /*! Macro for simplifying creating messages */
 #define MAKE_PAIRING_MESSAGE(TYPE) \
@@ -186,7 +191,9 @@ static void pairing_EnterDiscoverable(pairingTaskData *thePairing)
     {
         TaskList_MessageSendId(TaskList_GetFlexibleBaseTaskList(PairingGetClientList()), PAIRING_ACTIVE);
     }
-
+#ifdef ENABLE_TYM_PLATFORM
+    Ui_InjectUiInput(ui_input_prompt_pairing_continue);
+#endif
     /* notify clients that pairing is in progress */
     pairing_MsgActivity(pairingInProgress, NULL);
 }
@@ -338,6 +345,9 @@ static void pairing_Complete(pairingTaskData *thePairing, pairingStatus status, 
     }
     if (pairingSuccess == status)
     {
+#ifdef ENABLE_TYM_PLATFORM
+        tymSyncdata(btStatusCmd,btPairingSuccessful);
+#endif
         TaskList_MessageSendId(TaskList_GetFlexibleBaseTaskList(PairingGetClientList()), PAIRING_COMPLETE);
         /* notify clients that pairing succeeded */
         pairing_MsgActivity(pairingSuccess, (bdaddr*)bd_addr);
@@ -791,6 +801,9 @@ static void pairing_HandleInternalPairRequest(pairingTaskData *thePairing, PAIR_
             /* no address, go discoverable for inquiry process */
             if (BdaddrIsZero(&req->addr))
             {
+#ifdef ENABLE_TYM_PLATFORM
+                tymSyncdata(btStatusCmd,btPairing);
+#endif
                 /* Move to 'discoverable' state to start inquiry & page scan */
                 pairing_SetState(thePairing, PAIRING_STATE_DISCOVERABLE);
             }
@@ -842,7 +855,16 @@ static void pairing_HandleInternalPairLePeerRequest(pairingTaskData *thePairing,
 static void pairing_HandleInternalTimeoutIndications(pairingTaskData *thePairing)
 {
     DEBUG_LOG("pairing_HandleInternalTimeoutIndications");
-
+#ifdef ENABLE_TYM_PLATFORM /*if no handset pairing list, continue pairing*/
+    if(pairing_GetState(thePairing) == PAIRING_STATE_DISCOVERABLE)
+    {
+        if(!BtDevice_IsPairedWithHandset())
+        {
+            DEBUG_LOG("No Pair with handset,continue pairing");
+            return;
+        }
+    }
+#endif
     switch (pairing_GetState(thePairing))
     {
         case PAIRING_STATE_DISCOVERABLE:
@@ -1390,7 +1412,9 @@ void Pairing_PairLeAddress(Task client_task, const typed_bdaddr* device_addr)
 void Pairing_PairStop(Task client_task)
 {
     pairingTaskData *thePairing = PairingGetTaskData();
-
+#ifdef ENABLE_TYM_PLATFORM
+    Prompts_CancelPairingContinue();
+#endif
     MAKE_PAIRING_MESSAGE(PAIRING_INTERNAL_PAIR_STOP_REQ);
 
     DEBUG_LOG("Pairing_PairStop");

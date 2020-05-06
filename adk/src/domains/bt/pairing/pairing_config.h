@@ -14,8 +14,13 @@
 /*! Minimum RSSI to pair with a device */
 #define appConfigPeerPairingMinRssi() (-60)
 #else
+#ifdef ENABLE_TYM_PLATFORM /*for factory -50 can't tws pairing success*/
+/*! Minimum RSSI to pair with a device */
+#define appConfigPeerPairingMinRssi() (-90)
+#else
 /*! Minimum RSSI to pair with a device */
 #define appConfigPeerPairingMinRssi() (-50)
+#endif
 #endif
 
 /*! Minimum difference in RSSI between devices discovered
@@ -25,9 +30,13 @@
 /*! Timeout in seconds for user initiated peer pairing */
 #define appConfigPeerPairingTimeout()       (120)
 
+#ifdef ENABLE_TYM_PLATFORM
+/*! Timeout in seconds for user initiated handset pairing */
+#define appConfigHandsetPairingTimeout()    (600)
+#else
 /*! Timeout in seconds for user initiated handset pairing */
 #define appConfigHandsetPairingTimeout()    (120)
-
+#endif
 /*! Timeout in seconds to disable page/inquiry scan after entering idle state */
 #define appConfigPairingScanDisableDelay()  (5)
 
@@ -37,9 +46,13 @@
 /*! Timeout in seconds for authentication */
 #define appConfigAuthenticationTimeout()       (90)
 
+#ifdef ENABLE_TYM_PLATFORM
+/*! Timeout in seconds for automatic handset pairing */
+#define appConfigAutoHandsetPairingTimeout()    (600)
+#else
 /*! Timeout in seconds for automatic handset pairing */
 #define appConfigAutoHandsetPairingTimeout()    (300)
-
+#endif
 /*! Key ID peer Earbud link-key derivation */
 #define appConfigTwsKeyId()       (0x74777332UL)
 

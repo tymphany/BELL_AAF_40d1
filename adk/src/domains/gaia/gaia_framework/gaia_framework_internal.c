@@ -97,6 +97,10 @@ static void gaiaFrameworkInternal_SetDisconnectResponseCallback(uint16 cid, gatt
 static void gaiaFrameworkInternal_NotifyGaiaConnected(void)
 {
     TaskList_MessageSendId(TaskList_GetFlexibleBaseTaskList(GaiaGetClientList()), APP_GAIA_CONNECTED);
+#ifdef ENABLE_TYM_PLATFORM
+    //start connect app report battery
+    bell_gaia_connect_event();
+#endif
 }
 
 
@@ -109,6 +113,10 @@ static void gaiaFrameworkInternal_NotifyGaiaDisconnected(void)
         response(appGaiaGetDisconnectResponseCallbackCid());
         gaiaFrameworkInternal_SetDisconnectResponseCallback(0, NULL);
     }
+#ifdef ENABLE_TYM_PLATFORM
+    //cancel app report battery
+    bell_gaia_disconnect_event();
+#endif
 }
 
 

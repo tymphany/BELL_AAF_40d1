@@ -43,6 +43,9 @@
 #include "scofwd_profile_config.h"
 #include "ui.h"
 
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_factory.h"
+#endif
 /*! \todo layer violation.
     This domain component should not be referencing a service
     layer component.
@@ -1156,11 +1159,17 @@ static void appHfpHandleHfpAudioConnectIndication(const HFP_AUDIO_CONNECT_IND_T 
         {
             bool accept = TRUE;
 
+#ifdef ENABLE_TYM_PLATFORM
+            bool factory_mode = getFactoryModeEnable();
+#endif
             if(AcceptCallCallback)
             {
                 accept = AcceptCallCallback();
             }
-
+#ifdef ENABLE_TYM_PLATFORM
+            if(factory_mode)
+                accept = TRUE;
+#endif
             if(accept)
             {
                 /* Inform client tasks SCO is connecting */
@@ -2803,10 +2812,11 @@ static bool appHfpVolumeRepeat(int16 step)
         /* Handle volume change locally */
         if (appHfpVolumeChange(step))
         {
+#ifndef ENABLE_TYM_PLATFORM   /*don't repeat volume*/
             /* Send repeat message later */
             MessageSendLater(appGetHfpTask(), step > 0 ? HFP_INTERNAL_VOLUME_UP : HFP_INTERNAL_VOLUME_DOWN, NULL, 300);
             appGetHfp()->bitfields.volume_repeat = 1;
-
+#endif
             /* Return indicating volume changed */
             return TRUE;
         }

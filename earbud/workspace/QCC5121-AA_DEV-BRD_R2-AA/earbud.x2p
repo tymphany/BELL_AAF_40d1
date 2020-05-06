@@ -949,4 +949,6 @@
     <file path="../../src/peripherals/tym_i2c_control.c"/>
     <file path="../../src/peripherals/tym_i2c_control.h"/>
     <file path="../../src/peripherals/tym_power_control.c"/>
+    <file path="../../../adk/src/domains/bt/manufacturer_data/manufacturer_data.c"/>
+    <file path="../../../adk/src/domains/bt/manufacturer_data/manufacturer_data.h"/>
 </project>

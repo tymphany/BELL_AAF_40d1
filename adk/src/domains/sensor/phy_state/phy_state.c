@@ -103,6 +103,16 @@ static void appPhyStateMsgSendStateChangedInd(phyState state, phy_state_event ev
 static void appPhyStateEnterInCase(void)
 {
     DEBUG_LOG("appPhyStateEnterInCase");
+#ifdef ENABLE_TYM_PLATFORM
+    //two earbud in case,report bt pairing to charging case
+    if(StateProxy_IsPeerInCase() == TRUE)
+    {
+        if(tymGetBTStatus() == btPairing)
+        {
+            tymSyncdata(btStatusCmd,btPairing);
+        }
+    }
+#endif
     appPhyStateMsgSendStateChangedInd(PHY_STATE_IN_CASE, phy_state_event_in_case);
 }
 
@@ -212,6 +222,9 @@ static void appPhyStateHandleInternalOutOfCaseEvent(void)
             appPhyStateSetState(PhyStateGetTaskData(), PHY_STATE_OUT_OF_EAR);
             if (phy_state->in_proximity)
             {
+#ifdef ENABLE_TYM_PLATFORM
+                appPhyStateInEarPromptCheck();
+#endif
                 appPhyStateSetState(PhyStateGetTaskData(), PHY_STATE_IN_EAR);
             }
             else if (!phy_state->in_motion)
@@ -252,6 +265,9 @@ static void appPhyStateHandleInternalInEarEvent(void)
 
         case PHY_STATE_UNKNOWN:
         case PHY_STATE_OUT_OF_EAR:
+#ifdef ENABLE_TYM_PLATFORM
+            appPhyStateInEarPromptCheck();
+#endif
             appPhyStateSetState(PhyStateGetTaskData(), PHY_STATE_IN_EAR);
             break;
 
@@ -423,7 +439,99 @@ static void appPhyStateHandleMessage(Task task, MessageId id, Message message)
         case PROXIMITY_MESSAGE_NOT_IN_PROXIMITY:
             appPhyStateOutOfEarEvent();
             break;
-
+#ifdef ENABLE_TYM_PLATFORM
+        case TOUCH_MESSAGE_TAPx1:
+            DEBUG_LOG("TOUCH_MESSAGE_TAPx1");
+            appPhyStateTapx1();
+            //LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);
+            break;
+        case TOUCH_MESSAGE_TAPx2:
+            DEBUG_LOG("TOUCH_MESSAGE_TAPx2");
+            appPhyStateTapx2();
+            break;
+        case TOUCH_MESSAGE_TAPx3:
+            DEBUG_LOG("TOUCH_MESSAGE_TAPx3");
+            appPhyStateTapx3();
+            break;
+        case TOUCH_MESSAGE_SWIPEL:
+            DEBUG_LOG("TOUCH_MESSAGE_SWIPEL");
+            if(Multidevice_IsLeft()) /*left earbud run left function */
+            {
+                appPhyStateSwipeL(uiseq_left_swipe);
+                //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_FORWARD, NULL);
+            }
+            else
+            {
+                appPhyStateSwipeL(uiseq_right_swipe);
+                //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_UP, NULL);
+            }
+            break;
+        case TOUCH_MESSAGE_SWIPER:
+            DEBUG_LOG("TOUCH_MESSAGE_SWIPER");
+            if(Multidevice_IsLeft()) /*left earbud run left function */
+            {
+                appPhyStateSwipeR(uiseq_left_swipe);
+                //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_BACKWARD, NULL);
+            }
+            else
+            {
+                appPhyStateSwipeR(uiseq_right_swipe);
+                //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_DOWN, NULL);
+            }
+            break;
+        case TOUCH_MESSAGE_HOLD2S:
+            DEBUG_LOG("TOUCH_MESSAGE_HOLD2S");
+            LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_presshold);
+            break;
+        case TOUCH_MESSAGE_HOLD5S:
+            DEBUG_LOG("TOUCH_MESSAGE_HOLD5S");
+            if(StateProxy_IsInCase() == TRUE)
+            {
+                MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_HANDSET_PAIRING, NULL);
+            }
+            else
+            {
+                if(Multidevice_IsLeft())
+                    tymSyncdata(noCasePairCmd,TYM_LEFT_EARBUD|1);
+                else
+                    tymSyncdata(noCasePairCmd,TYM_RIGHT_EARBUD|1);
+            }
+            break;
+        case TOUCH_MESSAGE_HOLD10S:
+            DEBUG_LOG("TOUCH_MESSAGE_HOLD10S");
+            MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_DELETE_HANDSET, NULL);
+            break;
+        case TOUCH_MESSAGE_HOLD2SEND:
+            DEBUG_LOG("TOUCH_MESSAGE_HOLD2SEND");
+            /*va release*/
+            LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_6);
+            break;
+        case TOUCH_MESSAGE_HOLD5SEND:
+            DEBUG_LOG("TOUCH_MESSAGE_HOLD5SEND");
+            if(Multidevice_IsLeft())
+                tymSyncdata(noCasePairCmd,TYM_LEFT_EARBUD);
+            else
+                tymSyncdata(noCasePairCmd,TYM_RIGHT_EARBUD);
+            break;
+         case PHY_STATE_INTERNAL_TIMEOUT_SLEEPMODE:
+            DEBUG_LOG("Sleep mode timeout");
+            if(getFactoryModeEnable() == FALSE) /*not factory mode */
+            {
+                if(StateProxy_IsSleepMode() == FALSE)
+                {
+                    //appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_enter_sleepmode);
+                    tymSyncdata(sleepStandbyModeCmd, phy_state_event_enter_sleepmode);
+                }
+            }
+            break;
+         case PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE:
+            DEBUG_LOG("Standby mode timeout");
+            if(getFactoryModeEnable() == FALSE) /*not factory mode */
+            {
+                tymSyncdata(sleepStandbyModeCmd, phy_state_event_enter_standbymode);
+            }
+            break;
+#endif
         default:
             DEBUG_LOG("Unknown message received, id:%d", id);
             break;
@@ -449,7 +557,6 @@ void appPhyStateUnregisterClient(Task client_task)
 bool appPhyStateInit(Task init_task)
 {
     phyStateTaskData* phy_state = PhyStateGetTaskData();
-
     DEBUG_LOG("appPhyStateInit");
 
     phy_state->task.handler = appPhyStateHandleMessage;
@@ -458,7 +565,11 @@ bool appPhyStateInit(Task init_task)
     TaskList_InitialiseWithCapacity(PhyStateGetClientTasks(), PHY_STATE_CLIENT_TASK_LIST_INIT_CAPACITY);
     phy_state->in_motion = FALSE;
     phy_state->in_proximity = FALSE;
-
+#ifdef ENABLE_TYM_PLATFORM
+    phy_state->poweron = TRUE;
+    phy_state->trigger_sleepmode = FALSE;
+    phy_state->trigger_standbymode = FALSE;
+#endif
 /* Not registering as a client of the charger means no charger state messages
 will be received. This means the in-case state can never be entered */
 #ifndef DISABLE_IN_CASE_PHY_STATE
@@ -467,34 +578,94 @@ will be received. This means the in-case state can never be entered */
     /* Without charger messages, remain out of case */
     MessageSend(&phy_state->task, CHARGER_MESSAGE_DETACHED, NULL);
 #endif
+#ifdef ENABLE_TYM_PLATFORM
+    if(getFactoryModeTopEnable() == TRUE)
+    {
+        DEBUG_LOG("ByPass Prox/anc register");
+    }
+    else
+    {
+        if (!appProximityClientRegister(&phy_state->task))
+        {
+            DEBUG_LOG("appPhyStateRegisterClient unable to register with proximity");
+            /* Without proximity detection, assume the device is always in-ear */
+            MessageSend(&phy_state->task, PROXIMITY_MESSAGE_IN_PROXIMITY, NULL);
+        }
 
+        if (!appAncClientRegister(&phy_state->task))
+        {
+            DEBUG_LOG("appPhyStateRegisterClient unable to register with anc");
+        }
+        else
+        {
+            DEBUG_LOG("appPhyStateRegisterClient register with anc");
+        }
+    }
+#else
     if (!appProximityClientRegister(&phy_state->task))
     {
         DEBUG_LOG("appPhyStateRegisterClient unable to register with proximity");
         /* Without proximity detection, assume the device is always in-ear */
         MessageSend(&phy_state->task, PROXIMITY_MESSAGE_IN_PROXIMITY, NULL);
     }
+#endif
     if (!appAccelerometerClientRegister(&phy_state->task))
     {
         DEBUG_LOG("appPhyStateRegisterClient unable to register with accelerometer");
         /* Without accelerometer motion detection, assume the device is always moving */
         MessageSend(&phy_state->task, ACCELEROMETER_MESSAGE_IN_MOTION, NULL);
     }
+#ifdef ENABLE_TYM_PLATFORM
+    if (!appTouchClientRegister(&phy_state->task))
+    {
+        DEBUG_LOG("appPhyStateRegisterClient unable to register with touch");
+    }
+    else
+    {
+        DEBUG_LOG("appPhyStateRegisterClient register with touch");
+    }
+#endif
     /* Supported sensors will send initial messages when the first measurement is made */
     phy_state->lock = PHY_STATE_LOCK_EAR | PHY_STATE_LOCK_MOTION | PHY_STATE_LOCK_CASE;
     MessageSendConditionally(init_task, PHY_STATE_INIT_CFM, NULL, &phy_state->lock);
 
+#ifdef ENABLE_TYM_PLATFORM
+    appPhyStateMsgSendStateChangedInd(PHY_STATE_IN_CASE, phy_state_event_user_poweron);
+    setSystemReady(TRUE);
+    appPhySateAppConfiguration();
+#endif
     return TRUE;
 }
 
 void appPhyStatePrepareToEnterDormant(void)
 {
-    phyStateTaskData* phy_state = PhyStateGetTaskData();
+#ifdef ENABLE_TYM_PLATFORM
+    DEBUG_LOG("appPhyStatePrepareToEnterDormant");
+    if(getFactoryModeTopEnable() == TRUE)
+    {
+        DEBUG_LOG("ByPass Prox/anc register");
+    }
+    else
+    {
+        appAncPowerOff();
+        appProximityPowerOff();
+        //appAncClientUnregister(&phy_state->task);
+        //appProximityClientUnregister(&phy_state->task);
+    }
+    //appTouchClientUnregister(&phy_state->task);
+    appTouchPowerOff();
+    setPSPresetEQ();
+    if((getFactoryModeEnable() == TRUE) || (getFactoryModeTopEnable() == TRUE))
+        setFactoryModeStatus(factory_disable);
 
+#else
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
     DEBUG_LOG("appPhyStatePrepareToEnterDormant");
     appProximityClientUnregister(&phy_state->task);
     appAccelerometerClientUnregister(&phy_state->task);
+#endif
 }
+
 
 /*! \brief Handle state transitions.
 

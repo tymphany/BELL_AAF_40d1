@@ -31,7 +31,10 @@ This is a minimal implementation of upgrade.
 #include <stdio.h>
 #include <upgrade.h>
 #include <ps.h>
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_sync.h"
+#include "earbud_tym_cc_communication.h"
+#endif
 
 /*!< Task information for UPGRADE support */
 upgradeTaskData app_upgrade;
@@ -47,7 +50,20 @@ typedef enum device_upgrade_internal_messages
    After a successful upgrade the values from the upgrade header
    will be written to the upgrade PS key and used in future.
 */
+#ifdef ENABLE_TYM_PLATFORM
+#define BellFW_LVer              17
+
+#ifdef ENABLE_UART
+#define BellFW_HVer              1*256
+#else
+#define BellFW_HVer              0
+#endif
+
+static const upgrade_version earbud_upgrade_init_version = { BellFW_HVer, BellFW_LVer };  /* Values should come from config file */
+
+#else /*ENABLE_TYM_PLATFORM*/
 static const upgrade_version earbud_upgrade_init_version = { 1, 0 };  /* Values should come from config file */
+#endif
 static const uint16 earbud_upgrade_init_config_version = 1;
 
 /* The upgrade libraries use of partitions is not relevant to the
@@ -268,6 +284,10 @@ static void appUpgradeHandleUpgradeStatusInd(const UPGRADE_STATUS_IND_T *sts)
         case upgrade_state_done:
             DEBUG_LOG("appUpgradeHandleUpgradeStatusInd. done(%d)",sts->state);
             appUpgradeNotifyCompleted();
+#ifdef ENABLE_TYM_PLATFORM
+            DEBUG_LOG("$$$ TYM Upgrade Done");
+            tymSyncdata(btStatusCmd,OTAFinish);
+#endif
             break;
 
         default:
@@ -378,6 +398,14 @@ static void appUpgradeMessageHandler(Task task, MessageId id, Message message)
         case UPGRADE_END_DATA_IND:
             DEBUG_LOG("appUpgradeMessageHandler. UPGRADE_END_DATA_IND %d (not handled)",
                         ((UPGRADE_END_DATA_IND_T*)message)->state);
+#ifdef ENABLE_TYM_PLATFORM
+            /*DATA error */
+            if(((UPGRADE_END_DATA_IND_T*)message)->state == upgrade_end_state_abort)
+            {
+                DEBUG_LOG("$$$ TYM Upgrade Abort");
+                tymSyncdata(btStatusCmd,happenErr);
+            }
+#endif
             break;
 
             /* Message sent to application to inform for cleaning up DFU state variables on Abort */

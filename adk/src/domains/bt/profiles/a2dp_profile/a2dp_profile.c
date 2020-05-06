@@ -42,7 +42,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stream.h>
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_sync.h"
+#include "tym_anc.h"
+#include "audio_curation.h"
+#include "ui_prompts.h"
+#endif
 /*! Code assertion that can be checked at run time. This will cause a panic. */
 #define assert(x) PanicFalse(x)
 
@@ -474,6 +479,11 @@ static void appA2dpEnterConnectedSignalling(avInstanceTaskData *theInst)
         if (!is_peer)
         {
             appAvSendUiMessageId(AV_CONNECTED);
+#ifdef ENABLE_TYM_PLATFORM
+            tymSyncdata(btStatusCmd,btConnected);
+            if(Prompts_GetConnectedStatus() == FALSE)
+                Ui_InjectUiInput(ui_input_prompt_connected_check);
+#endif
         }
         else
         {

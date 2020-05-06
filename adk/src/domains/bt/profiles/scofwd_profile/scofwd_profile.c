@@ -51,6 +51,9 @@
 #include <hfp_profile.h>
 #include <logging.h>
 #include <state_proxy.h>
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_factory.h"
+#endif
 
 scoFwdTaskData sco_fwd;
 #define GetScoFwd()      (&sco_fwd)
@@ -1923,6 +1926,10 @@ static void ScoFwdHandleDisableForwarding(void)
 static void ScoFwdHandlePhyStateChangedInd(const PHY_STATE_CHANGED_IND_T *ind)
 {
     DEBUG_LOG("ScoFwdHandlePhyStateChangedInd new state %u", ind->new_state);
+#ifdef ENABLE_TYM_PLATFORM /*factory mode don't mute*/
+    if(getFactoryModeEnable() == TRUE)
+        return;
+#endif
 
     switch (ind->new_state)
     {

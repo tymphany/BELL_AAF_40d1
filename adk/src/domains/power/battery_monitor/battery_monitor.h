@@ -211,6 +211,7 @@ void appBatteryTestSetFakeLevel(uint16 voltage);
 void updatePredictVoltToPSKEY(void);
 void appBatteryGetPredictVoltage(void);
 uint16 appBatteryGetQualcommVoltage(void);
+void appBatteryLowTest(void);
 #endif
 
 #endif /* BATTERY_MONITOR_H_ */

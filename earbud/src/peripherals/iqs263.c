@@ -462,7 +462,7 @@ void _processTAPEvent(void)
             DEBUG_LOG("tap > 1, standbyPad");
             TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx2);
         }    
-        DEBUG_LOG("tap is not normalPad return");
+        DEBUG_LOG("tap != normalPad, bye");
         return;    
     }        
     if(tapCnt == 1)
@@ -650,11 +650,11 @@ void setTouchPadTimer(void)
 {
     uint8 touchPadMode;
     touchPadMode = tymGetTouchPadMode();
-    DEBUG_LOG("touch Pad Mode %d",touchPadMode);
+    DEBUG_LOG("TouchPad Mode %d",touchPadMode);
 
     if((StateProxy_IsInCase() == TRUE) && (touchPadMode != restoreDefaultPad) )
     {
-        DEBUG_LOG("send hold 5s");  
+        DEBUG_LOG("hold 5s");  
         MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold5s, 0, D_SEC(4.5));        
     }    
     else if(touchPadMode == normalPad)
@@ -662,13 +662,13 @@ void setTouchPadTimer(void)
         MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold2s, 0, D_SEC(2));
         if((StateProxy_IsPeerInEar() == TRUE) && (StateProxy_IsInEar() == TRUE))//link wear,local wear
     	{
-            DEBUG_LOG("send hold 5s");
+            DEBUG_LOG("hold 5s");
             MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold5s, 0, D_SEC(4.5));
     	}        
     }
     else if(touchPadMode == restoreDefaultPad)                
     {
-        DEBUG_LOG("send hold 10s");
+        DEBUG_LOG("hold 10s");
         MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold10s, 0, D_SEC(9.5));
     }                
 }

@@ -243,6 +243,6 @@ void appPhyCheckSleepMode(void);
 void appPhySateAppConfiguration(void);
 void appPhySetPowerOffMode(uint8 poweroffmode);
 uint8 appPhyGetPowerOffMode(void);
-#endif
+#endif/*ENABLE_TYM_PLATFORM*/
 #endif /* PHY_STATE_H */
 
