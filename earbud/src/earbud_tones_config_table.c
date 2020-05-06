@@ -34,7 +34,36 @@
 #include <power_manager.h>
 #include <volume_service.h>
 
-#if INCLUDE_TONES
+#ifdef INCLUDE_TONES
+#ifdef ENABLE_TYM_PLATFORM
+const ui_event_indicator_table_t earbud_ui_tones_table[] =
+{
+    {.sys_event=TELEPHONY_INCOMING_CALL_OUT_OF_BAND_RINGTONE,  { .tone.tone = app_tone_hfp_ring,
+                                                                 .tone.queueable = FALSE,
+                                                                 .tone.interruptible = FALSE }},
+    {.sys_event=TELEPHONY_TRANSFERED,                          { .tone.tone = app_tone_hfp_talk_long_press,
+                                                                 .tone.queueable = TRUE,
+                                                                 .tone.interruptible = FALSE }},
+    {.sys_event=TELEPHONY_LINK_LOSS_OCCURRED,                  { .tone.tone = app_tone_hfp_link_loss,
+                                                                 .tone.queueable = TRUE,
+                                                                 .tone.interruptible = FALSE }},
+#ifndef QCC3020_FF_ENTRY_LEVEL_AA
+    {.sys_event=TELEPHONY_CALL_AUDIO_RENDERED_LOCAL,           { .tone.tone = app_tone_hfp_sco_connected,
+                                                                 .tone.queueable = TRUE,
+                                                                 .tone.interruptible = FALSE }},
+    {.sys_event=TELEPHONY_CALL_AUDIO_RENDERED_REMOTE,          { .tone.tone = app_tone_hfp_sco_disconnected,
+                                                                 .tone.queueable = TRUE,
+                                                                 .tone.interruptible = FALSE }},
+    {.sys_event=TELEPHONY_ERROR,                               { .tone.tone = app_tone_error,
+                                                                 .tone.queueable = TRUE,
+                                                                 .tone.interruptible = FALSE }},
+    {.sys_event=AV_CONNECTED_PEER,                             { .tone.tone = app_tone_av_connected,
+                                                                 .tone.queueable = TRUE,
+                                                                 .tone.interruptible = FALSE }},
+#endif
+};
+
+#else /*ENABLE_TYM_PLATFORM*/
 const ui_event_indicator_table_t earbud_ui_tones_table[] =
 {
     {.sys_event=TELEPHONY_INCOMING_CALL_OUT_OF_BAND_RINGTONE,  { .tone.tone = app_tone_hfp_ring,
@@ -127,11 +156,12 @@ const ui_repeating_indication_table_t earbud_ui_repeating_tones_table[] =
                                                                  .tone.interruptible = FALSE }}
 };
 
+#endif /*ENABLE_TYM_PLATFORM*/
 #endif
 
 uint8 EarbudTonesConfigTable_SingleGetSize(void)
 {
-#if INCLUDE_TONES
+#ifdef INCLUDE_TONES
     return ARRAY_DIM(earbud_ui_tones_table);
 #else
     return 0;
@@ -140,8 +170,12 @@ uint8 EarbudTonesConfigTable_SingleGetSize(void)
 
 uint8 EarbudTonesConfigTable_RepeatingGetSize(void)
 {
-#if INCLUDE_TONES
+#ifdef INCLUDE_TONES
+#ifdef ENABLE_TYM_PLATFORM
+    return 0;
+#else
     return ARRAY_DIM(earbud_ui_repeating_tones_table);
+#endif
 #else
     return 0;
 #endif

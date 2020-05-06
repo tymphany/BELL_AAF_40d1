@@ -120,6 +120,29 @@ enum charger_monitor_internal_messages
 };
 
 /**************************************************************************/
+#ifdef ENABLE_TYM_PLATFORM
+bool appChargerIsCharging(void)
+{
+    switch (UsbAttachedStatus())
+    {
+        case DETACHED:
+            return FALSE;
+
+        default:
+        {
+            switch (ChargerStatus())
+            {
+                case TRICKLE_CHARGE:
+                case FAST_CHARGE:
+                case PRE_CHARGE:
+                    return TRUE;
+                default:
+                    return FALSE;
+            }
+        }
+    }
+}
+#else
 static  bool appChargerIsCharging(void)
 {
     switch (UsbAttachedStatus())
@@ -141,6 +164,7 @@ static  bool appChargerIsCharging(void)
         }
     }
 }
+#endif
 
 /**************************************************************************/
 static void appChargerCheck(void)

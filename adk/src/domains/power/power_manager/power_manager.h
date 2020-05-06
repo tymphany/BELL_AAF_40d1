@@ -54,6 +54,11 @@ typedef struct
     bool allow_dormant:1;           /*!< Flag that can be modified during testing to disable dormant */
     bool user_initiated_shutdown:1; /*!< Flag that a shutdown was user initiated */
     bool init_complete:1;           /*!< Flag that initialisation is complete and sleep is permitted */
+#ifdef ENABLE_TYM_PLATFORM
+    bool user_power:1;              /*!< Flag that user_power on/off */
+    bool poweroff_ongoing:1;              /*!< Flag that user_power on/off */
+    bool standby:1;
+#endif
 } powerTaskData;
 
 /*! Power client messages, delivered to appPowerClientRegister() clients and
@@ -88,7 +93,12 @@ enum powerClientMessages
     /*! Message indicating the application has powered on */
     POWER_ON,
     /*! Message indicating the application is powering off */
-    POWER_OFF
+    POWER_OFF,
+#ifdef ENABLE_TYM_PLATFORM
+    APP_POWER_REQUEST_REBOOT,
+    APP_POWER_USERPOWEROFF_PREPARE_IND,
+    APP_POWER_USERPOWEROFF_RESPOND_IND,
+#endif
 };
 
 /*! \brief Power ui provider contexts */
@@ -207,5 +217,12 @@ void appPowerPerformanceProfileRelinquish(void);
           their task.
 */
 void appPowerInitComplete(void);
+#ifdef ENABLE_TYM_PLATFORM
+bool appUserPowerOffRequest(void);
+void appUserPowerOn(void);
+void appPowerRebootWaitSec(int sec);
+bool appUserStandbyModeRequest(void);
+bool appUserPowerOffAction(void);
+#endif
 
 #endif /* POWER_MANAGER_H_ */

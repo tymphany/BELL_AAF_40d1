@@ -1139,5 +1139,8 @@ unsigned appTestDeviceTestServiceDevices(device_t **devices);
  * \return true or false as per description.
  */
 bool appTestIsPreparingToSleep(void);
-
+#ifdef ENABLE_TYM_PLATFORM
+void appTestSwitchPresetEQ(uint8 eq);
+void appTestShipp(void);
+#endif
 #endif /* EARBUD_TEST_H */

@@ -87,6 +87,9 @@ typedef struct
     voice_ui_a2dp_state_t    va_a2dp_state;
     voice_ui_if_t*           voice_assistant;
     voice_ui_protected_if_t* va_protected_if;
+#ifdef ENABLE_TYM_PLATFORM
+    bool ambient_trigger;
+#endif
 }voice_ui_handle_t;
 
 /*\{*/

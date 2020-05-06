@@ -19,7 +19,13 @@
 
 #include <logging.h>
 #include <stdlib.h>
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "ui.h"
+#include "ps.h"
+#include "earbud_tym_psid.h"
+#include "charger_monitor.h"
+#include "state_proxy.h"
+#endif
 #ifndef FAKE_BATTERY_LEVEL
 #define FAKE_BATTERY_LEVEL (0)
 #endif
@@ -45,10 +51,17 @@ enum headset_battery_internal_messages
 {
         /*! Message sent to trigger an intermittent battery measurement */
     MESSAGE_BATTERY_INTERNAL_MEASUREMENT_TRIGGER = 1,
-
+#ifdef ENABLE_TYM_PLATFORM
+        /*! Message sent to trigger an intermittent battery predict */
+    MESSAGE_BATTERY_INTERNAL_PREDICT_TRIGGER = 2,
+#endif
     MESSAGE_BATTERY_TEST_PROCESS_READING = MESSAGE_BATTERY_PROCESS_READING,
 };
 
+#ifdef ENABLE_TYM_PLATFORM
+#define BATT_TABLE_NUM       20
+uint16 disch_table[BATT_TABLE_NUM] = {3520, 3538, 3560, 3584, 3601, 3615, 3629, 3644, 3659, 3676, 3696, 3718, 3744, 3778, 3810, 3846, 3894, 3930, 3966, 3992};
+#endif
 /*! TRUE when the filter is filled with results */
 #define FILTER_IS_FULL(battery) ((battery)->filter.index >= BATTERY_FILTER_LEN)
 
@@ -382,6 +395,109 @@ void appBatterySetPeriod(uint16 period)
     }
     battery->period = period;
 }
+#ifdef ENABLE_TYM_PLATFORM
+/*brief update tymphany predict voltage to PSKEY*/
+void updatePredictVoltToPSKEY(void)
+{
+    uint16 batt_pskey[2];
+    batteryTaskData *battery = GetBattery();
+    if(battery->predict_volt != 0)
+    {
+        batt_pskey[0] = battery->predict_volt;
+        batt_pskey[1] = battery->lock;
+        PsStore(PSID_BATT, batt_pskey, 2);
+    }
+}
+
+/*brief get tymphany predict voltage */
+uint16 appBatteryGetVoltage(void)
+{
+    batteryTaskData *battery = GetBattery();
+    /*get battery predict */
+    return battery->predict_volt;
+}
+
+/*brief predict voltage according Qualcomm current voltage */
+void appBatteryGetPredictVoltage(void)
+{
+    batteryTaskData *battery = GetBattery();
+    uint16 voltage = appBatteryGetQualcommVoltage();
+    uint16 batt_pskey[2];
+    bool charging = appChargerIsCharging();
+    bool skip = 0;
+
+    if(battery->predict_volt == 0)
+    {
+        if(PsRetrieve(PSID_BATT, 0, 0) != 0)
+        {
+            PsRetrieve(PSID_BATT, batt_pskey, 2);
+            voltage = batt_pskey[0];
+            battery->lock = batt_pskey[1] & 0x01;
+            DEBUG_LOG("get batt pksey lock %d",battery->lock);
+        }
+        battery->predict_volt = voltage;
+        skip = 1;
+    }
+
+    if((battery->lock == 0) && (charging == 0))
+    {
+        if((voltage > 5) && (skip == 0))
+        {
+            DEBUG_LOG("wait Qual %d,predict %d.balance",voltage,battery->predict_volt);
+            if((battery->predict_volt <= (voltage + 5)) && (battery->predict_volt >= (voltage - 5)))
+            {
+                battery->lock = 1;
+            }
+            battery->predict_volt = voltage;
+        }
+    }
+
+    if(charging == TRUE)
+    {
+        if(battery->predict_volt < 4200)
+        {
+            /*voltage 40%*/
+            if(battery->predict_volt >= disch_table[7])
+                battery->predict_volt += 2;
+            else
+                battery->predict_volt += 3;
+        }
+    }
+    else
+    {
+        if(battery->predict_volt > voltage)
+        {
+            /*voltage 80%-30%*/
+            if((battery->predict_volt >= disch_table[5]) && (battery->predict_volt <= disch_table[15]))
+                battery->predict_volt -= 1;
+            else
+                battery->predict_volt -= 2;
+        }
+    }
+    DEBUG_LOG("Qual %d,predict %d,charging %d",voltage,battery->predict_volt,charging);
+}
+
+/*brief Qualcomm reference voltage*/
+uint16 appBatteryGetQualcommVoltage(void)
+{
+    if (fake_battery_level)
+    {
+        return fake_battery_level;
+    }
+    else
+    {
+        batteryTaskData *battery = GetBattery();
+        uint16 index = battery->filter.index;
+        uint32 accumulator = battery->filter.accumulator;
+
+        if (FILTER_IS_FULL(battery))
+        {
+            return accumulator / BATTERY_FILTER_LEN;
+        }
+        return index == 0 ? 0 : accumulator / index;
+    }
+}
+#else
 
 uint16 appBatteryGetVoltage(void)
 {
@@ -402,6 +518,8 @@ uint16 appBatteryGetVoltage(void)
         return index == 0 ? 0 : accumulator / index;
     }
 }
+#endif
+
 
 battery_level_state appBatteryGetState(void)
 {

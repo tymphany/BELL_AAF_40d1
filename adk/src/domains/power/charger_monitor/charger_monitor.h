@@ -92,5 +92,7 @@ bool appChargerClientRegister(Task client_task);
     @param client_task The task to unregister. */
 void appChargerClientUnregister(Task client_task);
 
-
+#ifdef ENABLE_TYM_PLATFORM
+bool appChargerIsCharging(void);
+#endif
 #endif /* CHARGER_MONITOR_H_ */

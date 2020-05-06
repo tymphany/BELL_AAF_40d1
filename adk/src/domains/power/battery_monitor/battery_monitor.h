@@ -136,6 +136,10 @@ typedef struct
     } filter;
     /*! A linked-list of clients */
     batteryRegisteredClient *client_list;
+#ifdef ENABLE_TYM_PLATFORM
+    uint16 predict_volt;
+    bool   lock;
+#endif
 } batteryTaskData;
 
 /*! \brief Battery component task data. */
@@ -200,5 +204,13 @@ uint8 appBatteryConvertLevelToPercentage(uint16 level_mv);
     \param voltage Voltage level to be used.
 */
 void appBatteryTestSetFakeLevel(uint16 voltage);
+
+
+
+#ifdef ENABLE_TYM_PLATFORM
+void updatePredictVoltToPSKEY(void);
+void appBatteryGetPredictVoltage(void);
+uint16 appBatteryGetQualcommVoltage(void);
+#endif
 
 #endif /* BATTERY_MONITOR_H_ */

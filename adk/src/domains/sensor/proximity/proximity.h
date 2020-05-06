@@ -45,7 +45,11 @@ typedef struct
     /*! The type specific proximity sensor state */
     proximityState *state;
     /*! The config */
+#ifdef ENABLE_TYM_PLATFORM
+    proximityConfig *config;
+#else    
     const proximityConfig *config;
+#endif    
 } proximityTaskData;
 
 /*!< Task information for proximity sensor */
@@ -86,5 +90,18 @@ static inline bool appProximityIsClientRegistered(Task task)
 #else
 #define appProximityIsClientRegistered(task) FALSE
 #endif
+
+#ifdef ENABLE_TYM_PLATFORM
+#if defined(INCLUDE_PROXIMITY)
+uint16 appProximityDataRead(void);
+uint8 appProximityStatus(void);
+void appProximityDataConfig(uint8 led_config,uint8 time_config);
+void appProximityPowerOn(void);
+void appProximityPowerOff(void);
+#else
+#define uint16 appProximityDataRead(void) (0)
+#define uint8 appProximityStatus(void) (0)
+#endif /*INCLUDE_PROXIMITY*/
+#endif /*ENABLE_TYM_PLATFORM*/
 
 #endif /* PROXIMITY_H */

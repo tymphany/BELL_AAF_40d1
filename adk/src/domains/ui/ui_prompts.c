@@ -22,7 +22,9 @@
 #include <panic.h>
 
 #include <stdlib.h>
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "state_proxy.h"
+#endif
 #include "system_clock.h"
 
 #define DEFAULT_NO_REPEAT_DELAY         D_SEC(5)
@@ -42,6 +44,10 @@ enum ui_internal_messages
     UI_INTERNAL_PROMPT_PLAYBACK_COMPLETED
 };
 
+#ifdef ENABLE_TYM_PLATFORM
+static void uiPrompts_UiInputProcess(MessageId id);
+static void uiPrompts_RunUiPowerOff(void);
+#endif
 static bool uiPrompts_GetPromptIndexFromMappingTable(MessageId id, uint16 * prompt_index)
 {
     return UiIndicator_GetIndexFromMappingTable(
@@ -182,6 +188,36 @@ static void uiPrompts_HandleMessage(Task task, MessageId id, Message message)
     {
         appPowerSleepPrepareResponse(&the_prompts.task);
     }
+#ifdef ENABLE_TYM_PLATFORM
+    else if((id >= UI_INPUTS_PROMPT_MESSAGE_BASE) && (id < UI_INPUTS_VOICE_UI_MESSAGE_BASE))
+    {
+        uiPrompts_UiInputProcess(id);
+    }
+    else if(id == APP_POWER_USERPOWEROFF_PREPARE_IND)
+    {
+        the_prompts.indicate_when_user_poweroff_prepared = TRUE;
+        if((StateProxy_IsInCase () == TRUE) &&  (StateProxy_IsPeerInCase () == TRUE))
+        {
+            DEBUG_LOG("No prompts play");
+            uiPrompts_RunUiPowerOff();
+        }
+        else
+        {
+            if(the_prompts.generate_ui_events)
+            {
+                if(StateProxy_IsInCase() == FALSE)
+                    Ui_InjectUiInput(ui_input_prompt_poweroff);
+            }
+            //wait 1 second, wait master send power off prompts, if not send ,force 1 seconds power off.
+            MessageSendLater(&the_prompts.task, APP_POWER_USERPOWEROFF_RESPOND_IND, NULL, D_SEC(1));
+        }
+        DEBUG_LOG("UI_PROMPTS recv APP_POWER_USERPOWEROFF_PREPARE_IND");
+    }
+    else if(id == APP_POWER_USERPOWEROFF_RESPOND_IND)
+    {
+        uiPrompts_RunUiPowerOff();
+    }
+#endif
     else
     {
         // Ignore message
@@ -244,7 +280,9 @@ bool UiPrompts_Init(Task init_task)
     the_prompts.no_repeat_period_in_ms = DEFAULT_NO_REPEAT_DELAY;
     the_prompts.generate_ui_events = TRUE;
     the_prompts.prompt_playback_enabled = TRUE;
-
+#ifdef ENABLE_TYM_PLATFORM
+    Ui_RegisterUiInputsMessageGroup(&the_prompts.task, UI_INPUTS_PROMPT_MESSAGE_GROUP);
+#endif
     return TRUE;
 }
 
@@ -267,3 +305,134 @@ void UiPrompts_GenerateUiEvents(bool generate)
 {
     the_prompts.generate_ui_events = generate;
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+static void uiPrompts_RunUiPowerOff(void)
+{
+    if (the_prompts.indicate_when_user_poweroff_prepared)
+    {
+        the_prompts.indicate_when_user_poweroff_prepared = FALSE;
+        appUserPowerOffAction();
+    }
+}
+
+bool Prompts_GetConnectedStatus(void)
+{
+    return the_prompts.ever_connected_prompt;
+}
+
+void Prompts_SetConnectedStatus(bool connected)
+{
+    the_prompts.ever_connected_prompt = connected;
+}
+
+/*! brief cancel prompts pairing */
+void Prompts_CancelPairingContinue(void)
+{
+    MessageCancelFirst(&the_prompts.task, ui_input_prompt_pairing_continue);
+}
+
+void UiPrompts_SendTymPrompt(MessageId id)
+{
+     //TaskList_MessageSendId(&the_prompts.clients, id);
+    MessageSend(&the_prompts.task, id, NULL);
+}
+
+void UiPrompts_SendTymPromptLater(MessageId id,uint32 delay)
+{
+     //TaskList_MessageSendLaterId(&the_prompts.clients, id, delay);
+     MessageSendLater(&the_prompts.task, id, NULL, delay);
+}
+
+static void uiPrompts_UiInputProcess(MessageId id)
+{
+    if(id == ui_input_prompt_pairing_continue)
+    {
+        MessageCancelFirst(&the_prompts.task, ui_input_prompt_pairing_continue);
+        MessageSendLater(&the_prompts.task, ui_input_prompt_pairing_continue, NULL, D_SEC(3));
+        if(StateProxy_IsInEar() == TRUE)
+            Ui_InjectUiInput(ui_input_prompt_pairing);
+    }
+    else if(StateProxy_IsInCase() == TRUE )
+    {
+        DEBUG_LOG("In Case don't play prompts");
+        return;
+    }
+
+    switch(id)
+    {
+        case ui_input_prompt_pairing:
+            UiPrompts_SendTymPrompt(PROMPT_PAIRING);
+            break;
+        case ui_input_prompt_pairing_successful:
+            UiPrompts_SendTymPrompt(PROMPT_PAIRING_SUCCESSFUL);
+            break;
+        case ui_input_prompt_pairing_failed:
+            UiPrompts_SendTymPrompt(PROMPT_PAIRING_FAILED);
+            break;
+        case ui_input_prompt_connected:
+            if(StateProxy_IsInEar() == TRUE)
+            {
+                the_prompts.ever_connected_prompt = TRUE;
+                UiPrompts_SendTymPrompt(PROMPT_CONNECTED);
+            }
+            break;
+        case ui_input_prompt_disconnected:
+            UiPrompts_SendTymPrompt(PROMPT_DISCONNECTED);
+            break;
+        case ui_input_prompt_anc_off:
+            UiPrompts_SendTymPrompt(PROMPT_ANC_OFF);
+            break;
+        case ui_input_prompt_anc_on:
+            UiPrompts_SendTymPrompt(PROMPT_ANC_ON);
+            break;
+        case ui_input_prompt_quick_attention_off:
+            UiPrompts_SendTymPrompt(PROMPT_QuickAttention_OFF);
+            break;
+        case ui_input_prompt_quick_attention_on:
+            UiPrompts_SendTymPrompt(PROMPT_QuickAttention_ON);
+            break;
+        case ui_input_prompt_ambient_off:
+            UiPrompts_SendTymPrompt(PROMPT_AMBIENT_OFF);
+            break;
+        case ui_input_prompt_ambient_on:
+            UiPrompts_SendTymPrompt(PROMPT_AMBIENT_ON);
+            break;
+        case ui_input_prompt_speech_off:
+            UiPrompts_SendTymPrompt(PROMPT_SPEECH_OFF);
+            break;
+        case ui_input_prompt_speech_on:
+            UiPrompts_SendTymPrompt(PROMPT_SPEECH_ON);
+            break;
+        case ui_input_prompt_volume_limit:
+            UiPrompts_SendTymPrompt(PROMPT_MAX_VOLUME);
+            break;
+        case ui_input_prompt_battery_low:
+            UiPrompts_SendTymPrompt(PROMPT_BATTERY_LOW);
+            break;
+        case ui_input_prompt_role_switch:
+            UiPrompts_SendTymPrompt(PROMPT_ROLE_SWITCH);
+            break;
+        case ui_input_prompt_findme:
+            UiPrompts_SendTymPrompt(PROMPT_FINDME);
+            break;
+        case ui_input_prompt_poweron:
+            UiPrompts_SendTymPrompt(PROMPT_POWER_ON);
+            break;
+        case ui_input_prompt_poweroff:
+            UiPrompts_SendTymPrompt(PROMPT_POWER_OFF);
+            break;
+        case ui_input_prompt_connected_check:
+            if(StateProxy_IsInEar() == TRUE)
+                UiPrompts_SendTymPromptLater(ui_input_prompt_connected_execute, D_SEC(1));
+            break;
+        case ui_input_prompt_connected_execute:
+            if(StateProxy_IsInEar() == TRUE)
+                Ui_InjectUiInput(ui_input_prompt_connected);
+            break;
+        default:
+            break;
+    }
+}
+
+#endif

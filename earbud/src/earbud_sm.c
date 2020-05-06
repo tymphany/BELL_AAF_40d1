@@ -3593,6 +3593,17 @@ bool appSmIsPrimary(void)
     return SmGetTaskData()->role == tws_topology_role_primary;
 }
 
+#ifdef ENABLE_TYM_PLATFORM
+void appDisconnectAll(void)
+{
+    DEBUG_LOG("appDisconnectAll");
+    DeviceDbSerialiser_Serialise();
+
+    appSmInitiateLinkDisconnection(SM_DISCONNECT_ALL, appConfigLinkDisconnectionTimeoutTerminatingMs(),
+                                   POST_DISCONNECT_ACTION_NONE);
+}
+#endif
+
 static void earbudSm_RegisterMessageGroup(Task task, message_group_t group)
 {
     PanicFalse(group == EARBUD_ROLE_MESSAGE_GROUP);

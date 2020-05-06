@@ -30,6 +30,10 @@
 /*! \brief Macro to return the last message id in a message group */
 #define LAST_ID_IN_MSG_GRP(x)   (MSG_GRP_TO_ID(x)+0xFF)
 
+/*ENABLE_TYM_PLATFORM add
+ *   1. TOUCH
+ */
+
 /*! A table of domain component names. */
 #define FOREACH_DOMAINS_MESSAGE_GROUP(X) \
     X(INTERNAL) \
@@ -82,7 +86,8 @@
     \
     X(ANC)                  /* See #anc_messages_t */ \
     X(LEAKTHROUGH)               /* See leakthrough_msg_t */\
-    X(QCOM_CON_MANAGER)
+    X(QCOM_CON_MANAGER)     /* See #QCOM_CON_MANAGER */\
+    X(TOUCH)                /* See #touch_messages_t*/
 
 
 /*! A table of service component names */
@@ -108,6 +113,9 @@
     X(CONN_RULES) \
     X(EARBUD_ROLE)
 
+/*ENABLE_TYM_PLATFORM add
+ *   UI_INPUTS_PROMPT
+ */
 /*! A table of UI inputs names */
 #define FOREACH_UI_INPUTS_MESSAGE_GROUP(X) \
     X(UI_INPUTS_TELEPHONY) \
@@ -117,6 +125,7 @@
     X(UI_INPUTS_VOLUME) \
     X(UI_INPUTS_HANDSET) \
     X(UI_INPUTS_AUDIO_CURATION) \
+    X(UI_INPUTS_PROMPT) \
     X(UI_INPUTS_VOICE_UI) \
     X(UI_INPUTS_BOUNDS_CHECK)
 

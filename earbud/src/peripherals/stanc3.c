@@ -23,8 +23,6 @@
 
 /* ------------------------ Defines ------------------------ */
 
-#define xprint(x)            DEBUG_LOG(x)
-#define xprintf(x, ...)      DEBUG_LOGF(x,  __VA_ARGS__)
 
 #define ANC_CTRL_ADDR			(0x44)
 #define STANC_CLOCK             (100) /*100 KHZ*/
@@ -97,7 +95,7 @@ void stanc3_init(ancConfig *config)
 
     if (tym_i2cdevice_init(ANC_CTRL_ADDR,STANC_CLOCK, i2c_device_anc_id) == FALSE)
     {
-        xprint("ANC i2c device init failed");
+        DEBUG_LOG("ANC i2c device init failed");
         return;
     }
     ANCConfigData = PsRetrieve(PSID_ANCTABLE,0,0);
@@ -105,24 +103,24 @@ void stanc3_init(ancConfig *config)
     {
         ANCConfigData = PsRetrieve(PSID_ANCTABLE,pskeydata,SINK_ANC_PS_SIZE);
         retbytes = ByteUtilsMemCpyUnpackString(anc_data, pskeydata, SINK_ANC_DATA_BYTES);
-        xprintf("dump calibration value ret byte %d",retbytes);
+        DEBUG_LOG("dump calibration value ret byte %d",retbytes);
         for(i = 0;i < retbytes;i++)
         {
-            xprintf("0x%x data 0x%x\n",i,anc_data[i]);
+            DEBUG_LOG("0x%x data 0x%x\n",i,anc_data[i]);
             write_data[0] = i;
             write_data[1] = anc_data[i];
             if(!tym_i2c_write(ANC_CTRL_ADDR,write_data,2))
             {
-                xprintf("return error tym_i2c_write seq %d",i);
+                DEBUG_LOG("return error tym_i2c_write seq %d",i);
                 return; /* error */
             }
         }
-        xprint("\n");
+        DEBUG_LOG("\n");
         write_data[0] = 0x22;
         write_data[1] = 0x01;
         if(!tym_i2c_write(ANC_CTRL_ADDR,write_data,2))
         {
-            xprintf("return error tym_i2c_write seq %d",i);
+            DEBUG_LOG("return error tym_i2c_write seq %d",i);
             return; /* error */
         }
     }
@@ -134,7 +132,7 @@ void stanc3_init(ancConfig *config)
             write_data[1] = ANCData[i].regData;
             if(!tym_i2c_write(ANC_CTRL_ADDR,write_data,2))
             {
-                xprintf("return error tym_i2c_write seq %d",i);
+                DEBUG_LOG("return error tym_i2c_write seq %d",i);
                 return; /* error */
             }
         }
@@ -160,7 +158,7 @@ void stanc3_audiomute(bool enable)
     read_addr = 0x17;
     if(!tym_i2c_read(ANC_CTRL_ADDR,read_addr,read_data,1))
     {
-        xprintf("return error tym_i2c_read %d",read_addr);
+        DEBUG_LOG("return error tym_i2c_read %d",read_addr);
         return; /* error */
     }
     if(enable == 1)
@@ -168,10 +166,10 @@ void stanc3_audiomute(bool enable)
         /* mute */
         write_data[0] = 0x17;
         write_data[1] = (read_data[0] | (1 << 0));/*Set AUDIO_MUTE bit (0x17,D0) to 1*/
-        xprintf("write 0x17 0x%x",write_data[1]);
+        DEBUG_LOG("write 0x17 0x%x",write_data[1]);
         if(!tym_i2c_write(ANC_CTRL_ADDR,write_data,2))
         {
-            xprintf("return error tym_i2c_write %d",write_data[0]);
+            DEBUG_LOG("return error tym_i2c_write %d",write_data[0]);
             return; /* error */
         }
     }
@@ -180,10 +178,10 @@ void stanc3_audiomute(bool enable)
     	/* unmute */
         write_data[0] = 0x17;
         write_data[1] = (read_data[0] & ~(1 << 0));/*Set AUDIO_MUTE bit (0x17,D0) to 0*/
-        xprintf("write 0x17 0x%x",write_data[1]);
+        DEBUG_LOG("write 0x17 0x%x",write_data[1]);
         if(!tym_i2c_write(ANC_CTRL_ADDR,write_data,2))
         {
-            xprintf("return error tym_i2c_write %d",write_data[0]);
+            DEBUG_LOG("return error tym_i2c_write %d",write_data[0]);
             return; /* error */
         }
     }
@@ -218,7 +216,7 @@ void appAncClientUnregister(Task task)
         TaskList_RemoveTask(tymanc->clients, task);
         if (0 == TaskList_Size(tymanc->clients))
         {
-            xprint("appAncClientUnregister");
+            DEBUG_LOG("appAncClientUnregister");
             stanc3_deinit(tymanc->config);
             tym_i2cdevice_deinit(i2c_device_anc_id);
             tym_power_off(i2c_device_anc_id);
@@ -260,14 +258,14 @@ void stanc3_ancoff(void)
     read_addr = 0x17;
     if(!tym_i2c_read(ANC_CTRL_ADDR,read_addr,read_data,1))
     {
-        xprintf("return error tym_i2c_read %d",read_addr);
+        DEBUG_LOG("return error tym_i2c_read %d",read_addr);
         return; /* error */
     }
     write_data[0] = 0x17;
     write_data[1] = (read_data[0] | (1 << 1));/*Set ANC_MUTE bit (0x17,D1) to 1*/
     if(!tym_i2c_write(ANC_CTRL_ADDR,write_data,2))
     {
-        xprintf("return error tym_i2c_write %d",write_data[0]);
+        DEBUG_LOG("return error tym_i2c_write %d",write_data[0]);
         return; /* error */
     }
     //xprintf("write 0x17 0x%x",write_data[1]);
@@ -275,7 +273,7 @@ void stanc3_ancoff(void)
     read_addr = 0x24;
     if(!tym_i2c_read(ANC_CTRL_ADDR,read_addr,read_data,1))
     {
-        xprintf("return error tym_i2c_read %d",read_addr);
+        DEBUG_LOG("return error tym_i2c_read %d",read_addr);
         return; /* error */
     }
 
@@ -283,7 +281,7 @@ void stanc3_ancoff(void)
     write_data[1] = (read_data[0] | (1 << 2));/*Set SWITCH_EQ_BANK bit (0x24,D2) set to 1 (audio compensation EQ to Bank 1)*/
     if(!tym_i2c_write(ANC_CTRL_ADDR,write_data,2))
     {
-        xprintf("return error tym_i2c_write %d",write_data[0]);
+        DEBUG_LOG("return error tym_i2c_write %d",write_data[0]);
         return; /* error */
     }
 
@@ -303,7 +301,7 @@ void stanc3_ancon(void)
     read_addr = 0x19;
     if(!tym_i2c_read(ANC_CTRL_ADDR,read_addr,read_data,1))
     {
-        xprintf("return error tym_i2c_read %d",read_addr);
+        DEBUG_LOG("return error tym_i2c_read %d",read_addr);
         return; /* error */
     }
     write_data[0] = 0x19;
@@ -311,7 +309,7 @@ void stanc3_ancon(void)
     //xprintf("write 0x19 0x%x",write_data[1]);
     if(!tym_i2c_write(ANC_CTRL_ADDR,write_data,2))
     {
-        xprintf("return error tym_i2c_write %d",write_data[0]);
+        DEBUG_LOG("return error tym_i2c_write %d",write_data[0]);
         return; /* error */
     }
     /*wait 20 ms*/
@@ -327,7 +325,7 @@ void stanc3_ancon(void)
     read_addr = 0x17;
     if(!tym_i2c_read(ANC_CTRL_ADDR,read_addr,read_data,1))
     {
-        xprintf("return error tym_i2c_read %d",read_addr);
+        DEBUG_LOG("return error tym_i2c_read %d",read_addr);
         return; /* error */
     }
     write_data[0] = 0x17;
@@ -335,7 +333,7 @@ void stanc3_ancon(void)
     //xprintf("write 0x17 0x%x",write_data[1]);
     if(!tym_i2c_write(ANC_CTRL_ADDR,write_data,2))
     {
-        xprintf("return error tym_i2c_write %d",write_data[0]);
+        DEBUG_LOG("return error tym_i2c_write %d",write_data[0]);
         return; /* error */
     }
     /*wait 100 ms*/
@@ -351,7 +349,7 @@ void stanc3_ancon(void)
     read_addr = 0x24;
     if(!tym_i2c_read(ANC_CTRL_ADDR,read_addr,read_data,1))
     {
-        xprintf("return error tym_i2c_read %d",read_addr);
+        DEBUG_LOG("return error tym_i2c_read %d",read_addr);
         return; /* error */
     }
     write_data[0] = 0x24;
@@ -359,7 +357,7 @@ void stanc3_ancon(void)
     //xprintf("write 0x24 0x%x",write_data[1]);
     if(!tym_i2c_write(ANC_CTRL_ADDR,write_data,2))
     {
-        xprintf("return error tym_i2c_write %d",write_data[0]);
+        DEBUG_LOG("return error tym_i2c_write %d",write_data[0]);
         return; /* error */
     }
 
@@ -376,7 +374,7 @@ uint8 stanc3_ancvol(void)
     read_addr = 0x15;
     if(!tym_i2c_read(ANC_CTRL_ADDR,read_addr,read_data,1))
     {
-        xprintf("return error tym_i2c_read %d",read_addr);
+        DEBUG_LOG("return error tym_i2c_read %d",read_addr);
         return 0; /* error */
     }
     return read_data[0];
@@ -395,16 +393,16 @@ void dumpANCWriteToPSKey(void)
         read_addr = i;
         if(!tym_i2c_read(ANC_CTRL_ADDR,read_addr,&read_data[i],1))
         {
-            xprintf("return error tym_i2c_read %d",i);
+            DEBUG_LOG("return error tym_i2c_read %d",i);
             return; /* error */
         }
     }
     ByteUtilsMemCpyPackString(ps_key,read_data,ANCDataNum);
-    xprint("dump calibration value");
+    DEBUG_LOG("dump calibration value");
     for(i = 0;i < ANCDataNum;i++)
         DEBUG_LOG("0x%x ",read_data[i]);
     retwords = PsStore(PSID_ANCTABLE,ps_key,SINK_ANC_PS_SIZE);
-    xprintf("PsStore word %d",retwords);
+    DEBUG_LOG("PsStore word %d",retwords);
 
 }
 
@@ -430,10 +428,10 @@ void stanc3_volumedown(bool enable)
     	/* volume down */
     	write_data[0] = 0x15;
         write_data[1] = 0xF8;
-        xprintf("write 0x15 0x%x",write_data[1]);
+        DEBUG_LOG("write 0x15 0x%x",write_data[1]);
         if(!tym_i2c_write(ANC_CTRL_ADDR,write_data,2))
         {
-            xprintf("return error tym_i2c_write %d",write_data[0]);
+            DEBUG_LOG("return error tym_i2c_write %d",write_data[0]);
             return; /* error */
         }
     }
@@ -442,10 +440,10 @@ void stanc3_volumedown(bool enable)
         /* volume up */
         write_data[0] = 0x15;
         write_data[1] = 0x10;
-        xprintf("write 0x15 0x%x",write_data[1]);
+        DEBUG_LOG("write 0x15 0x%x",write_data[1]);
         if(!tym_i2c_write(ANC_CTRL_ADDR,write_data,2))
         {
-            xprintf("return error tym_i2c_write %d",write_data[0]);
+            DEBUG_LOG("return error tym_i2c_write %d",write_data[0]);
             return; /* error */
         }
     }	

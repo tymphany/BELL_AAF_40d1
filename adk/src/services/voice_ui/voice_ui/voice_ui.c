@@ -131,4 +131,24 @@ void VoiceUi_RebootLater(void)
     MessageSendLater(voiceUi_GetTask(), VOICE_UI_INTERNAL_REBOOT, NULL, VOICE_UI_REBOOT_DELAY_MILLISECONDS);
 }
 
+#ifdef ENABLE_TYM_PLATFORM
+void VoiceUi_SetAmbientTrigger(bool ambinent)
+{
+    voice_ui_handle_t* handle = VoiceUi_GetActiveVa();
+    if(handle != NULL)
+        handle->ambient_trigger = ambinent;
+}
+
+bool VoiceUi_GetAmbientTrigger(void)
+{
+    voice_ui_handle_t* handle = VoiceUi_GetActiveVa();
+    if(handle != NULL)
+        return handle->ambient_trigger;
+    else
+        return FALSE;
+}
+
+#endif
+
+
 MESSAGE_BROKER_GROUP_REGISTRATION_MAKE(VOICE_UI_SERVICE, voiceAssistant_RegisterMessageGroup, NULL);

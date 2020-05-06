@@ -13,7 +13,11 @@
 #include <stdlib.h>
 
 #include "local_name.h"
-
+#ifdef ENABLE_TYM_PLATFORM
+#include <ps.h>
+#include "byte_utils.h"
+#include "earbud_tym_psid.h"
+#endif
 
 #define LOCAL_NAME_LE_PREFIX ("LE-")
 #define LOCAL_NAME_SIZE_LE_PREFIX (3)
@@ -71,8 +75,25 @@ static void localName_MessageHandler(Task task, MessageId id, Message message)
 
 bool LocalName_Init(Task init_task)
 {
-    DEBUG_LOG("LocalName_Init");
+#ifdef ENABLE_TYM_PLATFORM
+    int retwords;
+    uint8 btname[64];
+    uint16 pskeystore[32], retbytes = 0;
 
+    /* read PS key and change BT name*/
+    retwords = PsRetrieve(PSID_BTNAME,0 ,0);
+    if(retwords != 0)
+    {
+        memset(btname,0x0,sizeof(btname));
+        retwords = PsRetrieve(PSID_BTNAME, pskeystore ,retwords);
+        retbytes = ByteUtilsMemCpyUnpackString(btname, pskeystore, (retwords*2));
+        if(retbytes != 0)
+        {
+            ConnectionChangeLocalName(strlen((char *)btname), btname);
+        }
+    }
+#endif
+    DEBUG_LOG("LocalName_Init");
     local_name_task_data.client_task = init_task;
     ConnectionReadLocalName((Task) &local_name_task);
     return TRUE;
@@ -94,3 +115,20 @@ const uint8 *LocalName_GetPrefixedName(uint16* name_len)
     *name_len = local_name_task_data.name_len;
     return PanicNull(local_name_task_data.name);
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+void LocalName_ChangeByApp(uint8 *btname,uint16 size)
+{
+    uint16 pskeystore[32];
+    int  retbytes;
+
+    /*change name now*/
+    ConnectionChangeLocalName(size, btname);
+    ConnectionReadLocalName((Task) &local_name_task);
+    /* update name to psid*/
+    ByteUtilsMemCpyPackString(pskeystore,btname,size);
+    retbytes = ByteUtilsGetPackedStringLen(pskeystore,64);
+    retbytes = PsStore(PSID_BTNAME,pskeystore,PS_SIZE_ADJ(retbytes));
+    DEBUG_LOG("PsStore 0x%x\n",retbytes);
+}
+#endif

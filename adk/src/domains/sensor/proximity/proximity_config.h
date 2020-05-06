@@ -12,10 +12,13 @@
 
 #include "proximity.h"
 
-
+#ifdef ENABLE_TYM_PLATFORM
+/*! The proximity sensor configuration */
+extern proximityConfig proximity_config;
+#else
 /*! The proximity sensor configuration */
 extern const proximityConfig proximity_config;
-
+#endif
 /*! Returns the proximity sensor configuration */
 #define appConfigProximity() (&proximity_config)
 

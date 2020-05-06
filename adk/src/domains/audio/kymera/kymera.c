@@ -708,3 +708,20 @@ void Kymera_SetScoSlaveChainTable(const appKymeraScoChainInfo *info)
 {
     appKymeraScoSlaveChainTable = info;
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+void appKymeraChangeCVCMode(int mode)
+{
+    kymeraTaskData *theKymera = KymeraGetTaskData();
+    //chain handle
+    kymera_chain_handle_t chain = theKymera->chainu.sco_handle;
+    Operator cvc_send; //add peq op here
+
+    cvc_send = ChainGetOperatorByRole(chain, OPR_CVC_SEND);
+    if(cvc_send)
+    {
+        OperatorsStandardSetControl(cvc_send, OPMSG_CONTROL_MODE_ID, mode); //ucid=0x00
+    }
+}
+#endif
+

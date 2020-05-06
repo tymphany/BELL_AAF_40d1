@@ -28,7 +28,18 @@ enum audio_curation_messages
 };
 
 /*@{*/
-
+#ifdef ENABLE_TYM_PLATFORM
+typedef enum
+{
+    context_ambient_enabled,
+    context_ambient_disabled,
+    context_anc_disabled,
+    context_anc_enabled,
+    context_anc_tuning_mode_active,
+    context_leakthrough_disabled,
+    context_leakthrough_enabled,
+} audio_curation_provider_context_t;
+#else
 /*! \brief Audio Curation UI Provider contexts */
 typedef enum
 {
@@ -38,14 +49,18 @@ typedef enum
     context_leakthrough_disabled,
     context_leakthrough_enabled,
 } audio_curation_provider_context_t;
-
+#endif
 
 /*! \brief Initialise the audio curation service
 
     \param init_task Unused
  */
 bool AudioCuration_Init(Task init_task);
-
+#ifdef ENABLE_TYM_PLATFORM
+void BellUiAncControl(MessageId ui_input);
+void setupAmbientLevel(void);
+void setupSpeechLevel(void);
+#endif
 /*@}*/
 
 #endif /* AUDIO_CURATION_H_ */

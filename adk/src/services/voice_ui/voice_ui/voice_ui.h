@@ -67,6 +67,12 @@ void VoiceUi_Notify(voice_ui_msg_id_t msg);
  */
 bool VoiceUi_IsVoiceAssistantA2dpStreamActive(void);
 
+#ifdef ENABLE_TYM_PLATFORM
+
+void VoiceUi_SetAmbientTrigger(bool ambinent);
+bool VoiceUi_GetAmbientTrigger(void);
+#endif
+
 /*\}*/
 
 #endif /* VOICE_UI_H_ */

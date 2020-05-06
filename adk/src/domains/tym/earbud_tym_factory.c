@@ -41,7 +41,6 @@
 #include "kymera.h"
 #include "kymera_adaptation.h"
 #include "volume_messages.h"
-#include "kymera_voice_capture.h"
 #include "peer_signalling.h"
 #include "kymera_private.h"
 #include "earbud_test.h"
@@ -282,7 +281,7 @@ void factory_restore(void *dataptr)
 {
    UNUSED(dataptr);
    tymSendDatatoHost((uint8 *)"1", sizeof("1"));
-   appSetState(APP_STATE_IN_CASE_IDLE);
+   appSmSetState(APP_STATE_IN_CASE_IDLE);
    earbudCC_RecoveryCommPort();
    appSmDeleteHandsets(); 
 }

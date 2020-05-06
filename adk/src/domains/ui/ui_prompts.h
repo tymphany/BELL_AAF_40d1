@@ -55,9 +55,41 @@ typedef struct
     /*! Specifies whether the UI Indicator should generate UI Inidications from System Event messages
     received at the task handler. \note this is not the same as whether indication playback is enabled. */
     unsigned generate_ui_events :1;
-
+#ifdef ENABLE_TYM_PLATFORM
+    unsigned ever_connected_prompt:1;
+    /*! Needed to indicate back to the Power Manager UI Prompt completion, if a prompt was configured
+    to be played on Power Off. */
+    unsigned indicate_when_user_poweroff_prepared :1;
+#endif
 } ui_prompts_task_data_t;
 
+
+
+#ifdef ENABLE_TYM_PLATFORM
+typedef enum prompt_name
+{
+    PROMPT_POWER_ON = PROMPTS_MESSAGE_BASE,
+    PROMPT_POWER_OFF,
+    PROMPT_PAIRING,
+    PROMPT_PAIRING_SUCCESSFUL,
+    PROMPT_PAIRING_FAILED,
+    PROMPT_CONNECTED,
+    PROMPT_DISCONNECTED,
+    PROMPT_BATTERY_LOW,
+    PROMPT_FINDME,
+    PROMPT_MAX_VOLUME,
+    PROMPT_QuickAttention_OFF,
+    PROMPT_QuickAttention_ON,
+    PROMPT_ROLE_SWITCH,
+    PROMPT_AMBIENT_OFF,
+    PROMPT_AMBIENT_ON,
+    PROMPT_ANC_OFF,
+    PROMPT_ANC_ON,
+    PROMPT_SPEECH_OFF,
+    PROMPT_SPEECH_ON,
+}voicePromptName;
+
+#endif
 /*! brief Set/reset play_prompt flag. This is flag is used to check if prompts can be played or not.
   application will set and reset the flag. */
 void UiPrompts_SetPromptPlaybackEnabled(bool play_prompt);
@@ -82,5 +114,13 @@ void UiPrompts_NotifyUiIndication(uint16 prompt_index, rtime_t time_to_play);
 
 /*! brief Used by the Application to control whether the UI Indicator shall generate UI events. */
 void UiPrompts_GenerateUiEvents(bool generate);
+
+#ifdef ENABLE_TYM_PLATFORM
+bool Prompts_GetConnectedStatus(void);
+void Prompts_SetConnectedStatus(bool connected);
+void Prompts_CancelPairingContinue(void);
+void UiPrompts_SendTymPrompt(MessageId id);
+void UiPrompts_SendTymPromptLater(MessageId id,uint32 delay);
+#endif/*ENABLE_TYM_PLATFORM*/
 
 #endif // UI_PROMPTS_H

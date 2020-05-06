@@ -12,10 +12,10 @@
 #include <stdlib.h>
 #include <peer_signalling.h>
 #include <ps.h>
+#include <logging.h>
 #include "earbud_tym_sync.h"
 #include "earbud_tym_sync_marshal_defs.h"
 #include "earbud_tym_sync_private.h"
-#include "adk_log.h"
 #include "earbud_tym_cc_communication.h"
 #include "logical_input_switch.h"
 #include "phy_state.h"
@@ -107,11 +107,11 @@ static void noCasePairProcess(uint8 context)
         {
             tym_sync.rightpairact = TRUE; 
         }
-        DEBUG_LOGF("noCasePairProcess left %d,right %d",tym_sync.leftpairact,tym_sync.rightpairact);
+        DEBUG_LOG("noCasePairProcess left %d,right %d",tym_sync.leftpairact,tym_sync.rightpairact);
         if( (tym_sync.leftpairact == TRUE) && (tym_sync.rightpairact == TRUE) )
         {
-            DEBUG_LOGF("noCasePairProcess send pairing");
-            MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_HANDSET_PAIRING, NULL); 
+            DEBUG_LOG("noCasePairProcess send pairing");
+            LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_sm_pair_handset);
         }    
                     
     }

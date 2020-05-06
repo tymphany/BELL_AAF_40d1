@@ -55,6 +55,11 @@ typedef struct
 
     bool anc_state:1;               /*!< The devcie earbud has anc enable or disable state. */
     bool leakthrough_state:1;       /*!< The device earbud has leakthrough enable or disable state. */
+#ifdef ENABLE_TYM_PLATFORM
+    bool poweron:1;                 /*!< The device is in the poweron. */
+    bool sleepmode:1;               /*!< The device is in the sleepmode. */
+    bool standbymode:1;             /*!< The device is in the standbymode. */
+#endif
 } state_proxy_data_flags_t;
 
 /*! Data supplied to clients when state changes. */

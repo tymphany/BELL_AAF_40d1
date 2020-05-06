@@ -258,6 +258,16 @@ bool StateProxy_GetPeerAncState(void);
 uint8 StateProxy_GetPeerAncMode(void);
 bool StateProxy_GetPeerLeakthroughState(void);
 uint8 StateProxy_GetPeerLeakthroughMode(void);
+
+#ifdef ENABLE_TYM_PLATFORM
+bool StateProxy_IsPowerOn(void);
+bool StateProxy_IsPeerPowerOn(void);
+bool StateProxy_IsSleepMode(void);
+bool StateProxy_IsPeerSleepMode(void);
+bool StateProxy_IsStandbyMode(void);
+bool StateProxy_IsPeerStandbyMode(void);
+#endif
+
 /*\}*/
 
 #endif /* STATE_PROXY_H */

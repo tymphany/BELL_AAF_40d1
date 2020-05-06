@@ -186,7 +186,10 @@ typedef enum
 
     /*! Channel ID for VOICE UI messages. */
     PEER_SIG_MSG_CHANNEL_VOICE_UI,
-
+#ifdef ENABLE_TYM_PLATFORM
+    /*! Channel ID for TYM SYNC messages. */
+    PEER_SIG_MSG_CHANNEL_TYM_SYNC,
+#endif
     /* Number of peer sig channels */
     PEER_SIG_MSG_CHANNEL_MAX
 } peerSigMsgChannel;

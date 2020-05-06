@@ -1,6 +1,6 @@
 #ifndef __EARBUD_TYM_GAIA_H__
 #define __EARBUD_TYM_GAIA_H__
-#include "gaia_handler.h"
+#include "gaia_framework.h"
 
 #define  BELL_VENDOR_QTIL                  (0x0664)
 /*follow Bell Customer GAIA app specification ver 20 page 11. custom ui define */

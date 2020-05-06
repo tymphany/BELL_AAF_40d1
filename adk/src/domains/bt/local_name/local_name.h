@@ -40,5 +40,7 @@ const uint8 *LocalName_GetName(uint16* name_len);
            prefixed for use with Bluetooth Low Energy services
 */
 const uint8 *LocalName_GetPrefixedName(uint16* name_len);
-
+#ifdef ENABLE_TYM_PLATFORM
+void LocalName_ChangeByApp(uint8 *btname,uint16 size);
+#endif
 #endif /* _DOMAINS_BT_LOCAL_NAME_ */

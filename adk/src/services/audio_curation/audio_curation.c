@@ -13,6 +13,13 @@
 #include "anc.h"
 #include "power_manager.h"
 #include "aec_leakthrough.h"
+#ifdef ENABLE_TYM_PLATFORM
+#include "tym_anc.h"
+#include "av.h"
+#include "kymera_private.h"
+#include "earbud_tym_gaia.h"
+#include "state_proxy.h"
+#endif
 
 #define audioCuration_SendEvent(msg_id) TaskList_MessageSendId(audioCuration_GetMessageClients(), msg_id)
 static anc_mode_t anc_mode;/* An odd hook to know there was ANC mode change */
@@ -20,6 +27,13 @@ static task_list_t * client_list;
 
 static void audioCuration_HandleMessage(Task task, MessageId id, Message message);
 static const TaskData ui_task = {audioCuration_HandleMessage};
+#ifdef ENABLE_TYM_PLATFORM
+static void BellUiAncOff(void);
+static void BellUiAncOn(void);
+static void BellUiAmbientOn(void);
+static void BellUiSpeechOn(void);
+static void BellUiPPAmbient(void);
+#endif
 
 
 static const message_group_t ui_inputs[] =
@@ -371,4 +385,178 @@ static void audioCuration_RegisterMessageGroup(Task task, message_group_t group)
 
 MESSAGE_BROKER_GROUP_REGISTRATION_MAKE(AUDIO_CURATION_SERVICE, audioCuration_RegisterMessageGroup, NULL);
 
+
+#ifdef ENABLE_TYM_PLATFORM
+/*\brief external ANC off,internal ANC off*/
+static void BellUiAncOff(void)
+{
+    if(getExtAncEnableStatus() == TRUE)
+    {
+        Ui_InjectUiInput(ui_input_ext_anc_off);
+    }
+    if(AncStateManager_IsEnabled())
+    {
+        Ui_InjectUiInput(ui_input_anc_off);
+    }
+
+}
+
+/*\brief external ANC on,internal ANC off*/
+static void BellUiAncOn(void)
+{
+    if(getExtAncEnableStatus() == FALSE)
+    {
+        Ui_InjectUiInput(ui_input_ext_anc_on);
+    }
+    if(AncStateManager_IsEnabled())
+    {
+        Ui_InjectUiInput(ui_input_anc_off);
+    }
+}
+
+/*\brief setup ampbient level,1: anc_mode_1(0) */
+void setupAmbientLevel(void)
+{
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
+    anc_mode_t  anc_mode_l = AncStateManager_GetMode();
+    MessageId ui_input;
+    if(tymAnc->ambientLevel != (anc_mode_l + 1))
+    {
+        ui_input = ui_input_anc_set_mode_1 + (tymAnc->ambientLevel-1);
+        Ui_InjectUiInput(ui_input);
+    }
+}
+
+/*\brief setup speech level 1: anc_mode_6(5)*/
+void setupSpeechLevel(void)
+{
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
+    anc_mode_t  anc_mode_l = AncStateManager_GetMode();
+    MessageId ui_input;
+    if((tymAnc->speechLevel+4) != anc_mode_l)
+    {
+        ui_input = ui_input_anc_set_mode_6 + (tymAnc->speechLevel-1);
+        Ui_InjectUiInput(ui_input);
+    }
+}
+/*\brief external ANC on,internal ANC on, choose different mode */
+static void BellUiAmbientOn(void)
+{
+    if(getExtAncEnableStatus() == FALSE)
+    {
+        Ui_InjectUiInput(ui_input_ext_anc_on);
+    }
+    setupAmbientLevel();
+    if(AncStateManager_IsEnabled() == FALSE)
+    {
+        Ui_InjectUiInput(ui_input_anc_on);
+    }
+}
+
+/*\brief external ANC on,internal ANC on, choose different mode */
+static void BellUiSpeechOn(void)
+{
+    if(getExtAncEnableStatus() == FALSE)
+    {
+        Ui_InjectUiInput(ui_input_ext_anc_on);
+    }
+    setupSpeechLevel();
+    if(AncStateManager_IsEnabled() == FALSE)
+    {
+        Ui_InjectUiInput(ui_input_anc_on);
+    }
+}
+
+static void BellUiPPAmbient(void)
+{
+    bool playing = (appAvPlayStatus() == avrcp_play_status_playing);
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
+    /* == play === */
+    if(playing == TRUE)
+    {
+        if(tymAnc->curAncMode != ambient)
+        {
+            tymAnc->prevAncMode = tymAnc->curAncMode;
+            tymAnc->curAncMode = ambient;
+            BellUiAmbientOn();
+        }
+    }
+    else
+    {
+        /* == pause === */
+        if(tymAnc->prevAncMode != amcinvalid)
+        {
+            tymAnc->curAncMode = tymAnc->prevAncMode;
+            tymAnc->prevAncMode = ambient;
+            if(tymAnc->curAncMode == ancoff)
+            {
+                BellUiAncOff();
+            }
+            else if(tymAnc->curAncMode == ancon)
+            {
+                BellUiAncOn();
+            }
+            else if(tymAnc->curAncMode == ambient)
+            {
+                BellUiAmbientOn();
+            }
+            else if(tymAnc->curAncMode == speech)
+            {
+                BellUiSpeechOn();
+            }
+        }
+    }
+}
+
+/*\brief Bell ANC control,check external/internal ANC on/off , internal mode*/
+void BellUiAncControl(MessageId ui_input)
+{
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
+    if(ui_input != ui_input_bell_ui_pp_ambient)
+    {
+        tymAnc->prevAncMode = amcinvalid;
+    }
+    switch(ui_input)
+    {
+        case ui_input_bell_ui_anc_on:
+            tymAnc->curAncMode = ancon;
+            BellUiAncOn();
+            bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 1);
+            break;
+        case ui_input_bell_ui_ambient_on:
+            tymAnc->curAncMode = ambient;
+            BellUiAmbientOn();
+            bell_gaia_anc_notify_event(BELL_GAIA_AMBIENT_NOTIFY, 1);
+            break;
+        case ui_input_bell_ui_speech_on:
+            tymAnc->curAncMode = speech;
+            BellUiSpeechOn();
+            bell_gaia_anc_notify_event(BELL_GAIA_SPEECH_NOTIFY, 1);
+            break;
+        case ui_input_bell_ui_pp_ambient:
+            BellUiPPAmbient();
+            break;
+        case ui_input_bell_ui_anc_off:
+        case ui_input_bell_ui_ambient_off:
+        case ui_input_bell_ui_speech_off:
+        default:
+            tymAnc->curAncMode = ancoff;
+            BellUiAncOff();
+            break;
+
+    }
+    if(ui_input == ui_input_bell_ui_anc_off)
+    {
+        bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 0);
+    }
+    else if(ui_input == ui_input_bell_ui_ambient_off)
+    {
+        bell_gaia_anc_notify_event(BELL_GAIA_AMBIENT_NOTIFY, 0);
+    }
+    else if(ui_input == ui_input_bell_ui_speech_off)
+    {
+        bell_gaia_anc_notify_event(BELL_GAIA_SPEECH_NOTIFY, 0);
+    }
+}
+#endif
 

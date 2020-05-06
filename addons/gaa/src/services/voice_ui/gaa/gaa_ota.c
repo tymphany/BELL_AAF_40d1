@@ -1245,7 +1245,9 @@ GSoundStatus GSoundTargetOtaAbort(uint32_t device_index)
 GSoundStatus GSoundTargetInfoGetAppVersion(uint8_t *version, uint32_t max_len)
 {
     GSoundStatus status = GSOUND_STATUS_OK;
-
+#ifdef ENABLE_TYM_PLATFORM /*for gaa support 9.9.9 */
+    uint16 minor_tym, major_tym;
+#endif
     /*
      * The GSound library is calling this function before it has called
      * GSoundTargetOtaInit, so cannot use the conventional mechanism of
@@ -1274,6 +1276,14 @@ GSoundStatus GSoundTargetInfoGetAppVersion(uint8_t *version, uint32_t max_len)
         else
         {
             result = UpgradeGetVersion(&major, &minor, &config);
+#ifdef ENABLE_TYM_PLATFORM /*for gaa support 9.9.9 */
+            major_tym = (minor/256);
+            minor_tym = (minor%255);
+
+            major = (major_tym%10);
+            minor = (minor_tym / 10);
+            config = (minor_tym % 10);
+#endif
         }
 
         if (result)

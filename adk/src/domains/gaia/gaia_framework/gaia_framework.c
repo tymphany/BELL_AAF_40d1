@@ -81,3 +81,22 @@ void GaiaFramework_SendNotification(uint8 feature_id, uint8 notification_id, uin
     }
 }
 
+#ifdef ENABLE_TYM_PLATFORM
+void tym_gaia_send_simple_response(uint16 command_id,uint8 status)
+{
+    GAIA_TRANSPORT *transport = GaiaGetTransport();
+    GaiaBuildAndSendSynch(transport, GAIA_V3_VENDOR_ID, command_id, status, 0, NULL);
+}
+
+void tym_gaia_send_response(uint16 command_id,uint8 status,uint16 payload_length, uint8 *payload)
+{
+    GAIA_TRANSPORT *transport = GaiaGetTransport();
+    GaiaBuildAndSendSynch(transport, GAIA_V3_VENDOR_ID, command_id, status, payload_length, payload);
+}
+
+void tym_gaia_send_notification(uint16 event, uint8 status, uint16 payload_length, uint8 *payload)
+{
+    GAIA_TRANSPORT *transport = GaiaGetTransport();
+    GaiaBuildAndSendSynch(transport, GAIA_V3_VENDOR_ID, event, status, payload_length, payload);
+}
+#endif

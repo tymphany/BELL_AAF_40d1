@@ -22,26 +22,35 @@ bool EarbudUi_Init(Task init_task)
 {
     UNUSED(init_task);
 
-#if INCLUDE_PROMPTS
+#ifdef INCLUDE_PROMPTS
     UiPrompts_SetPromptConfiguration(
                 earbud_ui_prompts_table,
                 EarbudPromptsConfigTable_GetSize());
 #endif
 
-#if INCLUDE_TONES
+#ifdef INCLUDE_TONES
+#ifdef ENABLE_TYM_PLATFORM
+    UiTones_SetToneConfiguration(
+                earbud_ui_tones_table,
+                EarbudTonesConfigTable_SingleGetSize(),
+                NULL,
+                0);
+#else
     UiTones_SetToneConfiguration(
                 earbud_ui_tones_table,
                 EarbudTonesConfigTable_SingleGetSize(),
                 earbud_ui_repeating_tones_table,
                 EarbudTonesConfigTable_RepeatingGetSize());
 #endif
-
+#endif
+#ifndef ENABLE_TYM_PLATFORM
     UiLeds_SetLedConfiguration(
                 earbud_ui_leds_table,
                 EarbudLedsConfigTable_EventsTableGetSize(),
                 earbud_ui_leds_context_indications_table,
                 EarbudLedsConfigTable_ContextsTableGetSize());
 
+#endif
     return TRUE;
 }
 

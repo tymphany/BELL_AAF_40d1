@@ -98,9 +98,15 @@ static void gaa_BleConvertBdAddrToGaaType(GSoundBTAddr *gaa_bd_addr, bdaddr *bd_
 /*********************************************************************/
 static bool gaa_BleIsRequestValidForGaaDataSet(const le_adv_data_params_t * params)
 {
+#ifdef ENABLE_TYM_PLATFORM /*Google bist only put scan_resp*/
+    return ((params->data_set == le_adv_data_set_handset_identifiable) || (params->data_set == le_adv_data_set_handset_unidentifiable)) &&
+            (params->completeness == le_adv_data_completeness_full) &&
+            (params->placement == le_adv_data_placement_scan_response);
+#else
     return ((params->data_set == le_adv_data_set_handset_identifiable) || (params->data_set == le_adv_data_set_handset_unidentifiable)) &&
             (params->completeness == le_adv_data_completeness_full) &&
             (params->placement == le_adv_data_placement_dont_care);
+#endif
 }
 
 /*********************************************************************/

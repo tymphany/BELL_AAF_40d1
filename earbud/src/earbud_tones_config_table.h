@@ -10,9 +10,11 @@
 
 #include <csrtypes.h>
 #include <ui_tones.h>
-
-extern const ui_event_indicator_table_t earbud_ui_tones_table[];
+#ifndef ENABLE_TYM_PLATFORM
 extern const ui_repeating_indication_table_t earbud_ui_repeating_tones_table[];
+#endif
+extern const ui_event_indicator_table_t earbud_ui_tones_table[];
+
 
 uint8 EarbudTonesConfigTable_SingleGetSize(void);
 uint8 EarbudTonesConfigTable_RepeatingGetSize(void);

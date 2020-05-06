@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <ps.h>
 #include <pio_monitor.h>
-#include "logging.h"
+#include <logging.h>
 #include "proximity_config.h"
 #include "tym_i2c_control.h"
 #include "ltr2678.h"
@@ -311,7 +311,7 @@ bool _ltr2678Enable(proximityConfig *config)
     irps = PsRetrieve(PSID_IRTH,thr,3);           
     if(irps == 3)
     {
-    	DEBUG_LOGF("IR PSkey threshold %d,%d,offset %d\n",thr[0],thr[1],thr[2]);
+        DEBUG_LOG("IR PSkey threshold %d,%d,offset %d",thr[0],thr[1],thr[2]);
         config->threshold_high = thr[0];
     	config->threshold_low = thr[1];
     	config->offset = thr[2];    

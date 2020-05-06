@@ -652,4 +652,8 @@ void Kymera_DisableLeakthrough(void);
 #else
 #define Kymera_DisableLeakthrough() ((void)(0))
 #endif
+#ifdef ENABLE_TYM_PLATFORM
+void appKymeraChangeCVCMode(int mode);
+#endif
+
 #endif /* KYMERA_H */

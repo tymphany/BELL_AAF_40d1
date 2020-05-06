@@ -22,6 +22,16 @@
 #include "microphones.h"
 #include "microphones_config.h"
 
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_config.h"
+#include "audio_music_processing.h"
+#include "audio_config.h"
+#include "operators.h"
+#include "tym_anc.h"
+#include "earbud_tym_util.h"
+#include "audio_curation.h"
+#endif
+
 /*! Convert a channel ID to a bit mask */
 #define CHANNEL_TO_MASK(channel) ((uint32)1 << channel)
 
@@ -41,6 +51,9 @@
 #define isAecUsedInOutputChain() FALSE
 #endif
 
+#ifdef ENABLE_TYM_PLATFORM
+static uint8 cur_preset_eq = UCID_USER_EQ_BANK0;
+#endif
 static uint8 audio_ss_client_count = 0;
 
 /*! \brief The chain output channels */
@@ -505,6 +518,9 @@ void appKymeraConfigureOutputChainOperators(kymera_chain_handle_t chain,
 {
     Operator sync_op;
     Operator volume_op;
+#ifdef ENABLE_TYM_PLATFORM
+    Operator peq_op; //add peq op here
+#endif
 
     /* Configure operators */
     if (GET_OP_FROM_CHAIN(sync_op, chain, OPR_SOURCE_SYNC))
@@ -515,7 +531,44 @@ void appKymeraConfigureOutputChainOperators(kymera_chain_handle_t chain,
 
     volume_op = ChainGetOperatorByRole(chain, OPR_VOLUME_CONTROL);
     OperatorsStandardSetSampleRate(volume_op, sample_rate);
+#ifdef ENABLE_TYM_PLATFORM
+    peq_op = ChainGetOperatorByRole(chain, OPR_USER_EQ);
+    if(peq_op)
+    {
+        OperatorsSetMusicProcessingMode(peq_op,music_processing_mode_full_processing);
+        OperatorsStandardSetSampleRate(peq_op,sample_rate);
+        //OperatorsStandardSetUCID(peq_op, UCID_USER_EQ_BANK0); //ucid=0x00
+        OperatorsStandardSetUCID(peq_op, cur_preset_eq); //default ucid=0x00
+    }
 
+    peq_op = ChainGetOperatorByRole(chain, OPR_SPEAKER_EQ1);
+    if(peq_op)
+    {
+        if(!getExtAncEnableStatus()){
+            //ANC-OFF enable SPK-EQ1
+            OperatorsSetMusicProcessingMode(peq_op,music_processing_mode_full_processing);
+        }else {
+            //ANC-ON passthrough SPK-EQ1
+            OperatorsSetMusicProcessingMode(peq_op,music_processing_mode_passthrough);
+        }
+        OperatorsStandardSetSampleRate(peq_op,sample_rate);
+        OperatorsStandardSetUCID(peq_op, UCID_SPEAKER_EQ1); //ucid=0x07
+    }
+
+    peq_op = ChainGetOperatorByRole(chain, OPR_SPEAKER_EQ2);
+    if(peq_op)
+    {
+        if(getExtAncEnableStatus()){
+            //ANC-ON enable SPK-EQ2
+            OperatorsSetMusicProcessingMode(peq_op,music_processing_mode_full_processing);
+        }else{
+            //ANC-OFF passthrough SPK-EQ2
+            OperatorsSetMusicProcessingMode(peq_op,music_processing_mode_passthrough);
+        }
+        OperatorsStandardSetSampleRate(peq_op,sample_rate);
+        OperatorsStandardSetUCID(peq_op, UCID_SPEAKER_EQ2); //ucid=0x08
+    }
+#endif
     appKymeraSetVolume(chain, volume_in_db);
 
     if (buffer_size)
@@ -524,6 +577,67 @@ void appKymeraConfigureOutputChainOperators(kymera_chain_handle_t chain,
         OperatorsStandardSetBufferSize(op, buffer_size);
     }
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+kymera_chain_handle_t speaker_chain;
+void appKymeraSpeakerEqOnOff(bool spk_eq1_enable, bool spk_eq2_enable)
+{
+
+    Operator peq_op1,peq_op2;
+    kymeraTaskData *theKymera = KymeraGetTaskData();
+    kymera_chain_handle_t chain = theKymera->chainu.output_vol_handle;
+
+    //Prevent panic cause by chain is NULL
+    if(chain == NULL)
+        return;
+
+    peq_op1 = ChainGetOperatorByRole(speaker_chain, OPR_SPEAKER_EQ1);
+    peq_op2 = ChainGetOperatorByRole(speaker_chain, OPR_SPEAKER_EQ2);
+
+    if(peq_op1){
+        if(spk_eq1_enable)
+            OperatorsSetMusicProcessingMode(peq_op1,music_processing_mode_full_processing);
+        else
+            OperatorsSetMusicProcessingMode(peq_op1,music_processing_mode_passthrough);
+    }else{
+        DEBUG_LOG("SPK-EQ1 OP does not exist\n");
+    }
+
+    if(peq_op2){
+        if(spk_eq2_enable)
+            OperatorsSetMusicProcessingMode(peq_op2,music_processing_mode_full_processing);
+        else
+            OperatorsSetMusicProcessingMode(peq_op2,music_processing_mode_passthrough);
+    }else{
+        DEBUG_LOG("SPK-EQ2 OP does not exist\n");
+    }
+}
+
+void appKymeraSelectUsrEQPreset(unsigned char preset_no)
+{
+    Operator peq_op;
+    kymeraTaskData *theKymera = KymeraGetTaskData();
+    kymera_chain_handle_t chain = theKymera->chainu.output_vol_handle;
+
+
+    DEBUG_LOG("Start Swtich EQ\n");
+    if(preset_no>UCID_USER_EQ_BANK6)
+        return;
+
+    set_cur_preset_eq(preset_no);
+
+    if(chain == NULL)
+        return;
+
+    peq_op = ChainGetOperatorByRole(chain, OPR_USER_EQ);
+
+    if(peq_op)
+    {
+        DEBUG_LOG("Set EQ %x\n",cur_preset_eq);
+        OperatorsStandardSetUCID(peq_op, cur_preset_eq);
+    }
+}
+#endif /*ENABLE_TYM_PLATFORM*/
 
 static chain_endpoint_role_t appkymera_GetOuputRole(output_channel_t is_left)
 {
@@ -555,6 +669,10 @@ void appKymeraCreateOutputChain(unsigned kick_period, unsigned buffer_size, int1
 
     /* Create chain */
     chain = ChainCreate(Kymera_GetChainConfigs()->chain_output_volume_config);
+#ifdef ENABLE_TYM_PLATFORM
+    speaker_chain = chain;
+#endif
+
     theKymera->chainu.output_vol_handle = chain;
     appKymeraConfigureOutputChainOperators(chain, theKymera->output_rate, kick_period, buffer_size, volume_in_db);
     PanicFalse(OperatorsFrameworkSetKickPeriod(kick_period));
@@ -708,6 +826,18 @@ uint32 appKymeraGetOptimalMicSampleRate(uint32 sample_rate)
 
     return sample_rate;
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+uint8 get_cur_preset_eq(void)
+{
+    return cur_preset_eq;
+}
+
+void set_cur_preset_eq(uint8 eq)
+{
+    cur_preset_eq = eq;
+}
+#endif
 
 
 

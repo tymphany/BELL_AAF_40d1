@@ -14,8 +14,6 @@
 #include "tym_pin_config.h"
 /* ------------------------ Defines ------------------------ */
 
-#define xprint(x)            DEBUG_LOG(x)
-#define xprintf(x, ...)      DEBUG_LOGF(x,  __VA_ARGS__)
 /*! \brief Returns the PIOs bank number.
     \param pio The pio.
 */
@@ -137,7 +135,7 @@ bool tym_i2c_read(uint8 i2c_addr,uint8 read_addr, uint8 *read_data, uint16 read_
     bitserial_result result;
     if(gi2c_ctrl_config.disable_i2c)
     {
-        xprint("disable I2C mode");
+        DEBUG_LOG("disable I2C mode");
         return TRUE;
     }
     if( gi2c_ctrl_config.i2c_addr != i2c_addr)
@@ -152,7 +150,7 @@ bool tym_i2c_read(uint8 i2c_addr,uint8 read_addr, uint8 *read_data, uint16 read_
     result = BitserialTransfer(gi2c_ctrl_config.handle, BITSERIAL_NO_MSG, &read_addr, 1, read_data, read_size);
     if (result != BITSERIAL_RESULT_SUCCESS)
     {
-        xprintf("error i2c r %d",result);
+        DEBUG_LOG("error i2c r %d",result);
         //close reopen
         if(result == BITSERIAL_RESULT_TIMEOUT)
             i2c_ErrorRecovery();
@@ -167,7 +165,7 @@ bool tym_i2c_write(uint8 i2c_addr, uint8 *write_data, uint16 write_size)
     bitserial_result result;
     if(gi2c_ctrl_config.disable_i2c)
     {
-        xprint("disable I2C mode");
+        DEBUG_LOG("disable I2C mode");
         return TRUE;
     }
     
@@ -184,7 +182,7 @@ bool tym_i2c_write(uint8 i2c_addr, uint8 *write_data, uint16 write_size)
     result = BitserialWrite(gi2c_ctrl_config.handle, BITSERIAL_NO_MSG, write_data, write_size,BITSERIAL_FLAG_BLOCK);
     if (result != BITSERIAL_RESULT_SUCCESS)
     {       
-        xprint("error i2c w");
+        DEBUG_LOG("error i2c w");
         //close reopen
         if(result == BITSERIAL_RESULT_TIMEOUT)
             i2c_ErrorRecovery();

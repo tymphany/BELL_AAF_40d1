@@ -17,7 +17,38 @@
 #include <charger_monitor.h>
 
 #include <panic.h>
-
+#ifdef ENABLE_TYM_PLATFORM
+#include <logical_input_switch.h>
+#include <input_event_manager.h>
+#include <ps.h>
+#include "ui.h"
+#include "earbud_config.h"
+#include "tym_anc_config.h"
+#include "tym_touch_config.h"
+#include "earbud_tym_util.h"
+#include "tym_power_control.h"
+#include "earbud_tym_factory.h"
+#include "earbud_sm.h"
+#include "tym_anc.h"
+#include "earbud_tym_cc_communication.h"
+#include "hfp_profile.h"
+#include "scofwd_profile.h"
+#include "1_button.h"
+#include "ui_prompts.h"
+#include "earbud_tym_sync.h"
+#include "anc_state_manager.h"
+#include "state_proxy.h"
+#include "pio_monitor.h"
+#include "audio_curation.h"
+#include "tws_topology_private.h"
+#include "tws_topology_rule_events.h"
+#include "earbud_tym_sensor.h"
+#include "handset_service.h"
+#include "earbud_tym_psid.h"
+#include "earbud_tym_gaia.h"
+#include "handset_service_protected.h"
+#include "earbud_test.h"
+#endif
 /*! Message creation macro for phyiscal state module. */
 #define MAKE_PHYSTATE_MESSAGE(TYPE) TYPE##_T *message = PanicUnlessNew(TYPE##_T);
 
@@ -36,6 +67,18 @@ do {                                 \
     PhyStateGetTaskData()->lock &= ~bit;  \
 } while(0)
 
+#ifdef ENABLE_TYM_PLATFORM
+uint8 appPhyStateGetCustomUiId(uint8 act);
+void appPhyStateTapx1(void);
+void appPhyStateCustomIdTapx1(uint8 act);
+void appPhyStateTapx2(void);
+void appPhyStateCustomIdTapx2(uint8 act);
+void appPhyStateTapx3(void);
+void appPhyStateSwipeL(uint8 act);
+void appPhyStateSwipeR(uint8 act);
+/*! \brief Handle connected prompt check in ear. */
+void appPhyStateInEarPromptCheck(void);
+#endif
 void appPhyStateSetState(phyStateTaskData* phy_state, phyState new_state);
 
 /*! \brief Send a PHY_STATE_CHANGED_IND message to all registered client tasks.
@@ -639,3 +682,542 @@ void appPhyStateNotInMotionEvent(void)
     MessageSend(&phy_state->task, PHY_STATE_INTERNAL_NOT_IN_MOTION, NULL);
     appPhyStateClearLockBit(PHY_STATE_LOCK_MOTION);
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+/*typedef enum{
+    uifunc_anc_amb = 0,
+    uifunc_play_pause,
+    uifunc_play_pause_with_amb,
+    uifunc_vol,
+    uifunc_track,
+    uifunc_google_notification,
+    uifunc_stop_google_assistant,
+    uifunc_battery_level,
+    uifunc_mute,
+    uifunc_gaming,
+    uifunc_movie,
+    uifunc_dont_change = 0x80,
+    uifunc_disable = 0xff,
+}custom_ui_func;
+typedef enum{
+   uiseq_left_swipe,
+   uiseq_right_swipe,
+   uiseq_left_tapx1,
+   uiseq_right_tapx1,
+   uiseq_left_tapx2,
+   uiseq_right_tapx2,
+   uiseq_left_tapx3,
+   uiseq_right_tapx3,
+   uiseq_maximum,
+}custom_ui_seq; */
+void appPhySateAppConfiguration(void)
+{
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    if(PsRetrieve(PSID_APPCONFIG, 0, 0) == 0) //no data run initial information
+    {
+        app_set->auto_power_off_cmd = 0x02;//app power off configure 30 min
+        app_set->auto_power_off_timer = 30;//30 min;
+        app_set->enable_auto_wear = 1; //default no wear pause
+        app_set->custom_ui[uiseq_left_swipe] = uifunc_track;
+        app_set->custom_ui[uiseq_right_swipe] = uifunc_vol;
+        app_set->custom_ui[uiseq_left_tapx1] = uifunc_play_pause_with_amb;
+        app_set->custom_ui[uiseq_right_tapx1] = uifunc_play_pause_with_amb;
+        app_set->custom_ui[uiseq_left_tapx2] = uifunc_anc_amb;
+        app_set->custom_ui[uiseq_right_tapx2] = uifunc_google_notification;
+        app_set->custom_ui[uiseq_left_tapx3] = uifunc_disable;
+        app_set->custom_ui[uiseq_right_tapx3] = uifunc_disable;
+        PsStore(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
+    }
+    else
+    {
+        PsRetrieve(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
+    }
+}
+
+/*! \brief Handle notification that Earbud is now in the case for OTA mode. */
+void appPhyStateInCaseEventForOTA(void)
+{
+    DEBUG_LOG("appPhyStateInCaseEventForOTA");
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    phy_state->ota_incase = TRUE;
+    MessageCancelAll(&phy_state->task, PHY_STATE_INTERNAL_IN_CASE_EVENT);
+    MessageSend(&phy_state->task, PHY_STATE_INTERNAL_IN_CASE_EVENT, NULL);
+    appPhyStateClearLockBit(PHY_STATE_LOCK_CASE);
+}
+
+/*! \brief Handle connected prompt check in ear. */
+void appPhyStateInEarPromptCheck(void)
+{
+    DEBUG_LOG("appPhyStateInEarPromptCheck btstatus %d,Prompt %d",tymGetBTStatus(),Prompts_GetConnectedStatus());
+    /*connected & no play connected prompts , request connected prompts play*/
+    if((tymGetBTStatus() == btConnected) || (tymGetBTStatus() == btPairingSuccessful))
+    {
+        if(Prompts_GetConnectedStatus() == FALSE)
+            Ui_InjectUiInput(ui_input_prompt_connected_check);
+    }
+}
+
+void appPhyCheckSleepMode(void)
+{
+    bool inEar = StateProxy_IsInEar();
+    bool peerInEar = StateProxy_IsPeerInEar();
+    if((inEar == FALSE) && (peerInEar == FALSE))
+        appPhyStateTriggerSleepMode();
+
+}
+/*! \brief Handle tym phy state power on. */
+void appPhyStatePowerOnEvent(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    bool standby = StateProxy_IsStandbyMode();
+    /*add patch for SSP, if anc calibration is no recovery, force recovery it*/
+    if(phy_state->anc_cal == TRUE)
+    {
+        phy_state->anc_cal = FALSE;
+        disable_i2c_for_cal(0);//power on
+        dumpANCWriteToPSKey();
+    }
+    phy_state->poweron = TRUE;
+    if(standby)
+        appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_leave_standbymode);
+    appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_user_poweron);
+}
+
+/*! \brief Handle tym phy state power off. */
+void appPhyStatePowerOffEvent(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    phy_state->poweron = FALSE;
+    appPhyStateCancelTriggerSleepMode();
+    appPhyStateCancelTriggerStandbyMode();
+    if(appSmIsPrimary())
+        tymSyncdata(btStatusCmd,btConnectable);   //power off sync bt status connectable
+    appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_user_poweroff);
+    if(getFactoryModeEnable() == TRUE)
+    {
+        DEBUG_LOG("bt status %d",tymGetBTStatus());
+        if((tymGetBTStatus() == btConnected) || (tymGetBTStatus() == btPairingSuccessful))
+        {
+            appDisconnectAll();
+        }
+        if(tymGetBTStatus() == btPairing)
+        {
+            Pairing_PairStop(NULL);
+        }
+    }
+}
+
+/*! \brief Handle get tym power on status. */
+bool appPhyStateGetPowerState(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    return  phy_state->poweron;
+}
+
+/*! \brief Handle ANC calibration for factory. */
+void appPhyStateAncCalibration(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    if(getFactoryModeEnable() == TRUE)
+    {
+        if(phy_state->anc_cal == FALSE)
+        {
+            phy_state->anc_cal = TRUE;
+            /*disable I2C communication*/
+            disable_i2c_for_cal(1);
+            reportDoAncCalibration();
+        }
+        else
+        {
+            phy_state->anc_cal = FALSE;
+            /*enable I2C communication*/
+            /*read ANC register and write to PSKEY*/
+            disable_i2c_for_cal(0);
+            dumpANCWriteToPSKey();
+        }
+    }
+}
+
+/*! \brief based on action (left/right) tapx1,tapx2,tapx3,swipeL,swipeR get custom ui functin id*/
+uint8 appPhyStateGetCustomUiId(uint8 act)
+{
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    uint8 funcid = uifunc_disable;
+    if(act < uiseq_maximum)
+    {
+        funcid = app_set->custom_ui[act];
+    }
+    return funcid;
+}
+
+
+/*! \brief tapx1 action based on custom ui id*/
+void appPhyStateCustomIdTapx1(uint8 act)
+{
+    uint8 id = appPhyStateGetCustomUiId(act);
+    if(id == uifunc_play_pause_with_amb)
+    {
+        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel_ambient);
+    }
+    else if(id == uifunc_play_pause)
+    {
+        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel);
+    }
+}
+
+/*! \brief tapx1 ui*/
+void appPhyStateTapx1(void)
+{
+    //Incomming
+    if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE))
+    {
+        DEBUG_LOG("Have Call InComing");
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX1, NULL);
+    }
+    else
+    {
+        if(appConfigIsLeft())
+        {
+            appPhyStateCustomIdTapx1(uiseq_left_tapx1);
+            //LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel_ambient);
+        }
+        else
+        {
+            appPhyStateCustomIdTapx1(uiseq_right_tapx1);
+            //LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel_ambient);
+        }
+    }
+
+}
+
+/*! \brief tapx2 for cutom UI id */
+void appPhyStateCustomIdTapx2(uint8 act)
+{
+    uint8 id = appPhyStateGetCustomUiId(act);
+    if(id == uifunc_anc_amb) /* switch between ambient and ANC */
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
+    }
+    else if(id == uifunc_google_notification) /* google bisto notification */
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_BISTO, NULL);
+    }
+    else if(id == uifunc_track) /*track , next track */
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_FORWARD, NULL);
+    }
+}
+
+/*! \brief tapx2 ui*/
+void appPhyStateTapx2(void)
+{
+    uint8 touchPadMode = tymGetTouchPadMode();
+    if(touchPadMode == standbyPad)
+    {
+        appUserPowerOn();
+        return;
+    }
+    else if(touchPadMode == sleepPad)
+    {
+        appPhyStateCancelTriggerSleepMode();
+        appPhyStateCancelTriggerStandbyMode();
+        tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode);
+        return;
+    }
+    /* HFP on Incomming */
+    if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE))
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
+    }
+    else if((appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE))
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
+    }
+    else if(appConfigIsLeft())
+    {
+        appPhyStateCustomIdTapx2(uiseq_left_tapx2);
+        //ANC on/off
+        //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
+    }
+    else //right
+    {
+        appPhyStateCustomIdTapx2(uiseq_right_tapx2);
+        //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_BISTO, NULL);
+    }
+}
+
+/*! \brief tapx3 ui*/
+void appPhyStateTapx3(void)
+{
+    bool left = appConfigIsLeft();
+    uint8 id = uifunc_disable;
+    if(left)
+    {
+        id = appPhyStateGetCustomUiId(uiseq_left_tapx3);
+    }
+    else
+    {
+        id = appPhyStateGetCustomUiId(uiseq_right_tapx3);
+    }
+
+    if(id == uifunc_track)
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_BACKWARD, NULL);
+    }
+}
+
+/*! \brief swipe left ui */
+void appPhyStateSwipeL(uint8 act)
+{
+    uint8 id = appPhyStateGetCustomUiId(act);
+    if(id == uifunc_vol) /* volume => volume up */
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_UP, NULL);
+    }
+    else if(id == uifunc_track) /* track ==> next track */
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_FORWARD, NULL);
+    }
+    else if(id == uifunc_anc_amb) /*track , next track */
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
+    }
+}
+
+/*! \brief swipe right ui */
+void appPhyStateSwipeR(uint8 act)
+{
+    uint8 id = appPhyStateGetCustomUiId(act);
+    if(id == uifunc_vol) /* volume => volume up */
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_DOWN, NULL);
+    }
+    else if(id == uifunc_track) /* track ==> next track */
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_BACKWARD, NULL);
+    }
+    else if(id == uifunc_anc_amb) /*track , next track */
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
+    }
+}
+
+/*! \brief start count to sleep mode */
+void appPhyStateTriggerSleepMode(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    DEBUG_LOG("appPhyStateTriggerSleepMode");
+    if(appSmIsPrimary() == FALSE)
+        return;
+    if(phy_state->trigger_sleepmode == FALSE)
+    {
+        DEBUG_LOG("appPhyStateTriggerSleepMod wait timeout 10 min");
+        phy_state->trigger_sleepmode = TRUE;
+        MessageSendLater(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_SLEEPMODE, NULL, D_MIN(10));
+    }
+}
+
+void appPhyStateCancelTriggerSleepMode(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    if(appSmIsPrimary() == FALSE)
+        return;
+    if(phy_state->trigger_sleepmode == TRUE)
+    {
+        phy_state->trigger_sleepmode = FALSE;
+        MessageCancelFirst(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_SLEEPMODE);
+    }
+}
+
+void appPhyStateTriggerStandbyMode(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    if(appSmIsPrimary() == FALSE)
+        return;
+    if(app_set->auto_power_off_timer == 0xff) //cancel
+        return;
+    if(phy_state->trigger_standbymode == FALSE)
+    {
+        phy_state->trigger_standbymode = TRUE;
+        MessageSendLater(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE, NULL, D_MIN(app_set->auto_power_off_timer));
+    }
+}
+
+void appPhyStateCancelTriggerStandbyMode(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    if(appSmIsPrimary() == FALSE)
+        return;
+    if(phy_state->trigger_standbymode == TRUE)
+    {
+        phy_state->trigger_standbymode = FALSE;
+        MessageCancelFirst(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE);
+    }
+}
+
+void appPhyUpdateSleepStandbyMode(void)
+{
+    bool inEar = StateProxy_IsInEar();
+    bool peerInEar = StateProxy_IsPeerInEar();
+    bool sleepMode = StateProxy_IsSleepMode();
+    bool standbyMode = StateProxy_IsStandbyMode();
+    if(inEar || peerInEar)
+    {
+        appPhyStateCancelTriggerSleepMode();
+        if(sleepMode)
+        {
+            appPhyStateCancelTriggerStandbyMode();
+            tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode);
+        }
+    }
+    else
+    {
+        if((sleepMode == FALSE) && (standbyMode == FALSE))
+        {
+            appPhyStateTriggerSleepMode();
+        }
+    }
+}
+
+void appPhyChangeSleepStandbyMode(phy_state_event phyState)
+{
+    bdaddr handset_addr;
+    DEBUG_LOG("sleep/standby mode chanage %d",phyState);
+    appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phyState);
+
+    if(appSmIsPrimary())
+    {
+        if(phyState == phy_state_event_enter_sleepmode)
+        {
+            //disconnect phone
+            if (appDeviceIsHandsetConnected())
+            {
+                EarbudTest_DisconnectHandset();
+            }
+            else if(tymGetBTStatus() == btPairing)
+            {
+                //cancel pairing
+                Pairing_PairStop(NULL);
+            }
+            if(StateProxy_IsInCase() == FALSE)
+                Ui_InjectUiInput(ui_input_prompt_poweroff);
+        }
+        else if(phyState == phy_state_event_leave_sleepmode)
+        {
+            //re-connect phone
+            if (appDeviceGetHandsetBdAddr(&handset_addr))
+            {
+                EarbudTest_ConnectHandset();
+            }
+            //twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_ROLE_SWITCH);
+            if(StateProxy_IsInCase() == FALSE)
+                Ui_InjectUiInput(ui_input_prompt_poweron);
+        }
+        else if(phyState == phy_state_event_enter_standbymode)
+        {
+            DEBUG_LOG("enter standby mode");
+        }
+    }
+    switch(phyState)
+    {
+        case phy_state_event_leave_sleepmode:
+            setSystemReady(TRUE);
+            break;
+        case phy_state_event_leave_standbymode:
+            break;
+        case phy_state_event_enter_sleepmode:
+            appPhyStateCancelTriggerSleepMode(); //for next time to trigger sleep mode timeout
+            appPhyStateTriggerStandbyMode();
+            BellUiAncControl(ui_input_bell_ui_anc_off);
+            setSystemReady(FALSE);
+            break;
+        case phy_state_event_enter_standbymode:
+            appPhyStateCancelTriggerSleepMode();
+            appPhyStateCancelTriggerStandbyMode();
+            BellUiAncControl(ui_input_bell_ui_anc_off);
+            appUserStandbyModeRequest();
+            break;
+        default:
+            break;
+    }
+
+
+}
+
+void appPhySetPowerOffMode(uint8 mode)
+{
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    app_set->auto_power_off_cmd = mode;
+    if(mode == uifunc_poweroff_disable)
+    {
+       app_set->auto_power_off_timer = 0xff;
+       MessageCancelAll(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE);
+    }
+    else if(mode == uifunc_poweroff_10m)
+    {
+        app_set->auto_power_off_timer = 10;
+    }
+    else if(mode == uifunc_poweroff_30m)
+    {
+        app_set->auto_power_off_timer = 30;
+    }
+    else if(mode == uifunc_poweroff_60m)
+    {
+        app_set->auto_power_off_timer = 60;
+    }
+    else if(mode == uifunc_poweroff_now)
+    {
+        tymSyncdata(sleepStandbyModeCmd, phy_state_event_enter_standbymode);
+    }
+
+}
+
+uint8 appPhyGetPowerOffMode(void)
+{
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    return app_set->auto_power_off_cmd;
+}
+
+void appPhyStatePrepareToEnterStandbyMode(void)
+{
+    //phyStateTaskData* phy_state = PhyStateGetTaskData();
+
+    DEBUG_LOG("appPhyStatePrepareToEnterStandbyMode");
+    if(getFactoryModeTopEnable() == TRUE)
+    {
+        DEBUG_LOG("ByPass Prox/anc register");
+    }
+    else
+    {
+        //appAncClientUnregister(&phy_state->task);
+        //appProximityClientUnregister(&phy_state->task);
+        appAncPowerOff();
+        appProximityPowerOff();
+    }
+    if((getFactoryModeEnable() == TRUE) || (getFactoryModeTopEnable() == TRUE))
+        setFactoryModeStatus(factory_disable);
+    updateTouchPadMode();//for standby mode
+}
+
+
+void appPhyStateLeaveDormant(void)
+{
+
+    DEBUG_LOG("appPhyStateLeaveDormant");
+    if(getFactoryModeTopEnable() == TRUE)
+    {
+        DEBUG_LOG("ByPass Prox/anc register");
+    }
+    else
+    {
+        appProximityPowerOn();
+        appAncPowerOn();
+        AncStateManager_Disable();
+    }
+    appTouchPowerOn();
+
+}
+#endif
+
+

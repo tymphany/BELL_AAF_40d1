@@ -463,5 +463,8 @@ extern void appSmEnterDfuModeInCase(bool enable, bool inform_peer);
     \return TRUE if the handler has dealt with the message, FALSE otherwise
 */
 bool appSmHandleConnectionLibraryMessages(MessageId id, Message message, bool already_handled);
+#ifdef ENABLE_TYM_PLATFORM
+void appDisconnectAll(void);
+#endif
 
 #endif /* EARBUD_SM_H_ */

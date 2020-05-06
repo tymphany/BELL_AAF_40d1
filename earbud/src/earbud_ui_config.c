@@ -132,7 +132,13 @@ const touchEventConfig touch_event_table [] =
     },
 };
 #endif
-
+#ifdef ENABLE_TYM_PLATFORM
+/*! \brief ui config table*/
+const ui_config_table_content_t earbud_ui_config_table[] =
+{
+ {APP_POWER_OFF,                    ui_provider_phy_state,              context_phy_state_out_of_case,                ui_input_power_off                            },
+};
+#else
 /*! \brief ui config table*/
 const ui_config_table_content_t earbud_ui_config_table[] =
 {
@@ -245,7 +251,7 @@ const ui_config_table_content_t earbud_ui_config_table[] =
     {CAP_SENSE_VERY_VERY_VERY_LONG_PRESS,  ui_provider_phy_state,  context_phy_state_out_of_case,        ui_input_factory_reset_request                },
 #endif
 };
-
+#endif
 const ui_config_table_content_t* EarbudUi_GetConfigTable(unsigned* table_length)
 {
     *table_length = ARRAY_DIM(earbud_ui_config_table);

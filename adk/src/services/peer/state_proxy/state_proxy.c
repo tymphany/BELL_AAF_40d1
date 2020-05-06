@@ -44,7 +44,9 @@
 #include <message.h>
 #include <panic.h>
 #include <stdlib.h>
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "tym_touch.h"
+#endif
 /*! Instance of the state proxy. */
 state_proxy_task_data_t state_proxy;
 
@@ -176,6 +178,9 @@ static void stateProxy_HandleInitialState(const state_proxy_initial_state_t* ini
      * state proxy is synchronised with peer state */
     proxy->initial_state_received = TRUE;
     stateProxy_MsgStateProxyEventInitialStateReceived();
+#ifdef ENABLE_TYM_PLATFORM
+    updateTouchPadMode();
+#endif
 }
 
 /*! \brief Handle version message transmitted by state proxy on peer.
@@ -662,7 +667,7 @@ bool StateProxy_InitialStateReceived(void)
 /*************************
  * State Access Functions
  *************************/
-
+/*#ifdef ENABLE_TYM_PLATFORM */
 /*! \brief A table defining each state/flag accessor function.
     \param X The table is expanded using the macro X.  */
 #define FOR_EACH_FLAG(X) \
@@ -680,6 +685,9 @@ bool StateProxy_InitialStateReceived(void)
     X(Is, Advertising, , advertising) \
     X(Is, BleConnected, , ble_connected) \
     X(Is, DfuInProgress, , dfu_in_progress) \
+    X(Is, PowerOn, , poweron) \
+    X(Is, SleepMode, , sleepmode) \
+    X(Is, StandbyMode, , standbymode) \
 
 /*! \brief X-Macro generator, creating a remote flag accessor function */
 #define GENERATE_PEER_ACCESSOR(verb, func, negate, flag) \

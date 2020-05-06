@@ -163,12 +163,18 @@ initData    app_init;
 static bool appPioInit(Task init_task)
 {
 #ifndef USE_BDADDR_FOR_LEFT_RIGHT
+#ifdef ENABLE_TYM_PLATFORM
+    PioSetMapPins32Bank(appConfigHandednessPio()/32, 1UL << (appConfigHandednessPio()%32), 1UL << (appConfigHandednessPio()%32));
+    PioSetDir32Bank(appConfigHandednessPio()/32, 1UL << (appConfigHandednessPio()%32), 0);
+    PioSet32Bank(appConfigHandednessPio()/32, 1UL << (appConfigHandednessPio()%32), 1UL << (appConfigHandednessPio()%32));
+    DEBUG_LOG("appPioInit, left %d, right %d", appConfigIsLeft(), appConfigIsRight());
+#else
     /* Make PIO2 an input with pull-up */
     PioSetMapPins32Bank(0, 1UL << appConfigHandednessPio(), 1UL << appConfigHandednessPio());
     PioSetDir32Bank(0, 1UL << appConfigHandednessPio(), 0);
     PioSet32Bank(0, 1UL << appConfigHandednessPio(), 1UL << appConfigHandednessPio());
     DEBUG_LOG_INFO("appPioInit, left %d, right %d", appConfigIsLeft(), appConfigIsRight());
-
+#endif
     Multidevice_SetType(multidevice_type_pair);
     Multidevice_SetSide(appConfigIsLeft() ? multidevice_side_left : multidevice_side_right);
 #endif
@@ -439,16 +445,40 @@ static const InputActionMessage_t* appInitGetInputActions(uint16* input_actions_
 #if defined(INCLUDE_GAA) || defined(INCLUDE_AMA)
     if (appConfigIsRight())
     {
-        DEBUG_LOG_VERBOSE("appInitGetInputActions voice_assistant_message_group");
+#ifdef ENABLE_TYM_PLATFORM
+#ifdef ENABLE_UART /*UART*/
+        DEBUG_LOG("appInitGetInputActions media_message_group");
+        *input_actions_dim = ARRAY_DIM(dummy_message_group);
+        input_actions = dummy_message_group;
+#else   /*GPIO */
+        DEBUG_LOG("appInitGetInputActions media_message_group");
+        *input_actions_dim = ARRAY_DIM(media_message_group);
+        input_actions = media_message_group;
+#endif
+#else
+        DEBUG_LOG("appInitGetInputActions voice_assistant_message_group");
         *input_actions_dim = ARRAY_DIM(voice_assistant_message_group);
         input_actions = voice_assistant_message_group;
+#endif
     }
     else
 #endif /* INCLUDE_GAA || INCLUDE_AMA */
     {
-        DEBUG_LOG_VERBOSE("appInitGetInputActions media_message_group");
+#ifdef ENABLE_TYM_PLATFORM
+#ifdef ENABLE_UART
+        DEBUG_LOG("appInitGetInputActions media_message_group");
+        *input_actions_dim = ARRAY_DIM(dummy_message_group);
+        input_actions = dummy_message_group;
+#else
+        DEBUG_LOG("appInitGetInputActions media_message_group");
         *input_actions_dim = ARRAY_DIM(media_message_group);
         input_actions = media_message_group;
+#endif
+#else
+        DEBUG_LOG("appInitGetInputActions media_message_group");
+        *input_actions_dim = ARRAY_DIM(media_message_group);
+        input_actions = media_message_group;
+#endif
     }
 #else /* HAVE_1_BUTTON */
     *input_actions_dim = ARRAY_DIM(default_message_group);

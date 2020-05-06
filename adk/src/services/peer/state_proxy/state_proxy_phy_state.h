@@ -31,5 +31,8 @@ void stateProxy_HandleRemotePhyStateChangedInd(const PHY_STATE_CHANGED_IND_T* in
     \param[in] phy_event Physical state event.
 */
 void stateProxy_SendRemotePhyStateChangedInd(phyState phy_state, phy_state_event phy_event);
-
+#ifdef ENABLE_TYM_PLATFORM
+/*for master <-> slave:stateProxy_MarshalToAnotherPeer , slave -> master: stateProxy_MarshalToConnectedPeer */
+void stateProxy_MarshalToAnotherPeer(marshal_type_t marshal_type, Message msg, size_t size);
+#endif
 #endif /* STATE_PROXY_PHY_STATE_H */

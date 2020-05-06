@@ -21,7 +21,10 @@
 #include <logging.h>
 #include <stdlib.h>
 #include <peer_signalling.h>
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "tym_touch.h"
+#include "phy_state.h"
+#endif
 /* forward declarations */
 static void stateProxy_UpdatePhyState(state_proxy_data_t* data, phy_state_event event);
 
@@ -50,6 +53,11 @@ void stateProxy_GetInitialPhyState(void)
         default:
             break;
     }
+#ifdef ENABLE_TYM_PLATFORM
+    proxy->local_state->flags.poweron = TRUE;
+    proxy->local_state->flags.sleepmode = FALSE;
+    proxy->local_state->flags.standbymode = FALSE;
+#endif
 }
 
 static void stateProxy_HandlePhyStateChangedIndImpl(const PHY_STATE_CHANGED_IND_T* ind,
@@ -64,11 +72,19 @@ static void stateProxy_HandlePhyStateChangedIndImpl(const PHY_STATE_CHANGED_IND_
     stateProxy_MsgStateProxyEventClients(source,
                                          state_proxy_event_type_phystate,
                                          ind);
-
+#ifdef ENABLE_TYM_PLATFORM
+    if (source == state_proxy_source_local)
+    {
+        stateProxy_MarshalToAnotherPeer(MARSHAL_TYPE(PHY_STATE_CHANGED_IND_T), ind, sizeof(*ind));
+    }
+    updateTouchPadMode();
+    appPhyUpdateSleepStandbyMode();
+#else
     if (source == state_proxy_source_local)
     {
         stateProxy_MarshalToConnectedPeer(MARSHAL_TYPE(PHY_STATE_CHANGED_IND_T), ind, sizeof(*ind));
     }
+#endif
 }
 
 /*! \brief Function to send PHY_STATE_CHANGED_IND message for remote device
@@ -228,6 +244,29 @@ static void stateProxy_UpdatePhyState(state_proxy_data_t* data, phy_state_event 
     /*! \todo just save the event instead? */
     switch (event)
     {
+#ifdef ENABLE_TYM_PLATFORM
+        case phy_state_event_user_poweroff:
+            data->flags.poweron = FALSE;
+            break;
+        case phy_state_event_user_poweron:
+            data->flags.poweron = TRUE;
+            data->flags.sleepmode = FALSE;
+            data->flags.standbymode = FALSE;
+            break;
+        case phy_state_event_enter_sleepmode:
+            data->flags.sleepmode = TRUE;
+            break;
+        case phy_state_event_leave_sleepmode:
+            data->flags.sleepmode = FALSE;
+            break;
+        case phy_state_event_enter_standbymode:
+            data->flags.sleepmode = FALSE;
+            data->flags.standbymode = TRUE;
+            break;
+        case phy_state_event_leave_standbymode:
+            data->flags.standbymode = FALSE;
+            break;
+#endif
         case phy_state_event_in_case:
             data->flags.in_case = TRUE;
             break;
@@ -246,6 +285,39 @@ static void stateProxy_UpdatePhyState(state_proxy_data_t* data, phy_state_event 
         case phy_state_event_not_in_motion:
             data->flags.in_motion = FALSE;
             break;
+#ifdef ENABLE_TYM_PLATFORM
+        default:
+            break;
+#endif
+
     }
 }
+#ifdef ENABLE_TYM_PLATFORM
+/*for master <-> slave:stateProxy_MarshalToAnotherPeer , slave -> master: stateProxy_MarshalToConnectedPeer */
+void stateProxy_MarshalToAnotherPeer(marshal_type_t marshal_type, Message msg, size_t size)
+{
+    bool send = !stateProxy_Paused() && appPeerSigIsConnected();
+
+    DEBUG_LOG("stateProxy_MarshalToConnectedPeer stateProxy_Paused=%u, appPeerSigIsConnected=%u, stateProxy_IsSecondary=%u",
+            stateProxy_Paused(), appPeerSigIsConnected(), stateProxy_IsSecondary());
+
+    if (send)
+    {
+        void* copy;
+        SP_LOG_VERBOSE("stateProxy_MarshalToConnectedPeer forwarding type:0x%x to primary", marshal_type);
+
+        /* Cancel any pending messages of this type - its more important to send
+        the latest state, so cancel any pending messages. */
+        appPeerSigMarshalledMsgChannelTxCancelAll(stateProxy_GetTask(),
+                                                  PEER_SIG_MSG_CHANNEL_STATE_PROXY,
+                                                  marshal_type);
+
+        copy = PanicUnlessMalloc(size);
+        memcpy(copy, msg, size);
+        appPeerSigMarshalledMsgChannelTx(stateProxy_GetTask(),
+                                         PEER_SIG_MSG_CHANNEL_STATE_PROXY,
+                                         copy, marshal_type);
+    }
+}
+#endif
 

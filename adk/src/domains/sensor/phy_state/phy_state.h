@@ -82,6 +82,14 @@ typedef enum
     phy_state_event_out_of_ear,
     phy_state_event_in_motion,
     phy_state_event_not_in_motion,
+#ifdef ENABLE_TYM_PLATFORM
+    phy_state_event_user_poweron,
+    phy_state_event_user_poweroff,
+    phy_state_event_enter_sleepmode,
+    phy_state_event_leave_sleepmode,
+    phy_state_event_enter_standbymode,
+    phy_state_event_leave_standbymode,
+#endif
 } phy_state_event;
 /*! Define phy_state_event as a uint8 for marshalling use. */
 #define MARSHAL_TYPE_phy_state_event   MARSHAL_TYPE_uint8
@@ -99,6 +107,14 @@ typedef struct
     bool in_motion;
     /*! Stores the proximity state */
     bool in_proximity;
+#ifdef ENABLE_TYM_PLATFORM
+    /*! Store power-on state*/
+    bool poweron;
+    bool anc_cal;
+    bool ota_incase;
+    bool trigger_sleepmode;
+    bool trigger_standbymode;
+#endif
     /*! Lock used to conditionalise sending of PHY_STATE_INIT_CFM. */
     uint16 lock;
     /*! Last state reported to clients. */
@@ -135,6 +151,12 @@ typedef enum
     PHY_STATE_INTERNAL_NOT_IN_MOTION,
     /*! Timer used to limit rate of PHY_STATE_CHANGED_IND messages generated. */
     PHY_STATE_INTERNAL_TIMEOUT_NOTIFICATION_LIMIT,
+#ifdef ENABLE_TYM_PLATFORM
+    /*! Timer for sleep mode */
+    PHY_STATE_INTERNAL_TIMEOUT_SLEEPMODE,
+    /*! Timer for standby mode */
+    PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE,
+#endif
 } PHY_STATE_INTERNAL_MSG;
 
 /*!< Physical state of the Earbud. */
@@ -203,6 +225,24 @@ void appPhyStatePrepareToEnterDormant(void);
     \note #PHY_STATE_INIT_CFM is sent when the phy state is known.
 */
 bool appPhyStateInit(Task init_task);
-
+#ifdef ENABLE_TYM_PLATFORM
+void appPhyStateInCaseEventForOTA(void);
+void appPhyStateLeaveDormant(void);
+void appPhyStatePowerOnEvent(void);
+void appPhyStatePowerOffEvent(void);
+bool appPhyStateGetPowerState(void);
+void appPhyStateAncCalibration(void);
+void appPhyStateTriggerSleepMode(void);
+void appPhyStateCancelTriggerSleepMode(void);
+void appPhyStateTriggerStandbyMode(void);
+void appPhyStateCancelTriggerStandbyMode(void);
+void appPhyUpdateSleepStandbyMode(void);
+void appPhyChangeSleepStandbyMode(phy_state_event phyState);
+void appPhyStatePrepareToEnterStandbyMode(void);
+void appPhyCheckSleepMode(void);
+void appPhySateAppConfiguration(void);
+void appPhySetPowerOffMode(uint8 poweroffmode);
+uint8 appPhyGetPowerOffMode(void);
+#endif
 #endif /* PHY_STATE_H */
 

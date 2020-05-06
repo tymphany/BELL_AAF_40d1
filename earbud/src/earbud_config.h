@@ -30,12 +30,22 @@ role selection. */
 /*! TRUE if this is the right earbud (Bluetooth address LAP is even). */
 #define appConfigIsRight()          (appConfigIsLeft() ^ 1)
 #else
+#ifdef ENABLE_TYM_PLATFORM
+
+/*! Left and right earbud roles are selected from the state of this PIO */
+#define appConfigHandednessPio()    (66)
+/*! TRUE if this is the left earbud (the #appConfigHandednessPio state is 0) */
+#define appConfigIsLeft()           ((PioGet32Bank(appConfigHandednessPio() / 32) & (1UL << (appConfigHandednessPio()%32))) ? 0 :1)
+/*! TRUE if this is the right earbud (the #appConfigHandednessPio state is 0) */
+#define appConfigIsRight()          (appConfigIsLeft() ^ 1)
+#else/*ENABLE_TYM_PLATFORM*/
 /*! Left and right earbud roles are selected from the state of this PIO */
 #define appConfigHandednessPio()    (2)
 /*! TRUE if this is the left earbud (the #appConfigHandednessPio state is 1) */
 #define appConfigIsLeft()           ((PioGet32Bank(appConfigHandednessPio() / 32) & (1UL << appConfigHandednessPio())) ? 1 : 0)
 /*! TRUE if this is the right earbud (the #appConfigHandednessPio state is 0) */
 #define appConfigIsRight()          (appConfigIsLeft() ^ 1)
+#endif /*ENABLE_TYM_PLATFORM*/
 #endif
 
 /*! @} */

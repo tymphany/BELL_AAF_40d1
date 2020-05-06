@@ -106,6 +106,18 @@ typedef enum kymera_operator_ucids
     UCID_CVC_RECEIVE = 0,
     UCID_VOLUME_CONTROL = 0,
     UCID_SOURCE_SYNC = 0,
+#ifdef ENABLE_TYM_PLATFORM
+    UCID_USER_EQ_BANK0 = 0, //0x2480
+    UCID_USER_EQ_BANK1 = 1, //0x2482
+    UCID_USER_EQ_BANK2 = 2, //0x2484
+    UCID_USER_EQ_BANK3 = 3, //0x2486
+    UCID_USER_EQ_BANK4 = 4, //0x2488
+    UCID_USER_EQ_BANK5 = 5, //0x248a
+    UCID_USER_EQ_BANK6 = 6, //0x248c
+
+    UCID_SPEAKER_EQ1 = 7,   //0x248e
+    UCID_SPEAKER_EQ2 = 8    //0x2490
+#endif/*ENABLE_TYM_PLATFORM*/    
 } kymera_operator_ucid_t;
 
 /*! \brief Connect audio output source to AEC.

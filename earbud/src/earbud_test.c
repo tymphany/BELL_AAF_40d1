@@ -2756,3 +2756,15 @@ void appTestShowKeptSymbols(void)
     }
 }
 #endif
+
+#ifdef ENABLE_TYM_PLATFORM
+void appTestSwitchPresetEQ(uint8 eq)
+{
+    Ui_InjectUiInput(ui_input_bell_ui_switch_preset_bank0+eq);
+}
+
+void appTestShipp(void)
+{
+    MessageSendLater(SmGetTask(), ui_input_shipping, NULL, D_SEC(1));
+}
+#endif

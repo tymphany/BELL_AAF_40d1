@@ -18,8 +18,6 @@
 #include "earbud_config.h"
 /* ------------------------ Defines ------------------------ */
 
-#define xprint(x)            DEBUG_LOG(x)
-#define xprintf(x, ...)      DEBUG_LOGF(x,  __VA_ARGS__)
 /*! \brief Returns the PIOs bank number.
     \param pio The pio.
 */
@@ -115,7 +113,7 @@ void tym_power_off(uint8 dev)
 /* L:USB, H:GPIO */
 void setCommunPort(xe_tymsetCPtype enable)
 {
-    xprintf("setCommunPort %d",enable);
+    DEBUG_LOG("setCommunPort %d",enable);
 
     switch(enable) 
     {

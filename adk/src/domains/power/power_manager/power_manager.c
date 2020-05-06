@@ -29,6 +29,17 @@
 #include "phy_state.h"
 #include "ui.h"
 
+#ifdef ENABLE_TYM_PLATFORM
+#include "tym_power_control.h"
+#include "earbud_tym_factory.h"
+#include "earbud_sm.h"
+#include "earbud_tym_cc_communication.h"
+#include "ui_prompts.h"
+#include "earbud_tym_util.h"
+#include "state_proxy.h"
+#endif
+
+
 /*! \brief The client task allows sleep */
 #define APP_POWER_ALLOW_SLEEP                       0x00000001
 /*! \brief Power is waiting for a response to #POWER_SHUTDOWN_PREPARE_IND from the client task. */
@@ -486,8 +497,32 @@ static void appPowerHandleMessage(Task task, MessageId id, Message message)
     UNUSED(message);
 
     if (isMessageUiInput(id))
+    {
+#ifdef ENABLE_TYM_PLATFORM
+        if (id == ui_input_power_off)
+        {
+            appUserPowerOffRequest();
+        }
+        else if(id == ui_input_factory_mode)
+        {
+            setFactoryModeStatus(factory_enable);
+        }
+        else if(id == ui_input_change_usb_port)
+        {
+            //appPhyStateChangeUSBPort();
+            earbudCC_ChangeUSBPort();
+        }
+        else if(id == ui_input_power_on)
+        {
+            appUserPowerOn();
+        }
+        else if(id == ui_input_anc_cal)
+        {
+            appPhyStateAncCalibration();
+        }
+#endif
         return;
-
+    }
     switch (id)
     {
         case CHARGER_MESSAGE_ATTACHED:
@@ -496,6 +531,11 @@ static void appPowerHandleMessage(Task task, MessageId id, Message message)
         case TEMPERATURE_STATE_CHANGED_IND:
             appPowerHandlePowerEvent();
             break;
+#ifdef ENABLE_TYM_PLATFORM
+        case APP_POWER_REQUEST_REBOOT:
+            appPowerReboot();
+            break;
+#endif
         default:
             break;
     }
@@ -506,6 +546,14 @@ void appPowerOn(void)
     DEBUG_LOG("appPowerOn");
 
     TaskList_MessageSendId(appPowerGetClients(), POWER_ON);
+#ifdef ENABLE_TYM_PLATFORM
+    if(StateProxy_IsInCase() == FALSE)
+        Ui_InjectUiInput(ui_input_prompt_poweron);
+
+#if ENABLE_UPDATE_AUDIO_PS_KEY
+    UpdateAudioPSKey();
+#endif
+#endif
 }
 
 void appPowerReboot(void)
@@ -543,6 +591,10 @@ bool appPowerOffRequest(void)
             case POWER_STATE_OK:
                 PowerGetTaskData()->user_initiated_shutdown = TRUE;
                 appPowerSetState(POWER_STATE_TERMINATING_CLIENTS_NOTIFIED);
+#ifdef ENABLE_TYM_PLATFORM
+                /*Do power off,keep current battery to PSKEY*/
+                updatePredictVoltToPSKEY();
+#endif
                 return TRUE;
             case POWER_STATE_TERMINATING_CLIENTS_NOTIFIED:
             case POWER_STATE_TERMINATING_CLIENTS_RESPONDED:
@@ -753,9 +805,84 @@ bool appPowerInit(Task init_task)
     Ui_RegisterUiProvider(ui_provider_power,appPowerCurrentContext);
 
     Ui_RegisterUiInputConsumer(PowerGetTask(), power_ui_inputs, ARRAY_DIM(power_ui_inputs));
-
+#ifdef ENABLE_TYM_PLATFORM
+    tymGPIOInit();
+    thePower->user_power = TRUE;
+#endif
     return TRUE;
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+void appUserPowerOn(void)
+{
+    powerTaskData *thePower = PowerGetTaskData();
+    DEBUG_LOG("appUserPowerOn state 0x%x",thePower->user_power);
+    if(thePower->user_power == TRUE)
+        return;
+    thePower->user_power = TRUE;
+    setSystemReady(TRUE);
+    appPhyStatePowerOnEvent();
+    appPhyStateLeaveDormant();
+    getPSPresetEQ();
+    if(appSmIsPrimary())
+    {
+        if(StateProxy_IsInCase() == FALSE)
+            Ui_InjectUiInput(ui_input_prompt_poweron);
+    }
+}
+
+void appPowerRebootWaitSec(int sec)
+{
+    MessageSendLater(PowerGetTask(),APP_POWER_REQUEST_REBOOT, NULL, D_SEC(sec));
+}
+
+bool appUserPowerOffAction(void)
+{
+    powerTaskData *thePower = PowerGetTaskData();
+    bool standby = thePower->standby;
+    reportPowerOffStatus();
+    appPhyStatePowerOffEvent();
+    if(standby == TRUE)
+        appPhyStatePrepareToEnterStandbyMode();
+    else
+        appPhyStatePrepareToEnterDormant();
+    if(getFactoryModeEnable() == TRUE)
+        setFactoryModeStatus(factory_disable);
+    setSystemReady(FALSE);
+    thePower->user_power = FALSE;
+    thePower->poweroff_ongoing = FALSE;
+    return TRUE;
+}
+
+
+static bool appPowerOffStandBy(bool standby)
+{
+    powerTaskData *thePower = PowerGetTaskData();
+    DEBUG_LOG("appUserPowerOffRequest state 0x%x",thePower->user_power);
+     if(thePower->user_power == FALSE)
+        return FALSE;
+    if(thePower->poweroff_ongoing == TRUE)
+        return FALSE;
+    thePower->poweroff_ongoing = TRUE;
+    if(standby)
+        thePower->standby = TRUE;
+    else
+        thePower->standby = FALSE;
+    Prompts_CancelPairingContinue();
+    MessageSend(UiPrompts_GetUiPromptsTask(), APP_POWER_USERPOWEROFF_PREPARE_IND, NULL);//send power off prompts
+    return TRUE;
+}
+
+bool appUserPowerOffRequest(void)
+{
+    return appPowerOffStandBy(0);
+}
+
+bool appUserStandbyModeRequest(void)
+{
+    return appPowerOffStandBy(1);
+}
+#endif
 
 static void powerManager_RegisterMessageGroup(Task task, message_group_t group)
 {
