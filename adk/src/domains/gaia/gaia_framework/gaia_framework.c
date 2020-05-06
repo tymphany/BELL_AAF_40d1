@@ -93,18 +93,18 @@ bool tym_gaia_is_acknowledgement(uint16 command_id)
 void tym_gaia_send_simple_response(uint16 command_id,uint8 status)
 {
     GAIA_TRANSPORT *transport = GaiaGetTransport();
-    GaiaBuildAndSendSynch(transport, BELL_VENDOR_QTIL, command_id, status, 0, NULL);
+    GaiaBuildAndSendSynch(transport, BELL_VENDOR_QTIL, command_id | GAIA_ACK_MASK, status, 0, NULL);
 }
 
 void tym_gaia_send_response(uint16 command_id,uint8 status,uint16 payload_length, uint8 *payload)
 {
     GAIA_TRANSPORT *transport = GaiaGetTransport();
-    GaiaBuildAndSendSynch(transport, BELL_VENDOR_QTIL, command_id, status, payload_length, payload);
+    GaiaBuildAndSendSynch(transport, BELL_VENDOR_QTIL, command_id | GAIA_ACK_MASK, status, payload_length, payload);
 }
 
 void tym_gaia_send_notification(uint16 event, uint8 status, uint16 payload_length, uint8 *payload)
 {
     GAIA_TRANSPORT *transport = GaiaGetTransport();
-    GaiaBuildAndSendSynch(transport, BELL_VENDOR_QTIL, event, status, payload_length, payload);
+    GaiaBuildAndSendSynch(transport, BELL_VENDOR_QTIL, event | GAIA_ACK_MASK, status, payload_length, payload);
 }
 #endif
