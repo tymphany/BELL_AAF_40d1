@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project path="">
-    <file path="../../../prompts/connected.sbc"/>
-    <file path="../../../prompts/disconnected.sbc"/>
-    <file path="../../../prompts/pairing.sbc"/>
-    <file path="../../../prompts/pairing_failed.sbc"/>
-    <file path="../../../prompts/pairing_successful.sbc"/>
-    <file path="../../../prompts/power_off.sbc"/>
-    <file path="../../../prompts/power_on.sbc"/>
+<project path="F:/05.Src/AAF/BELL_AAF_40d1/earbud/workspace/QCC5121-AA_DEV-BRD_R2-AA/filesystems/" name="ro_fs" type="list">
     <file path="../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_aec_reference.edkcs"/>
     <file path="../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_anc_tuning.edkcs"/>
     <file path="../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_aptx_demux.edkcs"/>
@@ -14,15 +7,37 @@
     <file path="../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_cvc_fbc.edkcs"/>
     <file path="../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_opus_celt_encode.edkcs"/>
     <file path="../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_switched_passthrough_consumer.edkcs"/>
-    <configurations>
-        <configuration name="filesystem" options="build|deploy">
+    <configurations defaultKit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}">
+        <configuration name="filesystem" kit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}" options="build|deploy|default">
             <devkitConfiguration>filesystem</devkitConfiguration>
-            <devkitGroup>kitres://{CE02C436-164B-46AA-8938-497C1665BEAE}</devkitGroup>
+            <devkitPath>C:/qtil/ADK_Toolkit_0.9.1.9_x64</devkitPath>
+            <devkitGroup>kitres://{ce02c436-164b-46aa-8938-497c1665beae}</devkitGroup>
             <deployProject>deploy</deployProject>
+            <devkitRevision>1576251075</devkitRevision>
+            <property name="CHIP_TYPE">qcc512x_qcc302x</property>
             <property name="FS_ROOT">..\customer_ro_filesystem</property>
             <property name="TYPE">customer_ro</property>
             <property name="system_label">QCC512X_CONFIG</property>
-            <property name="CHIP_TYPE">qcc512x_qcc302x</property>
         </configuration>
     </configurations>
+    <file path="../../../../addons/gaa/prompts/bt_va_not_connected.sbc"/>
+    <file path="../../../../addons/gaa/prompts/mic_close.sbc"/>
+    <file path="../../../../addons/gaa/prompts/mic_open.sbc"/>
+    <file path="../../../prompts/01.Battery_Level_Low.sbc"/>
+    <file path="../../../prompts/02.FindMyEarbud_MONO.sbc"/>
+    <file path="../../../prompts/03.Max_Volume_Tone.sbc"/>
+    <file path="../../../prompts/04.Paired.sbc"/>
+    <file path="../../../prompts/05.Pairing.sbc"/>
+    <file path="../../../prompts/06.Power_OFF.sbc"/>
+    <file path="../../../prompts/07.Power_ON.sbc"/>
+    <file path="../../../prompts/08.Quick_Attention_OFF.sbc"/>
+    <file path="../../../prompts/09.Quick_Attention_ON.sbc"/>
+    <file path="../../../prompts/10.Role_Switch.sbc"/>
+    <file path="../../../prompts/11.Unpaired.sbc"/>
+    <file path="../../../prompts/12.Ambient_OFF.sbc"/>
+    <file path="../../../prompts/13.Ambient_ON.sbc"/>
+    <file path="../../../prompts/14.ANC_OFF.sbc"/>
+    <file path="../../../prompts/15.ANC_ON.sbc"/>
+    <file path="../../../prompts/16.Speech_OFF.sbc"/>
+    <file path="../../../prompts/17.Speech_ON.sbc"/>
 </project>
