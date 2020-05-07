@@ -25,7 +25,9 @@ typedef struct
 {
     /*! The task. */
     TaskData task;
-
+#ifdef ENABLE_TYM_PLATFORM    
+    task_list_t clients;/*!< List of client tasks */
+#endif    
     /*! The configuration table of System Event to prompts to play, passed from the Application. */
     const ui_event_indicator_table_t * sys_event_to_prompt_data_mappings;
     uint8 mapping_table_size;

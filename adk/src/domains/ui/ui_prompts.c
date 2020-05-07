@@ -119,6 +119,12 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
             the_prompts.last_prompt_played_index = prompt_index;
         }
     }
+#ifdef ENABLE_TYM_PLATFORM    
+    else
+    {
+        uiPrompts_RunUiPowerOff();     
+    }
+#endif        
 }
 
 static void uiPrompts_SchedulePromptPlay(uint16 prompt_index)
@@ -175,10 +181,15 @@ static void uiPrompts_HandleMessage(Task task, MessageId id, Message message)
     else if (id == UI_INTERNAL_PROMPT_PLAYBACK_COMPLETED)
     {
         DEBUG_LOG("UI_INTERNAL_PROMPT_PLAYBACK_COMPLETED indicate=%d", the_prompts.indicate_when_power_shutdown_prepared);
+        DEBUG_LOG("UI_INTERNAL_PROMPT_PLAYBACK_COMPLETED pwr off indicate=%d", the_prompts.indicate_when_user_poweroff_prepared);
         if (the_prompts.indicate_when_power_shutdown_prepared)
         {
             appPowerShutdownPrepareResponse(&the_prompts.task);
         }
+        if (the_prompts.indicate_when_user_poweroff_prepared)
+        {
+            uiPrompts_RunUiPowerOff();       
+        }    
     }
     else if (id == APP_POWER_SHUTDOWN_PREPARE_IND)
     {
@@ -281,6 +292,7 @@ bool UiPrompts_Init(Task init_task)
     the_prompts.generate_ui_events = TRUE;
     the_prompts.prompt_playback_enabled = TRUE;
 #ifdef ENABLE_TYM_PLATFORM
+    TaskList_Initialise(&the_prompts.clients);
     Ui_RegisterUiInputsMessageGroup(&the_prompts.task, UI_INPUTS_PROMPT_MESSAGE_GROUP);
 #endif
     return TRUE;
@@ -334,15 +346,20 @@ void Prompts_CancelPairingContinue(void)
 
 void UiPrompts_SendTymPrompt(MessageId id)
 {
-     //TaskList_MessageSendId(&the_prompts.clients, id);
-    MessageSend(&the_prompts.task, id, NULL);
+     TaskList_MessageSendId(&the_prompts.clients, id);
 }
 
 void UiPrompts_SendTymPromptLater(MessageId id,uint32 delay)
 {
-     //TaskList_MessageSendLaterId(&the_prompts.clients, id, delay);
-     MessageSendLater(&the_prompts.task, id, NULL, delay);
+     TaskList_MessageSendLaterId(&the_prompts.clients, id, delay);
 }
+
+static void prompts_RegisterMessageGroup(Task task, message_group_t group)
+{
+    PanicFalse(group == PROMPTS_MESSAGE_GROUP);
+    TaskList_AddTask(&the_prompts.clients, task);
+}
+
 
 static void uiPrompts_UiInputProcess(MessageId id)
 {
@@ -434,5 +451,7 @@ static void uiPrompts_UiInputProcess(MessageId id)
             break;
     }
 }
+
+MESSAGE_BROKER_GROUP_REGISTRATION_MAKE(PROMPTS, prompts_RegisterMessageGroup, NULL);
 
 #endif
