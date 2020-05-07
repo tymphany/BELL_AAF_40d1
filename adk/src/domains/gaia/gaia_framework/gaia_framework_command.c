@@ -106,7 +106,7 @@ void GaiaFrameworkCommand_CommandHandler(Task task, const GAIA_UNHANDLED_COMMAND
             case GAIA_COMMAND_TYPE_CONTROL:
                 DEBUG_LOG("appTYMHandleControlCommand GAIA_COMMAND_TYPE_CONTROL");
                 //Todo : Gaia v2 control command handler
-                //appTYMHandleControlCommand(task,command);
+                appTYMHandleControlCommand(task,command);
                 break;
 
             case GAIA_COMMAND_TYPE_STATUS :
@@ -114,10 +114,18 @@ void GaiaFrameworkCommand_CommandHandler(Task task, const GAIA_UNHANDLED_COMMAND
                 #if 0
                 appGaiaHandleStatusCommand(task, command);
                 #else
-                if(command->command_id == GAIA_COMMAND_GET_API_VERSION)
+                switch(command->command_id)
                 {
-                    DEBUG_LOG("gaiaFramework_CommandHandler send Get API V2 reply with V3 version");
-                    gaiaFrameworkCommand_ReplyV2GetApiVersion(command);
+                    case GAIA_COMMAND_GET_API_VERSION:
+                        DEBUG_LOG("gaiaFramework_CommandHandler send Get API V2 reply with V3 version");
+                        gaiaFrameworkCommand_ReplyV2GetApiVersion(command);
+                        break;
+                    case GAIA_COMMAND_GET_APPLICATION_VERSION:
+                        gaia_send_application_version(command->vendor_id);
+                        break;
+                    default:
+                        DEBUG_LOG("GAIA_COMMAND_TYPE_STATUS does not support");
+                        break;
                 }
                 #endif
                 break;

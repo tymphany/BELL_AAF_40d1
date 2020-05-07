@@ -15,6 +15,9 @@
 #include "gaia_framework_feature.h"
 #include "gaia_core_plugin.h"
 #ifdef ENABLE_TYM_PLATFORM
+#include "ui.h"
+#include "kymera_aec.h"
+#include "kymera_private.h"
 #include "earbud_tym_gaia.h"
 #endif
 
@@ -106,5 +109,62 @@ void tym_gaia_send_notification(uint16 event, uint8 status, uint16 payload_lengt
 {
     GAIA_TRANSPORT *transport = GaiaGetTransport();
     GaiaBuildAndSendSynch(transport, BELL_VENDOR_QTIL, event | GAIA_ACK_MASK, status, payload_length, payload);
+}
+
+void gaia_send_application_version(uint16 vendor_id)
+{
+    GAIA_TRANSPORT *transport = GaiaGetTransport();
+    uint16 major,minor;
+    /*  Read Device ID from config, irrespective of DEVICE_ID_PSKEY  */
+    uint8 payload[8];
+    uint16 payload_length;
+    UpgradeGetVersion(&major, &minor, NULL);
+    memset(payload,0x0,sizeof(payload));
+    payload[0] = (major >> 8);
+    payload[1] = (major & 0xff);
+    payload[2] = (minor >> 8);
+    payload[3] = (minor & 0xff);
+    DEBUG_LOG("payload 0x%x 0x%x 0x%x 0x%x\n",payload[0],payload[1],payload[2],payload[3]);
+    payload_length = 4;
+
+    GaiaBuildAndSendSynch(transport, vendor_id, GAIA_COMMAND_GET_APPLICATION_VERSION | GAIA_ACK_MASK, GAIA_STATUS_SUCCESS, payload_length, payload);
+}
+
+void tym_send_switch_eq_preset(uint16 vendor_id, uint8 size_payload, uint8* payload)
+{
+    #define   TYM_SWITCH_EQ_COMMAND_PAY_LOAD_SIZE (1)
+    #define   MAX_EQ_PRESET                       (UCID_USER_EQ_BANK5)
+    GAIA_TRANSPORT *transport = GaiaGetTransport();
+    uint8 package[8];
+    uint16 package_length;
+    memset(package,0x0,sizeof(package));
+
+    if(size_payload == 1){
+        if(*payload <= MAX_EQ_PRESET)
+        {
+            Ui_InjectUiInput(ui_input_bell_ui_switch_preset_bank0 + *(payload));
+            package[0] = *(payload);
+        }else{
+            package[0] = get_cur_preset_eq();
+        }
+    }
+
+    package_length = TYM_SWITCH_EQ_COMMAND_PAY_LOAD_SIZE;
+    GaiaBuildAndSendSynch(transport, vendor_id, GAIA_COMMAND_SWITCH_EQ_CONTROL | GAIA_ACK_MASK, GAIA_STATUS_SUCCESS, package_length, package);
+}
+
+bool appTYMHandleControlCommand(Task task, const GAIA_UNHANDLED_COMMAND_IND_T *command)
+{
+    UNUSED(task);
+    switch (command->command_id)
+    {
+    case GAIA_COMMAND_SWITCH_EQ_CONTROL:
+        DEBUG_LOG("gaia send switch eq control");
+        tym_send_switch_eq_preset(command->vendor_id, command->size_payload, command->payload );
+        return TRUE;
+    default:
+        DEBUG_LOG("appTYMHandleControlCommand Unhandled GAIA_COMMAND 0x%x (%d)",command->command_id,command->command_id);
+        return FALSE;
+    }
 }
 #endif
