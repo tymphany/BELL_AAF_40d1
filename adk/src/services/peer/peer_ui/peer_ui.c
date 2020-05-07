@@ -211,6 +211,26 @@ static void peerUi_Interceptor_FuncPtr(ui_input_t ui_input, uint32 delay)
 {
     switch(ui_input)
     {
+#ifdef ENABLE_TYM_PLATFORM
+        case ui_input_ext_anc_off:
+        case ui_input_ext_anc_on:
+        case ui_input_bell_ui_switch_preset_bank0:
+        case ui_input_bell_ui_switch_preset_bank1:
+        case ui_input_bell_ui_switch_preset_bank2:
+        case ui_input_bell_ui_switch_preset_bank3:
+        case ui_input_bell_ui_switch_preset_bank4:
+        case ui_input_bell_ui_switch_preset_bank5:
+        case ui_input_bell_ui_switch_preset_bank6:
+            if(appPeerSigIsConnected())
+            {
+                /* peer connection exists so need to delay in handling ANC UI input at
+                primary EB so need to add delay when to handle the ui_input */
+                delay = PEER_ANC_ON_OFF_DELAY_MS;
+                /* send ui_input to secondary */
+                peerAnc_SendAncInputToSecondary(ui_input,peerUi_GetTask());
+            }
+            break;
+#endif
         case ui_input_anc_toggle_on_off:
             if(appPeerSigIsConnected())
             {

@@ -237,6 +237,25 @@ void hdma_HandlePhyState(bool is_this_bud,uint32 timestamp,
     hdma_core_event_t evt = HDMA_CORE_IN_EAR;
     switch(event)
     {
+#ifdef ENABLE_TYM_PLATFORM
+        case phy_state_event_user_poweroff:
+            DEBUG_LOG("hdma_HandlePhyState: phystate %d", event);
+            evt = is_this_bud? HDMA_CORE_POWEROFF : HDMA_CORE_PEER_POWEROFF;
+            if (is_this_bud)
+            {
+                hdma_DestroyIntervalTimerMessage();
+            }
+            break;
+
+        case phy_state_event_user_poweron:
+            DEBUG_LOG("hdma_HandlePhyState: phystate %d", event);
+            evt = is_this_bud? HDMA_CORE_POWERON : HDMA_CORE_PEER_POWERON;
+            if(is_this_bud)
+            {
+                hdma_StartIntervalTimerMessage();
+            }
+            break;
+#endif
         case phy_state_event_in_case:
             DEBUG_LOG("hdma_HandlePhyState: phystate %d", event);
             evt = is_this_bud? HDMA_CORE_IN_CASE : HDMA_CORE_PEER_IN_CASE;

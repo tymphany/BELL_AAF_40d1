@@ -21,6 +21,11 @@
 #include <message_broker.h>
 #include <logging.h>
 #include <stdio.h>
+#ifdef ENABLE_TYM_PLATFORM
+#include "ui.h"
+#include "ui_prompts.h"
+#include "state_proxy.h"
+#endif
 
 #define INTERNAL_MSG_APPLY_AUDIO_VOLUME    0
 #define VOLUME_SERVICE_CLIENT_TASK_LIST_INIT_CAPACITY 1
@@ -62,11 +67,21 @@ static void volumeService_NotifyMinOrMaxVolume(volume_t volume)
 {
     if(volume.value >= volume.config.range.max)
     {
+#ifdef ENABLE_TYM_PLATFORM
+        if(StateProxy_IsInCase() == FALSE)
+            Ui_InjectUiInput(ui_input_prompt_volume_limit);
+#else
         TaskList_MessageSendId(TaskList_GetFlexibleBaseTaskList(VolumeServiceGetClientLIst()), VOLUME_SERVICE_MAX_VOLUME);
+#endif
     }
     if(volume.value <= volume.config.range.min)
     {
+#ifdef ENABLE_TYM_PLATFORM
+        if(StateProxy_IsInCase() == FALSE)
+            Ui_InjectUiInput(ui_input_prompt_volume_limit);
+#else
         TaskList_MessageSendId(TaskList_GetFlexibleBaseTaskList(VolumeServiceGetClientLIst()), VOLUME_SERVICE_MIN_VOLUME);
+#endif
     }
 }
 

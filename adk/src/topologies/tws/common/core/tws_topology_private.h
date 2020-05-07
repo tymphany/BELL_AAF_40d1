@@ -127,6 +127,9 @@ typedef struct
 
     /*! Flag to track whether topology has already been started */
     bool                    started;
+#ifdef ENABLE_TYM_PLATFORM
+    bool                try_again;
+#endif
 } twsTopologyTaskData;
 
 /* Make the tws_topology instance visible throughout the component. */

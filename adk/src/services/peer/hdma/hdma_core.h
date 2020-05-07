@@ -35,7 +35,13 @@ typedef enum{
     HDMA_CORE_IN_CASE = (1 << 24),
     HDMA_CORE_OUT_OF_CASE = (1 << 25),
     HDMA_CORE_PEER_IN_CASE = (1 << 26),
-    HDMA_CORE_PEER_OUT_OF_CASE = (1 << 27)
+    HDMA_CORE_PEER_OUT_OF_CASE = (1 << 27),
+#ifdef ENABLE_TYM_PLATFORM
+    HDMA_CORE_POWERON = (1 << 28),
+    HDMA_CORE_PEER_POWERON = (1 << 29),
+    HDMA_CORE_POWEROFF = (1 << 30),
+    HDMA_CORE_PEER_POWEROFF = (1 << 31),
+#endif
 }hdma_core_event_t;
 
 typedef struct {
@@ -86,6 +92,9 @@ typedef struct{
     hdma_timestamp lastTimeInEar;
     uint8 inEar;
     uint8 inCase;
+#ifdef ENABLE_TYM_PLATFORM
+    uint8 poweron;
+#endif
 #ifdef INCLUDE_HDMA_BATTERY_EVENT
     hdma_core_battery_state_t batteryStatus;
 #endif

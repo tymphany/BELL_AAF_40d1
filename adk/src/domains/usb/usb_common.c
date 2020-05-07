@@ -15,7 +15,9 @@
 #include <panic.h>
 #include <task_list.h>
 #include "usb_common.h"
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_factory.h"
+#endif
 /* Unit/Terminal IDs */
 #define USB_AUDIO_SPEAKER_IT  0x01
 #define USB_AUDIO_SPEAKER_FU  0x02
@@ -288,7 +290,13 @@ void Usb_ClientUnRegister(Task task)
 void Usb_HandleMessage(Task task, MessageId id, Message message)
 {
     UNUSED(task);
+#ifdef ENABLE_TYM_PLATFORM
+    USB_DEVICE_CLASS_MSG_REPORT_IND_T* report_msg = (USB_DEVICE_CLASS_MSG_REPORT_IND_T *) message;
+    uint8 *usbdata = (uint8 *)report_msg->report;
+    uint8 *recv_ptr = (usbdata + 1); //data[0] = report_id
+#else
     UNUSED(message);
+#endif
     switch (id)
     {
         case USB_DEVICE_CLASS_MSG_SPEAKER_SAMPLE_RATE_IND:
@@ -318,7 +326,11 @@ void Usb_HandleMessage(Task task, MessageId id, Message message)
                 TaskList_MessageSendId(Usb_GetClients(), MESSAGE_USB_SUSPENDED);
             }
             break;
-
+#ifdef ENABLE_TYM_PLATFORM
+        case USB_DEVICE_CLASS_MSG_REPORT_IND:
+            tymReceivedDataFromHost(recv_ptr);
+            break;
+#endif
         default:
             DEBUG_LOG("USB_COMMON Message handler, id %x", id);
             break;
@@ -341,14 +353,32 @@ void Usb_TimeCriticalInit(void)
         {
             Panic();
         }
-
+#ifdef ENABLE_TYM_PLATFORM /*for USB HID communication for factory test*/
+        status = UsbDeviceClassEnumerate(&usbTask->task, USB_DEVICE_CLASS_TYPE_AUDIO_MICROPHONE | USB_DEVICE_CLASS_TYPE_AUDIO_SPEAKER|USB_DEVICE_CLASS_TYPE_HID_CONSUMER_TRANSPORT_CONTROL);
+#else
         status = UsbDeviceClassEnumerate(&usbTask->task, USB_DEVICE_CLASS_TYPE_AUDIO_MICROPHONE | USB_DEVICE_CLASS_TYPE_AUDIO_SPEAKER);
+#endif
         DEBUG_LOG("Usb_TimeCriticalInit Enumeration status is %d",status);
         if (status != usb_device_class_status_success)
         {
             Panic();
         }
     }
+#ifdef ENABLE_TYM_PLATFORM /*for USB HID communication for factory test*/
+    else
+    {
+        usb_device_class_status status;
+
+        status = UsbDeviceClassEnumerate(&usbTask->task, USB_DEVICE_CLASS_TYPE_HID_CONSUMER_TRANSPORT_CONTROL);
+        DEBUG_LOG("Usb_TimeCriticalInit Enumeration status is %d",status);
+        if (status != usb_device_class_status_success)
+        {
+            Panic();
+        }
+    }
+
+    Usb_AttachtoHub();
+#endif
 
 }
 

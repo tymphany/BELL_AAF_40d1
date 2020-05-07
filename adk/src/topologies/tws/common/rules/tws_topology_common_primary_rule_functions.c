@@ -49,23 +49,38 @@ typedef enum
 
 rule_action_t ruleTwsTopPriPeerPairedInCase(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() != FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerPairedInCase,ignore as not power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() != PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerPairedInCase, ignore as not in case");
         return rule_action_ignore;
     }
-
+#endif
     TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerPairedInCase, run as peer paired and in the case");
     return rule_action_run;
 }
 
 rule_action_t ruleTwsTopPriPeerPairedOutCase(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerPairedOutCase, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerPairedOutCase, ignore as in case");
         return rule_action_ignore;
     }
+#endif
 
     TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerPairedOutCase, run as peer paired and out of case");
     return rule_action_run;
@@ -108,12 +123,19 @@ rule_action_t ruleTwsTopPriEnableConnectablePeer(void)
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriConnectablePeer, ignore as unknown secondary address");
         return rule_action_ignore;
     }
-
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriConnectablePeer, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriConnectablePeer ignore as in case");
         return rule_action_ignore;
     }
+#endif
     if (ConManagerIsConnected(&secondary_addr))
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriConnectablePeer ignore as peer connected");
@@ -133,12 +155,19 @@ rule_action_t ruleTwsTopPriEnableConnectablePeer(void)
 rule_action_t ruleTwsTopPriConnectPeerProfiles(void)
 {
     uint8 profiles = TwsTopologyConfig_PeerProfiles();
-
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriConnectPeerProfiles ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriConnectPeerProfiles ignore as in case");
         return rule_action_ignore;
     }
+#endif
 
     TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriConnectPeerProfiles run as out of case (profiles:x%x)", profiles);
     return PRIMARY_RULE_ACTION_RUN_PARAM(profiles);
@@ -146,11 +175,19 @@ rule_action_t ruleTwsTopPriConnectPeerProfiles(void)
 
 rule_action_t ruleTwsTopPriReleasePeer(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriReleasePeer ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriReleasePeer run. Device is now in case");
         return rule_action_run;
     }
+#endif
 
     TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriReleasePeer ignore. Device not in case (normal)");
     return rule_action_ignore;
@@ -158,34 +195,57 @@ rule_action_t ruleTwsTopPriReleasePeer(void)
 
 rule_action_t ruleTwsTopPriSelectedPrimary(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriSelectedPrimary ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriSelectedPrimary, ignore as in the case");
         return rule_action_ignore;
     }
+#endif
     TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriSelectedPrimary, run as selected as Primary out of case");
     return rule_action_run;
 }
 
 rule_action_t ruleTwsTopPriSelectedActingPrimary(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriSelectedActingPrimary, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriSelectedActingPrimary, ignore as out of case");
         return rule_action_ignore;
     }
+#endif
     TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriSelectedActingPrimary, run as selected as Acting Primary out of case");
     return rule_action_run;
 }
 
 rule_action_t ruleTwsTopPriNoRoleSelectedSecondary(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriNoRoleSelectedSecondary, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriNoRoleSelectedSecondary, ignore as in case");
         return rule_action_ignore;
     }
-
+#endif
     if (TwsTopology_GetRole() != tws_topology_role_none)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriNoRoleSelectedSecondary, ignore as already have role");
@@ -198,12 +258,19 @@ rule_action_t ruleTwsTopPriNoRoleSelectedSecondary(void)
 
 rule_action_t ruleTwsTopPriPrimarySelectedSecondary(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPrimarySelectedSecondary, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPrimarySelectedSecondary, ignore as in case");
         return rule_action_ignore;
     }
-
+#endif
     if (TwsTopology_GetRole() != tws_topology_role_primary)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPrimarySelectedSecondary, ignore as not primary");
@@ -217,13 +284,19 @@ rule_action_t ruleTwsTopPriPrimarySelectedSecondary(void)
 rule_action_t ruleTwsTopPriPeerLostFindRole(void)
 {
     bdaddr secondary_addr, primary_addr;
-
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerLostFindRole, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerLostFindRole, ignore as in case");
         return rule_action_ignore;
     }
-
+#endif
     if (TwsTopology_GetRole() != tws_topology_role_primary)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerLostFindRole, ignore as not primary");
@@ -275,13 +348,19 @@ rule_action_t ruleTwsTopPriEnableConnectableHandset(void)
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriEnableConnectableHandset, ignore as connected to handset");
         return rule_action_ignore;
     }
-
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriEnableConnectableHandset, ignore as power off ");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriEnableConnectableHandset, ignore as in case ");
         return rule_action_ignore;
     }
-
+#endif
     if (TwsTopology_GetRole() != tws_topology_role_primary)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriEnableConnectableHandset, ignore as role is not primary");
@@ -302,13 +381,19 @@ rule_action_t ruleTwsTopPriEnableLeConnectableHandset(void)
 {
     const TWSTOP_PRIMARY_GOAL_ENABLE_LE_CONNECTABLE_HANDSET_T enable_le_adverts =
         {.enable = TRUE};
-
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriEnableLeConnectableHandset, ignore as power off ");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriEnableLeConnectableHandset, ignore as in case ");
         return rule_action_ignore;
     }
-
+#endif
     TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriEnableLeConnectableHandset, run as primary out of case not connected to handset");
     return PRIMARY_RULE_ACTION_RUN_PARAM(enable_le_adverts);
 }
@@ -332,13 +417,19 @@ static rule_action_t ruleTwsTopPriConnectHandset(rule_connect_reason_t reason)
     bdaddr handset_addr;
 
     TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriConnectHandset, reason %u", reason);
-
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriConnectHandset, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriConnectHandset, ignore as in case");
         return rule_action_ignore;
     }
-
+#endif
     if (!appDeviceGetHandsetBdAddr(&handset_addr))
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriConnectHandset, ignore as not paired with handset");
@@ -409,12 +500,19 @@ rule_action_t ruleTwsTopPriDisconnectHandset(void)
 
 rule_action_t ruleTwsTopPriInCaseDisconnectHandset(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() != FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriInCaseDisconnectHandset, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() != PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriInCaseDisconnectHandset, ignore as not in case");
         return rule_action_ignore;
     }
-
+#endif
     if (!appDeviceIsHandsetAnyProfileConnected())
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriInCaseDisconnectHandset, ignore as not connected to handset");
@@ -429,13 +527,19 @@ rule_action_t ruleTwsTopPriInCaseDisconnectHandset(void)
 rule_action_t ruleTwsTopPriAllowHandsetConnect(void)
 {
     const bool allow_connect = TRUE;
-
+#ifdef ENABLE_TYM_PLATFORM
+    if (appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriAllowHandsetConnect, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriAllowHandsetConnect, ignore as in case");
         return rule_action_ignore;
     }
-
+#endif
     /* If role is not any kind of primary don't allow handsets to connect */
     if (!TwsTopology_IsPrimary())
     {

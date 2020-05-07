@@ -23,12 +23,19 @@
 rule_action_t ruleTwsTopSecPeerLostFindRole(void)
 {
     bdaddr secondary_addr;
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        DEBUG_LOG("ruleTwsTopSecStaticHandoverCommand, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecPeerLostFindRole, ignore as in case");
         return rule_action_ignore;
     }
-
+#endif
     if(appDeviceGetSecondaryBdAddr(&secondary_addr) && UpgradeIsOutCaseDFU())
     {
         TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopPriPeerLostFindRole, ignore as DFU is in progress");
@@ -49,13 +56,19 @@ rule_action_t ruleTwsTopSecRoleSwitchPeerConnect(void)
         TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecRoleSwitchPeerConnect, ignore as unknown primary address");
         return rule_action_ignore;
     }
-
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        DEBUG_LOG("ruleTwsTopSecStaticHandoverFailedOutCase, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecRoleSwitchPeerConnect, ignore as in case");
         return rule_action_ignore;
     }
-
+#endif
     if (ConManagerIsConnected(&primary_addr))
     {
         TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecRoleSwitchPeerConnect, ignore as peer already connected");

@@ -13,9 +13,13 @@
 #define TWSTOP_RULE_EVENT_STARTUP                       (1ULL << 0)
 #define TWSTOP_RULE_EVENT_NO_PEER                       (1ULL << 1)
 #define TWSTOP_RULE_EVENT_PEER_PAIRED                   (1ULL << 2)
-
+#ifdef ENABLE_TYM_PLATFORM
+#define TWSTOP_RULE_EVENT_CANCEL_TRIG                   (1ULL << 3)
+#define TWSTOP_RULE_EVENT_START_TRIG                    (1ULL << 4)
+#else
 #define TWSTOP_RULE_EVENT_IN_CASE                       (1ULL << 3)
 #define TWSTOP_RULE_EVENT_OUT_CASE                      (1ULL << 4)
+#endif
 #define TWSTOP_RULE_EVENT_PEER_IN_CASE                  (1ULL << 5)
 #define TWSTOP_RULE_EVENT_PEER_OUT_CASE                 (1ULL << 6)
 

@@ -18,7 +18,12 @@
 #include "handset_service_config.h"
 #include "handset_service_protected.h"
 #include "handset_service_sm.h"
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_cc_communication.h"
+#include "state_proxy.h"
+#include "ui_prompts.h"
+#include "ui.h"
+#endif
 
 /*! \brief Cast a Task to a handset_service_state_machine_t.
     This depends on task_data being the first member of handset_service_state_machine_t. */
@@ -110,7 +115,11 @@ static bool handsetServiceSm_AllConnectionsDisconnected(handset_service_state_ma
     {
         ble_connected = HandsetServiceSm_IsLeConnected(sm);
     }
-
+#ifdef ENABLE_TYM_PLATFORM
+    Prompts_SetConnectedStatus(0); //disconnect
+    if(StateProxy_IsInCase() == FALSE)
+        Ui_InjectUiInput(ui_input_prompt_disconnected);
+#endif
     DEBUG_LOG("handsetServiceSm_AllConnectionsDisconnected bredr %d profiles 0x%x le %d",
               bredr_connected, connected_profiles, ble_connected);
 

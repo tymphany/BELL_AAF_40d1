@@ -35,6 +35,30 @@ static const UsbCodes usb_codes_hid_no_boot = {B_INTERFACE_CLASS_HID, /* bInterf
                                                I_INTERFACE_INDEX /* iInterface */
                                                };
 
+#if 1//ENABLE_TYM_PLATFORM
+#define HID_REPORT_ID         0x01
+#define HID_REPORT_OUTPUT_LEN 0x20
+#define HID_REPORT_INPUT_LEN  0x20
+static const uint8 report_descriptor_hid_consumer_transport[] =
+{
+    0x06, 0xa0, 0xff,            /* USAGE_PAGE (Vendor-defined 0xFFA0) */
+    0x09, 0x01,                  /* USAGE (Vendor-defined 0x0001) */
+    0xa1, 0x01,                  /* COLLECTION (Application) */
+    0x85, HID_REPORT_ID,         /*   REPORT_ID (1) */
+    0x09, 0x01,                  /*   USAGE (Vendor-defined 0x0001) */
+    0x15, 0x00,                  /*   LOGICAL_MINIMUM (0) */
+    0x26, 0xff, 0x00,            /*   LOGICAL_MAXIMUM (255) */
+    0x75, 0x08,                  /*   REPORT_SIZE (8) */
+    0x95, HID_REPORT_OUTPUT_LEN, /*   REPORT_COUNT (18) */
+    0x91, 0x00,                  /*   OUTPUT (Data,Array,Abs,Non-volatile,Bit Field) */
+    0x09, 0x02,                  /*   USAGE (Vendor-defined 0x0002) */
+    0x75, 0x08,                  /*   REPORT_SIZE (8) */
+    0x95, HID_REPORT_INPUT_LEN,  /*   REPORT_COUNT (18) */
+    0x81, 0x00,                  /*   INPUT (Const,Array,Abs,Bit Field) */
+
+    0xc0                         /* END_COLLECTION */
+};
+#else
 /* HID Report Descriptor - Consumer Transport Control Device */
 static const uint8 report_descriptor_hid_consumer_transport[] = 
 {
@@ -81,7 +105,7 @@ static const uint8 report_descriptor_hid_consumer_transport[] =
     
     0xc0                        /* END_COLLECTION */
 };
-
+#endif
 /* USB HID class descriptor - Consumer Transport Control Device*/
 static const uint8 interface_descriptor_hid_consumer_transport[] =
 {

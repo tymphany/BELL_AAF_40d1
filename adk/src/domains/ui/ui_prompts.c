@@ -27,7 +27,11 @@
 #endif
 #include "system_clock.h"
 
+#ifdef ENABLE_TYM_PLATFORM
+#define DEFAULT_NO_REPEAT_DELAY         300 /*receive next prompt need wait 300 ms*/
+#else
 #define DEFAULT_NO_REPEAT_DELAY         D_SEC(5)
+#endif
 
 ui_prompts_task_data_t the_prompts;
 
@@ -346,12 +350,14 @@ void Prompts_CancelPairingContinue(void)
 
 void UiPrompts_SendTymPrompt(MessageId id)
 {
-     TaskList_MessageSendId(&the_prompts.clients, id);
+     //TaskList_MessageSendId(&the_prompts.clients, id);
+    MessageSend(&the_prompts.task, id, NULL);
 }
 
 void UiPrompts_SendTymPromptLater(MessageId id,uint32 delay)
 {
-     TaskList_MessageSendLaterId(&the_prompts.clients, id, delay);
+     //TaskList_MessageSendLaterId(&the_prompts.clients, id, delay);
+    MessageSendLater(&the_prompts.task, id, NULL, delay);
 }
 
 static void prompts_RegisterMessageGroup(Task task, message_group_t group)

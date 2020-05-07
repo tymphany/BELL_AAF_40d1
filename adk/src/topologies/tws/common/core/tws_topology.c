@@ -44,6 +44,9 @@
 
 #include <panic.h>
 #include <bdaddr.h>
+#ifdef ENABLE_TYM_PLATFORM
+#include "ui.h"
+#endif
 
 /*! Instance of the TWS Topology. */
 twsTopologyTaskData tws_topology = {0};
@@ -177,6 +180,18 @@ tws_topology_role twsTopology_GetRole(void)
  */
 static void twsTopology_ReEvaluateDeferredEvents(rule_events_t event_mask)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    bool power_state = appPhyStateGetPowerState();
+    /* If the defer occur because of dynamic handover, re-inject physical state */
+    if(TwsTopology_IsGoalActive(tws_topology_goal_dynamic_handover) &&
+        (event_mask & TWSTOP_RULE_EVENT_CANCEL_TRIG)&&(power_state == FALSE))
+        {
+            DEBUG_LOG("twsTopology_ReEvaluateDeferredEvents : Set In Case Event");
+
+            twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+
+        }
+#else
     phyState current_phy_state = appPhyStateGetState();
     
     /* If the defer occur because of dynamic handover, re-inject physical state */
@@ -186,11 +201,42 @@ static void twsTopology_ReEvaluateDeferredEvents(rule_events_t event_mask)
             DEBUG_LOG("twsTopology_ReEvaluateDeferredEvents : Set In Case Event");
             twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_IN_CASE);
         }
-
+#endif
 }
 
 static void twsTopology_EvaluatePhyState(rule_events_t event_mask)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    bdaddr peer_addr;
+    if (   (event_mask & TWSTOP_RULE_EVENT_CANCEL_TRIG)
+        && (appPhyStateGetPowerState() == FALSE))
+    {
+        DEBUG_LOG("twsTopology_EvaluatePhyState setting unhandled IN_CASE event in new rule set");
+        if(appDeviceGetPeerBdAddr(&peer_addr))
+        {
+            if(TwsTopology_IsAnyGoalPending() == FALSE)
+            {
+                twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+            }
+
+        }
+
+    }
+    else if (   (event_mask & TWSTOP_RULE_EVENT_START_TRIG)
+             && (appPhyStateGetPowerState() != FALSE))
+    {
+        DEBUG_LOG("twsTopology_EvaluatePhyState setting unhandled OUT_CASE event in new rule set");
+        if(appDeviceGetPeerBdAddr(&peer_addr))
+        {
+            if(TwsTopology_IsAnyGoalPending() == FALSE)
+            {
+                twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+            }
+        }
+    }
+#else
     if (   (event_mask & TWSTOP_RULE_EVENT_IN_CASE)
         && (appPhyStateGetState() == PHY_STATE_IN_CASE))
     {
@@ -205,6 +251,7 @@ static void twsTopology_EvaluatePhyState(rule_events_t event_mask)
         twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_IN_CASE);
         twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_OUT_CASE);
     }
+#endif
 }
 
 void twsTopology_SetRole(tws_topology_role role)
@@ -415,10 +462,12 @@ static void twsTopology_Start(void)
     {
         twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_PEER_PAIRED);
     }
+#ifndef ENABLE_TYM_PLATFORM  /*for flash image finish don't find peer device, must wait hid send tws pairing command */
     else
     {
         twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_NO_PEER);
     }
+#endif
 }
 
 static void twsTopology_HandleInternalStart(void)
@@ -431,7 +480,10 @@ static void twsTopology_HandleInternalStart(void)
 static void twsTopology_HandleClearHandoverPlay(void)
 {
     DEBUG_LOG("twsTopology_HandleClearHandoverPlay");
-
+#ifdef ENABLE_TYM_PLATFORM
+    if(StateProxy_IsInCase() == FALSE)
+        Ui_InjectUiInput(ui_input_prompt_role_switch);
+#endif
     appAvPlayOnHandsetConnection(FALSE);
 }
 
@@ -452,10 +504,62 @@ static void twsTopology_HandleProcPeerPairResult(PROC_PAIR_PEER_RESULT_T* pppr)
 /* \brief Generate physical state related events into rules engine. */
 static void twsTopology_HandlePhyStateChangedInd(PHY_STATE_CHANGED_IND_T* ind)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    twsTopologyTaskData *tws_taskdata = TwsTopologyGetTaskData();
+    bdaddr peer_addr;
+#endif
     DEBUG_LOG("twsTopology_HandlePhyStateChangedInd ev %u", ind->event);
 
     switch (ind->event)
     {
+#ifdef ENABLE_TYM_PLATFORM
+        case phy_state_event_user_poweron:
+            if(appDeviceGetPeerBdAddr(&peer_addr))
+            {
+                if(TwsTopology_IsAnyGoalPending() == FALSE)
+                {
+                    twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+                    twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+                    tws_taskdata->try_again = FALSE;
+                }
+                else
+                {
+                    if(tws_taskdata->try_again == FALSE)
+                    {
+                        PHY_STATE_CHANGED_IND_T *message = PanicUnlessNew(PHY_STATE_CHANGED_IND_T);
+                        tws_taskdata->try_again = TRUE;
+                        MessageCancelAll(&tws_taskdata->task, PHY_STATE_CHANGED_IND);
+                        message->new_state = PHY_STATE_IN_CASE;
+                        message->event = phy_state_event_user_poweron;
+                        MessageSendLater(&tws_taskdata->task, PHY_STATE_CHANGED_IND, message, D_SEC(2));
+                    }
+                }
+            }
+            break;
+        case phy_state_event_user_poweroff:
+            if(appDeviceGetPeerBdAddr(&peer_addr))
+            {
+                if(TwsTopology_IsAnyGoalPending() == FALSE)
+                {
+                    twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+                    twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+                    tws_taskdata->try_again = FALSE;
+                }
+                else
+                {
+                    if(tws_taskdata->try_again == FALSE)
+                    {
+                        PHY_STATE_CHANGED_IND_T *message = PanicUnlessNew(PHY_STATE_CHANGED_IND_T);
+                        tws_taskdata->try_again = TRUE;
+                        MessageCancelAll(&tws_taskdata->task, PHY_STATE_CHANGED_IND);
+                        message->new_state = PHY_STATE_IN_CASE;
+                        message->event = phy_state_event_user_poweroff;
+                        MessageSendLater(&tws_taskdata->task, PHY_STATE_CHANGED_IND, message, D_SEC(2));
+                    }
+                }
+            }
+            break;
+#else
         case phy_state_event_out_of_case:
             /* Reset the In case rule event set out of case rule event */
             twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_IN_CASE);
@@ -466,6 +570,7 @@ static void twsTopology_HandlePhyStateChangedInd(PHY_STATE_CHANGED_IND_T* ind)
             twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_OUT_CASE);
             twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_IN_CASE);
             break;
+#endif
         default:
         break;
     }

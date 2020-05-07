@@ -28,12 +28,19 @@ rule_action_t ruleTwsTopClassicSecPeerLostFindRole(void)
         DEBUG_LOG("ruleTwsTopClassicSecPeerLostFindRole, ignore as already running secondary static handover");
         return rule_action_ignore;
     }
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        DEBUG_LOG("ruleTwsTopClassicSecPeerLostFindRole, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         DEBUG_LOG("ruleTwsTopClassicSecPeerLostFindRole, ignore as in case");
         return rule_action_ignore;
     }
-
+#endif
     if(appDeviceGetSecondaryBdAddr(&secondary_addr) && UpgradeIsOutCaseDFU())
     {
         DEBUG_LOG("ruleTwsTopClassicSecPeerLostFindRole, ignore as DFU is in progress");
@@ -46,12 +53,19 @@ rule_action_t ruleTwsTopClassicSecPeerLostFindRole(void)
 
 rule_action_t ruleTwsTopSecStaticHandoverCommand(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        DEBUG_LOG("ruleTwsTopSecStaticHandoverCommand, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         DEBUG_LOG("ruleTwsTopSecStaticHandoverCommand, ignore as in the case");
         return rule_action_ignore;
     }
-
+#endif
     if(PeerFindRole_HasFixedRole())
     {
         DEBUG_LOG("ruleTwsTopSecStaticHandoverCommand, ignore as have a fixed role");
@@ -64,12 +78,19 @@ rule_action_t ruleTwsTopSecStaticHandoverCommand(void)
 
 rule_action_t ruleTwsTopSecStaticHandoverFailedOutCase(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        DEBUG_LOG("ruleTwsTopSecStaticHandoverFailedOutCase, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         DEBUG_LOG("ruleTwsTopSecStaticHandoverFailedOutCase, ignore as in the case");
         return rule_action_ignore;
     }
-    
+#endif
     DEBUG_LOG("ruleTwsTopSecStaticHandoverFailedOutCase, run as out of case");
     return rule_action_run;
 }

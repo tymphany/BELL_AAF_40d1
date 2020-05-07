@@ -41,6 +41,14 @@
 
 #include "timestamp_event.h"
 
+#ifdef ENABLE_TYM_PLATFORM
+#include "ui.h"
+#include "earbud_config.h"
+#include "ps.h"         /* for PsFullRetrieve */
+#include "byte_utils.h" /* for MAKELONG */
+#include "state_proxy.h"
+#include "multidevice.h"
+#endif
 
 peerFindRoleTaskData peer_find_role = {0};
 
@@ -1547,6 +1555,12 @@ bool PeerFindRole_Init(Task init_task)
 
     /* invalidate the fixed role setting forcing a PsRetrieve */
     peer_find_role.fixed_role = peer_find_role_fixed_role_invalid;
-
+#ifdef ENABLE_TYM_PLATFORM
+    /*set default fixed role*/
+    if(Multidevice_IsLeft()) //left,slave
+        PeerFindRole_SetFixedRole(peer_find_role_fixed_role_secondary);
+    else //right,master
+        PeerFindRole_SetFixedRole(peer_find_role_fixed_role_primary);
+#endif /*ENABLE_TYM_PLATFORM*/
     return TRUE;
 }

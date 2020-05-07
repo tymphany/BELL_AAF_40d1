@@ -75,6 +75,14 @@ DEFINE_RULE(ruleTwsTopDfuKickPeerConnect);
 /*! \brief TWS Topology rules deciding behaviour in a Dfu role. */
 const rule_entry_t twstop_dfu_rules_set[] =
 {
+#ifdef ENABLE_TYM_PLATFORM
+    /* When Earbud is put dfu in case mode, disconnect HFP */
+    RULE(TWSTOP_RULE_EVENT_CANCEL_TRIG,        ruleTwsTopDfuInCase,             TWSTOP_DFU_GOAL_IN_CASE),
+    /* When Earbud put out of the case, disconnect handset (BR/EDR) profiles and links (BR/EDR and/or LE) when DFU transport is BLE. */
+    RULE(TWSTOP_RULE_EVENT_START_TRIG,         ruleTwsTopDfuLEPriAbortCleanup,  TWSTOP_DFU_GOAL_LE_PRI_ABORT_CLEANUP),
+    /* When Earbud put out of the case, terminate DFU */
+    RULE(TWSTOP_RULE_EVENT_START_TRIG,         ruleTwsTopDfuAlways,            TWSTOP_DFU_GOAL_NO_ROLE_FIND_ROLE),
+#else
     /* When Earbud is put dfu in case mode, disconnect HFP */
     RULE(TWSTOP_RULE_EVENT_IN_CASE,          ruleTwsTopDfuInCase,             TWSTOP_DFU_GOAL_IN_CASE),
 
@@ -83,7 +91,7 @@ const rule_entry_t twstop_dfu_rules_set[] =
 
     /* When Earbud put out of the case, terminate DFU */
     RULE(TWSTOP_RULE_EVENT_OUT_CASE,         ruleTwsTopDfuAlways,            TWSTOP_DFU_GOAL_NO_ROLE_FIND_ROLE),
-
+#endif
     /*! When a DFU is completed, disable page scan on Secondary that was started as part of Secondary reboot. */
     RULE(TWSTOP_RULE_EVENT_DFU_ROLE_COMPLETE, ruleTwsTopDfuDisablePageScan,  TWSTOP_DFU_GOAL_SEC_DISABLE_PAGE_SCAN_TO_PEER),
 
@@ -136,12 +144,19 @@ const rule_entry_t twstop_dfu_rules_set[] =
 static rule_action_t ruleTwsTopDfuConnectHandsetOnReset(void)
 {
     bdaddr handset_addr;
-
+#ifdef ENABLE_TYM_PLATFORM
+    if (appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuConnectHandsetOnReset, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuConnectHandsetOnReset, ignore as in case");
         return rule_action_ignore;
     }
+#endif
 
     if (!appDeviceGetHandsetBdAddr(&handset_addr))
     {
@@ -180,12 +195,19 @@ static rule_action_t ruleTwsTopDfuConnectPeerProfiles(void)
     bdaddr bd_addr;
 
     appDeviceGetMyBdAddr(&bd_addr);
+#ifdef ENABLE_TYM_PLATFORM
+    if (appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuConnectPeerProfiles, ignore as power off");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuConnectPeerProfiles ignore as in case");
         return rule_action_ignore;
     }
-
+#endif
     if(!appUpgradeIsDFUPrimary())
     {
         TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuConnectPeerProfiles, ignore as Secondary address");

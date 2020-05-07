@@ -25,7 +25,7 @@
                     "doc": "If static handover fails when not in the case, decide if this Earbud needs to start role selection."
                 },
                 { 
-                    "event_mask": "TWSTOP_RULE_EVENT_OUT_CASE",
+                    "event_mask": "TWSTOP_RULE_EVENT_START_TRIG",
                     "rule_function": "ruleTwsTopClassicPriFindRole",
                     "output_message_id": "TWSTOP_PRIMARY_GOAL_FIND_ROLE",
                     "doc": "When Earbud is taken out of the case, decide if role selection should be executed."
@@ -57,7 +57,7 @@
                     "doc": "When handset BREDR link is disconnected, decide if the Primary Earbud should enable page scan."
                 },
                 { 
-                    "event_mask": "TWSTOP_RULE_EVENT_IN_CASE",
+                    "event_mask": "TWSTOP_RULE_EVENT_CANCEL_TRIG",
                     "rule_function": "ruleTwsTopClassicPriNoRoleIdle",
                     "output_message_id": "TWSTOP_PRIMARY_GOAL_NO_ROLE_IDLE",
                     "doc": "When Primary Earbud goes in the case, device which peer profiles should be disconnected."

@@ -90,6 +90,10 @@ uint8 Hdma_CoreInit(void)
     hdma_core_data->local_bud.inEar = StateProxy_IsInEar();
     hdma_core_data->remote_bud.inCase = StateProxy_IsPeerInCase();
     hdma_core_data->remote_bud.inEar = StateProxy_IsPeerInEar();
+#ifdef ENABLE_TYM_PLATFORM
+    hdma_core_data->local_bud.poweron = StateProxy_IsPowerOn();
+    hdma_core_data->remote_bud.poweron = StateProxy_IsPeerPowerOn();
+#endif/*ENABLE_TYM_PLATFORM*/
 #endif
     hdma_core_data->timestamp = INVALID_TIMESTAMP;
     hdma_core_data->lastHandoverAttempt = INVALID_TIMESTAMP;
@@ -132,6 +136,20 @@ void Hdma_CoreHandleEvent( hdma_timestamp timestamp, hdma_core_event_t event)
 
     switch(event)
     {
+#ifdef ENABLE_TYM_PLATFORM
+        case HDMA_CORE_POWERON:
+            hdma_core_data->local_bud.poweron = TRUE;
+        break;
+        case HDMA_CORE_PEER_POWERON:
+            hdma_core_data->remote_bud.poweron = TRUE;
+        break;
+        case HDMA_CORE_POWEROFF:
+            hdma_core_data->local_bud.poweron = FALSE;
+        break;
+        case HDMA_CORE_PEER_POWEROFF:
+            hdma_core_data->remote_bud.poweron = FALSE;
+        break;
+#endif
         case HDMA_CORE_IN_CASE:
             hdma_core_data->local_bud.inCase = TRUE;
         break;
@@ -222,12 +240,18 @@ static void hdma_StateUpdate(hdma_timestamp timestamp)
     hdma_core_data->timestamp = timestamp;
 
     /*  Main logic for HDMA decision making */
-
+#ifdef ENABLE_TYM_PLATFORM
+    if((!hdma_core_data->local_bud.poweron) && (hdma_core_data->remote_bud.poweron))
+    {
+        result = hdma_MergeResult(result, hdma_NewResult(HDMA_CORE_HANDOVER_REASON_IN_CASE, HDMA_CORE_HANDOVER_URGENCY_CRITICAL));
+    }
+#else
     /*  Case (1) bud is in case */
     if((hdma_core_data->local_bud.inCase) && (!hdma_core_data->remote_bud.inCase))
     {
         result = hdma_MergeResult(result, hdma_NewResult(HDMA_CORE_HANDOVER_REASON_IN_CASE, HDMA_CORE_HANDOVER_URGENCY_CRITICAL));
     }
+#endif
 #ifdef INCLUDE_HDMA_BATTERY_EVENT
     /*  Case (2) battery is critical    */
     if((hdma_core_data->local_bud.batteryStatus == HDMA_CORE_BATTERY_CRITICAL) && (!(hdma_core_data->remote_bud.batteryStatus == HDMA_CORE_BATTERY_CRITICAL)))

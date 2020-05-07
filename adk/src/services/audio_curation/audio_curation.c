@@ -149,10 +149,24 @@ static leakthrough_mode_t getLeakthroughModeFromUiInput(MessageId ui_input)
 static unsigned getAncCurrentContext(void)
 {
     audio_curation_provider_context_t context = BAD_CONTEXT;
+#ifdef ENABLE_TYM_PLATFORM
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
+#endif
+
     if(AncStateManager_IsTuningModeActive())
     {
         context = context_anc_tuning_mode_active;
     }
+#ifdef ENABLE_TYM_PLATFORM
+    else if(tymAnc->curAncMode == ambient)
+    {
+        context = context_ambient_enabled;
+    }
+    else
+    {
+        context = context_ambient_disabled;
+    }
+#else
     else if(AncStateManager_IsEnabled())
     {
         context = context_anc_enabled;
@@ -161,6 +175,7 @@ static unsigned getAncCurrentContext(void)
     {
         context = context_anc_disabled;
     }
+#endif
     return (unsigned)context;
 }
 #endif
@@ -309,7 +324,68 @@ static void handleUiDomainInput(MessageId ui_input)
             DEBUG_LOG("handleUiDomainInput, leakthrough set next mode input");
             AecLeakthrough_SetNextMode();
             break;
-
+#ifdef ENABLE_TYM_PLATFORM
+        case ui_input_ext_anc_on:
+            DEBUG_LOG("handleUiDomainInput, ext anc on");
+            if(getExtAncEnableStatus() == FALSE)
+                stanc3_ancon();
+            break;
+        case ui_input_ext_anc_off:
+            DEBUG_LOG("handleUiDomainInput, ext anc off");
+            if(getExtAncEnableStatus() == TRUE)
+                stanc3_ancoff();
+            break;
+        case ui_input_bell_ui_anc_on:
+            DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_anc_on");
+            if(StateProxy_IsInCase() == FALSE)
+                Ui_InjectUiInput(ui_input_prompt_anc_on);
+            BellUiAncControl(ui_input);
+            break;
+        case ui_input_bell_ui_anc_off:
+            DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_anc_off");
+            if(StateProxy_IsInCase() == FALSE)
+                Ui_InjectUiInput(ui_input_prompt_anc_off);
+            BellUiAncControl(ui_input);
+            break;
+        case ui_input_bell_ui_ambient_on:
+            DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_ambient_on");
+            if(StateProxy_IsInCase() == FALSE)
+                Ui_InjectUiInput(ui_input_prompt_ambient_on);
+            BellUiAncControl(ui_input);
+            break;
+        case ui_input_bell_ui_ambient_off:
+            DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_ambient_off");
+            if(StateProxy_IsInCase() == FALSE)
+                Ui_InjectUiInput(ui_input_prompt_ambient_off);
+            BellUiAncControl(ui_input);
+            break;
+        case ui_input_bell_ui_speech_on:
+            DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_speech_on");
+            if(StateProxy_IsInCase() == FALSE)
+                Ui_InjectUiInput(ui_input_prompt_speech_off);
+            BellUiAncControl(ui_input);
+            break;
+        case ui_input_bell_ui_speech_off:
+            DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_speech_off");
+            if(StateProxy_IsInCase() == FALSE)
+                Ui_InjectUiInput(ui_input_prompt_speech_on);
+            BellUiAncControl(ui_input);
+            break;
+        case ui_input_bell_ui_pp_ambient:
+            DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_pp_ambient");
+            BellUiAncControl(ui_input);
+            break;
+        case ui_input_bell_ui_switch_preset_bank0:
+        case ui_input_bell_ui_switch_preset_bank1:
+        case ui_input_bell_ui_switch_preset_bank2:
+        case ui_input_bell_ui_switch_preset_bank3:
+        case ui_input_bell_ui_switch_preset_bank4:
+        case ui_input_bell_ui_switch_preset_bank5:
+        case ui_input_bell_ui_switch_preset_bank6:
+            DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_switch_preset_bank %x",(ui_input - ui_input_bell_ui_switch_preset_bank0));
+            appKymeraSelectUsrEQPreset(ui_input - ui_input_bell_ui_switch_preset_bank0);
+            break;
+#endif
         default:
             DEBUG_LOG("handleUiDomainInput, unhandled input");
             break;

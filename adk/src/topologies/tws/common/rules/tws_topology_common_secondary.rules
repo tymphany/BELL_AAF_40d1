@@ -25,7 +25,7 @@
                     "doc": "After switching to secondary role, decide if Secondary Earbud should create BREDR link to Primary Earbud."
                 },
                 {
-                    "event_mask": "TWSTOP_RULE_EVENT_IN_CASE",
+                    "event_mask": "TWSTOP_RULE_EVENT_CANCEL_TRIG",
                     "rule_function": "ruleTwsTopSecNoRoleIdle",
                     "output_message_id": "TWSTOP_SECONDARY_GOAL_NO_ROLE_IDLE",
                     "doc": "When Earbud put in the case, decide if it should drop links and transition to no role"
