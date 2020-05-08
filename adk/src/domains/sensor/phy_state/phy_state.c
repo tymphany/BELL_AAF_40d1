@@ -647,6 +647,7 @@ void appPhyStatePrepareToEnterDormant(void)
     }
     else
     {
+        AncStateManager_Disable();
         appAncPowerOff();
         appProximityPowerOff();
         //appAncClientUnregister(&phy_state->task);
@@ -1249,6 +1250,9 @@ void appPhyUpdateSleepStandbyMode(void)
     bool peerInEar = StateProxy_IsPeerInEar();
     bool sleepMode = StateProxy_IsSleepMode();
     bool standbyMode = StateProxy_IsStandbyMode();
+    bool poweron = StateProxy_IsPowerOn();
+    if(poweron == FALSE)
+        return; /*power off don't check sleep mode*/
     if(inEar || peerInEar)
     {
         appPhyStateCancelTriggerSleepMode();
@@ -1380,6 +1384,7 @@ void appPhyStatePrepareToEnterStandbyMode(void)
         //appAncClientUnregister(&phy_state->task);
         //appProximityClientUnregister(&phy_state->task);
         appAncPowerOff();
+        AncStateManager_Disable();
         appProximityPowerOff();
     }
     if((getFactoryModeEnable() == TRUE) || (getFactoryModeTopEnable() == TRUE))
@@ -1399,11 +1404,10 @@ void appPhyStateLeaveDormant(void)
     else
     {
         appProximityPowerOn();
+        AncStateManager_Enable();
         appAncPowerOn();
-        AncStateManager_Disable();
     }
     appTouchPowerOn();
-
 }
 #endif
 

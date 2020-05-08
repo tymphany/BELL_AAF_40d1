@@ -555,6 +555,7 @@ static void BellUiPPAmbient(void)
             tymAnc->prevAncMode = tymAnc->curAncMode;
             tymAnc->curAncMode = ambient;
             BellUiAmbientOn();
+            bell_gaia_anc_notify_event(BELL_GAIA_AMBIENT_NOTIFY, 1);
         }
     }
     else
@@ -567,18 +568,22 @@ static void BellUiPPAmbient(void)
             if(tymAnc->curAncMode == ancoff)
             {
                 BellUiAncOff();
+                bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 0);
             }
             else if(tymAnc->curAncMode == ancon)
             {
                 BellUiAncOn();
+                bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 1);
             }
             else if(tymAnc->curAncMode == ambient)
             {
                 BellUiAmbientOn();
+                bell_gaia_anc_notify_event(BELL_GAIA_AMBIENT_NOTIFY, 1);
             }
             else if(tymAnc->curAncMode == speech)
             {
                 BellUiSpeechOn();
+                bell_gaia_anc_notify_event(BELL_GAIA_SPEECH_NOTIFY, 1);
             }
         }
     }

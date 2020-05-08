@@ -137,7 +137,8 @@ void stanc3_init(ancConfig *config)
             }
         }
     }
-    stanc3_audiomute(FALSE);   
+    stanc3_audiomute(FALSE);  
+    stanc3_ancon();/*for default enable ambient:internal ANC,STANC on*/ 
     config->init = TRUE;
 }
 
@@ -201,7 +202,7 @@ bool appAncClientRegister(Task task)
         tym_power_on(i2c_device_anc_id);
         stanc3_init(config);
         tymanc->prevAncMode = amcinvalid;
-        tymanc->curAncMode = ancoff;
+        tymanc->curAncMode = ambient;
     }
 
     return TaskList_AddTask(tymanc->clients, task);
@@ -235,7 +236,7 @@ void appAncPowerOn(void)
     tym_power_on(i2c_device_anc_id);   
     stanc3_init(config);
     tymanc->prevAncMode = amcinvalid;
-    tymanc->curAncMode = ancoff;     
+    tymanc->curAncMode = ambient;     
 }
 
 void appAncPowerOff(void)

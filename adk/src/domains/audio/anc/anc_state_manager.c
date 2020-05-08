@@ -648,6 +648,7 @@ static bool handlePowerOffEvent(anc_state_manager_event_id_t event)
                     next_state = anc_state_manager_enabled;
                 }
             }
+          
             /* Update state */
             changeState(next_state);
             
@@ -935,6 +936,9 @@ bool AncStateManager_Init(Task init_task)
     {
         /* Initialisation successful, go ahead with ANC power ON*/
         AncStateManager_PowerOn();
+#ifdef ENABLE_TYM_PLATFORM
+        AncStateManager_Enable();/*enable for ambient*/
+#endif        
     }
     return TRUE;
 }
