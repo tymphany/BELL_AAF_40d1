@@ -411,7 +411,7 @@ static void uiPrompts_UiInputProcess(MessageId id)
             UiPrompts_SendTymPrompt(PROMPT_PAIRING_FAILED);
             break;
         case ui_input_prompt_connected:
-            if(StateProxy_IsInEar() == TRUE)
+            if((StateProxy_IsInEar() == TRUE)||(StateProxy_IsPeerInEar() == TRUE))
                 UiPrompts_SendTymPrompt(PROMPT_CONNECTED);
             break;
         case ui_input_prompt_disconnected:
