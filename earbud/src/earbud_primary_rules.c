@@ -37,6 +37,9 @@
 #include <panic.h>
 #include <system_clock.h>
 #include <voice_ui.h>
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_sync.h"
+#endif
 
 #pragma unitsuppress Unused
 
@@ -266,12 +269,16 @@ typedef enum
 static rule_action_t ruleAutoHandsetPair(void)
 {
     /* NOTE: Ordering of these checks is important */
-
+#ifdef ENABLE_TYM_PLATFORM
+    PRIMARY_RULE_LOG("ruleAutoHandsetPair, not ignore, we're in the case");
+    tymSyncdata(btStatusCmd,btConnectable);
+#else
     if (appSmIsInCase())
     {
         PRIMARY_RULE_LOG("ruleAutoHandsetPair, ignore, we're in the case");
         return rule_action_ignore;
     }
+#endif
 
     if (BtDevice_IsPairedWithHandset())
     {
@@ -377,6 +384,10 @@ static rule_action_t ruleInEarCancelAudioPause(void)
 /*! \brief Decide if we should restart A2DP on going back in the ear within timeout. */
 static rule_action_t ruleInEarA2dpRestart(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+   /*default auto play disable*/
+   return rule_action_ignore;
+#else
     if (appSmIsA2dpRestartPending())
     {
         PRIMARY_RULE_LOG("ruleInEarA2dpRestart, run as A2DP is paused within restart timer");
@@ -384,6 +395,7 @@ static rule_action_t ruleInEarA2dpRestart(void)
     }
     PRIMARY_RULE_LOG("ruleInEarA2dpRestart, ignore as A2DP restart timer not running");
     return rule_action_ignore;
+#endif
 }
 
 /*! @brief Rule to determine if SCO active when out of ear

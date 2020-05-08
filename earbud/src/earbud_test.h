@@ -1140,6 +1140,21 @@ unsigned appTestDeviceTestServiceDevices(device_t **devices);
  */
 bool appTestIsPreparingToSleep(void);
 #ifdef ENABLE_TYM_PLATFORM
+void appTestHfpState(void);
+void appTestTap1(void);
+void appTestTap2(void);
+void appTestTap2Bisto(void);
+void appTestTymPowerOff(void);
+void appTestTymDelHandSet(void);
+void appTestTymHandsetPair(void);
+void appTestBattPrompt(void);
+void appTestInterANCSetMode(uint8 mode);
+void appTestBellAmbientOn(void);
+void appTestBellAmbientOff(void);
+void appTestSendPrompt(void);
+void appTestPromptCheck(void);
+void appTestChangeName(void);
+void appTestEnterStandby(void);
 void appTestSwitchPresetEQ(uint8 eq);
 void appTestShipp(void);
 void appTestShowLog(void);

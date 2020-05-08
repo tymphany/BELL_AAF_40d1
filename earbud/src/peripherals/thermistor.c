@@ -19,7 +19,9 @@
 #include "temperature_sensor.h"
 #include "thermistor.h"
 #include "thermistor_config.h"
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_factory.h"
+#endif
 #include CSR_EXPAND_AND_STRINGIFY(THERMISTOR_DATA_FILE)
 
 /*! \brief Returns the PIO bank number.
@@ -121,7 +123,9 @@ static bool appThermistorHandleMeasurement(const MessageAdcResult* result, int8 
         uint32 vref_const = VmReadVrefConstant();
         uint16 thermistor_mv = (uint16)(vref_const * reading / vref_raw);
         int8 celsius = appThermistorMillivoltsToDegreesCelsius(thermistor_mv, *temperature);
-
+#ifdef ENABLE_TYM_PLATFORM
+       updateFactoryVthmVolt(thermistor_mv);
+#endif
         DEBUG_LOG_V_VERBOSE("appThermistorHandleMeasurement, %u, %u, %u, %d", vref_const, vref_raw, thermistor_mv, celsius);
 
         *temperature = celsius;

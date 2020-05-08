@@ -1141,7 +1141,15 @@ void appPhyStateTapx3(void)
 void appPhyStateSwipeL(uint8 act)
 {
     uint8 id = appPhyStateGetCustomUiId(act);
-    if(id == uifunc_vol) /* volume => volume up */
+    if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE))
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_UP, NULL);
+    }
+    else if((appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE))
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_UP, NULL);
+    }
+    else if(id == uifunc_vol) /* volume => volume up */
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_UP, NULL);
     }
@@ -1149,7 +1157,7 @@ void appPhyStateSwipeL(uint8 act)
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_FORWARD, NULL);
     }
-    else if(id == uifunc_anc_amb) /*track , next track */
+    else if(id == uifunc_anc_amb) /*anc, anc ambient */
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
     }
@@ -1159,15 +1167,23 @@ void appPhyStateSwipeL(uint8 act)
 void appPhyStateSwipeR(uint8 act)
 {
     uint8 id = appPhyStateGetCustomUiId(act);
-    if(id == uifunc_vol) /* volume => volume up */
+    if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE))
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_DOWN, NULL);
     }
-    else if(id == uifunc_track) /* track ==> next track */
+    else if((appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE))
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_DOWN, NULL);
+    }
+    else if(id == uifunc_vol) /* volume => volume down */
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_DOWN, NULL);
+    }
+    else if(id == uifunc_track) /* track ==> previous track */
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_BACKWARD, NULL);
     }
-    else if(id == uifunc_anc_amb) /*track , next track */
+    else if(id == uifunc_anc_amb) /*anc, anc ambient */
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
     }

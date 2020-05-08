@@ -62,10 +62,13 @@
 /*! Time to wait for successful disconnection of links to peer and handset
  *  in terminating substate before shutdown/sleep. */
 #define appConfigLinkDisconnectionTimeoutTerminatingMs() D_SEC(5)
-
+#ifdef ENABLE_TYM_PLATFORM
+/*! Timeout for A2DP audio when earbud removed from ear,reduce pause time */
+#define appConfigOutOfEarA2dpTimeoutSecs()      (1)
+#else
 /*! Timeout for A2DP audio when earbud removed from ear. */
 #define appConfigOutOfEarA2dpTimeoutSecs()      (2)
-
+#endif
 /*! Timeout within which A2DP audio will be automatically restarted
  *  if placed back in the ear. */
 #define appConfigInEarA2dpStartTimeoutSecs()    (10)

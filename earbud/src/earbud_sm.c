@@ -63,6 +63,16 @@
 #include <boot.h>
 #include <message.h>
 
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_factory.h"
+#include "earbud_tym_util.h"
+#include "tym_power_control.h"
+#include "phy_state.h"
+#include "earbud_tym_sync.h"
+#include "earbud_tym_cc_communication.h"
+#endif
+
+
 #define ATTRIBUTE_BASE_PSKEY_INDEX  100
 #define TDL_BASE_PSKEY_INDEX        142
 #define TDL_INDEX_PSKEY             141
@@ -698,11 +708,12 @@ static void appEnterOutOfCaseIdle(void)
     DEBUG_LOG_DEBUG("appEnterOutOfCaseIdle");
 
     Ui_InformContextChange(ui_provider_phy_state, context_app_sm_out_of_case_idle);
-
+#ifndef ENABLE_TYM_PLATFORM /*disable Qualcomm Sleep mode*/
     if (appConfigIdleTimeoutMs())
     {
         MessageSendLater(SmGetTask(), SM_INTERNAL_TIMEOUT_IDLE, NULL, appConfigIdleTimeoutMs());
     }
+#endif
 }
 
 /*! \brief Exit
@@ -714,7 +725,9 @@ static void appExitOutOfCaseIdle(void)
     /* Stop idle on LEDs */
     Ui_InformContextChange(ui_provider_phy_state, context_app_sm_out_of_case_busy);
 
+#ifndef ENABLE_TYM_PLATFORM /*disable Qualcomm Sleep mode*/
     MessageCancelFirst(SmGetTask(), SM_INTERNAL_TIMEOUT_IDLE);
+#endif
 }
 
 /*! \brief Enter
@@ -868,7 +881,10 @@ void appSmSetState(appState new_state)
     appState previous_state = SmGetTaskData()->state;
 
     DEBUG_LOG_STATE("appSmSetState, state 0x%02x to 0x%02x", previous_state, new_state);
-
+#ifdef ENABLE_TYM_PLATFORM
+    if(previous_state == new_state)
+        return;
+#endif
     /* Handle state exit functions */
     switch (previous_state)
     {
@@ -1422,6 +1438,9 @@ static void appSmHandleConnRulesHandsetPair(void)
     {
         case APP_STATE_OUT_OF_CASE_IDLE:
         case APP_STATE_IN_EAR_IDLE:
+#ifdef ENABLE_TYM_PLATFORM
+        case APP_STATE_IN_CASE_IDLE: /*in case support pairing*/
+#endif
             DEBUG_LOG_DEBUG("appSmHandleConnRulesHandsetPair, rule said pair with handset");
             appSmClearUserPairing();
             appSmSetState(APP_STATE_HANDSET_PAIRING);
@@ -1600,15 +1619,30 @@ static void appSmHandleConnRulesLedDisable(void)
 /*! \brief Pause A2DP as an earbud is out of the ear for too long. */
 static void appSmHandleInternalTimeoutOutOfEarA2dp(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+#endif
+
     DEBUG_LOG_DEBUG("appSmHandleInternalTimeoutOutOfEarA2dp out of ear pausing audio");
 
     /* Double check we're still out of case when the timeout occurs */
     if (appSmIsOutOfCase() ||
         ((StateProxy_IsPeerOutOfEar()) && (StateProxy_IsPeerOutOfCase())))
     {
+#ifdef ENABLE_TYM_PLATFORM
+        if(app_set->enable_auto_wear)
+        {
+            Ui_InjectUiInput(ui_input_pause);
+        }
+        else
+        {
+            DEBUG_LOG("app Set can't pause music");
+        }
+
+#else
         /* request the handset pauses the media player */
         Ui_InjectUiInput(ui_input_pause);
-
+#endif
         /* start the timer to autorestart the audio if earbud is placed
          * back in the ear. */
         if (appConfigInEarA2dpStartTimeoutSecs())
@@ -1875,6 +1909,10 @@ static void appSmHandleAvA2dpDisconnectedInd(const AV_A2DP_DISCONNECTED_IND_T *i
         {
             if (appDeviceIsHandset(&ind->bd_addr))
             {
+#ifdef ENABLE_TYM_PLATFORM
+                if(ind->reason != AV_A2DP_INVALID_REASON)
+                    tymSyncdata(btStatusCmd,btDisconnect);
+#endif
                 /* Clear connected and set disconnected events */
                 appSmRulesResetEvent(RULE_EVENT_HANDSET_A2DP_CONNECTED);
                 appSmRulesSetEvent(RULE_EVENT_HANDSET_A2DP_DISCONNECTED);
@@ -2062,6 +2100,17 @@ bool appSmHandleConnectionLibraryMessages(MessageId id, Message message, bool al
 
 static void appSmHandleInternalPairHandset(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    if (appSmIsPrimary())
+    {
+        appSmSetUserPairing();
+        appSmSetState(APP_STATE_HANDSET_PAIRING);
+    }
+    else
+    {
+        DEBUG_LOG("appSmHandleInternalPairHandset can only pair once role has been decided");
+    }
+#else
     if (appSmStateIsIdle(appSmGetState()) && appSmIsPrimary())
     {
         appSmSetUserPairing();
@@ -2069,6 +2118,7 @@ static void appSmHandleInternalPairHandset(void)
     }
     else
         DEBUG_LOG_DEBUG("appSmHandleInternalPairHandset can only pair once role has been decided and is in IDLE state");
+#endif
 }
 
 /*! \brief Delete pairing for all handsets.
@@ -2083,6 +2133,10 @@ static void appSmHandleInternalDeleteHandsets(void)
         case APP_STATE_OUT_OF_CASE_IDLE:
         case APP_STATE_IN_EAR_IDLE:
         case APP_STATE_FACTORY_RESET:
+#ifdef ENABLE_TYM_PLATFORM
+        /*master enter pairing delete all handset*/
+        case APP_STATE_HANDSET_PAIRING:
+#endif
         {
             appSmInitiateLinkDisconnection(SM_DISCONNECT_HANDSET, appConfigLinkDisconnectionTimeoutTerminatingMs(),
                                                 POST_DISCONNECT_ACTION_DELETE_HANDSET_PAIRING);
@@ -2331,6 +2385,9 @@ static void appSmHandleNoDfu(void)
 /*! \brief Reboot the earbud, no questions asked. */
 static void appSmHandleInternalReboot(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    updatePredictVoltToPSKEY();
+#endif
     BootSetMode(BootGetMode());
 }
 
@@ -2385,6 +2442,21 @@ static void appSmHandleInternalAllRequestedLinksDisconnected(SM_INTERNAL_LINK_DI
             }
         break;
     }
+#ifdef ENABLE_TYM_PLATFORM
+    if(msg->post_disconnect_action == POST_DISCONNECT_ACTION_DELETE_HANDSET_PAIRING)
+    {
+        /*avoid role switch pending disconnect*/
+        /* send restore default to C.C. */
+        reportBtStatus(restoreDefault);
+
+        configTYMRestoreDefault();
+
+        if(getFactoryModeEnable() == TRUE)
+            MessageSend(SmGetTask(), SM_INTERNAL_REBOOT, NULL);
+        else
+            MessageSendLater(SmGetTask(), SM_INTERNAL_REBOOT, NULL, D_SEC(3));/*for restore default led lock 5 seconds*/
+    }
+#endif
 }
 
 static void appSm_HandleTwsTopologyRoleChange(tws_topology_role new_role)
@@ -2426,6 +2498,9 @@ static void appSm_HandleTwsTopologyRoleChange(tws_topology_role new_role)
             TaskList_MessageSendId(SmGetTaskData()->client_tasks, EARBUD_ROLE_PRIMARY);
 
             PrimaryRules_SetEvent(RULE_EVENT_ROLE_SWITCH);
+#ifdef ENABLE_TYM_PLATFORM
+            appPhyCheckSleepMode();
+#endif
             if (appPhyStateGetState() != PHY_STATE_IN_CASE)
             {
                 PrimaryRules_SetEvent(RULE_EVENT_OUT_CASE);
@@ -2651,6 +2726,13 @@ static void appSmHandleUiInput(MessageId  ui_input)
 #ifdef QCC3020_FF_ENTRY_LEVEL_AA
         case ui_input_force_reset:
             Panic();
+            break;
+#endif
+#ifdef ENABLE_TYM_PLATFORM
+        case ui_input_shipping:
+            appSmSetCoreState();
+            MessageSend(SmGetTask(), SM_INTERNAL_TIMEOUT_IDLE, NULL);
+            //appPowerClientAllowSleep(SmGetTask());
             break;
 #endif
         default:
@@ -3405,6 +3487,10 @@ void appSmEnterDfuModeInCase(bool enable, bool inform_peer)
 
         /*! We will be entering DFU mode. Make sure that the topology is aware */
         TwsTopology_SwitchToDfuRole();
+#ifdef ENABLE_TYM_PLATFORM
+        DEBUG_LOG("$$$ TYM Start Upgrade");
+        tymSyncdata(btStatusCmd,startOTA);
+#endif
     }
 
     if (inform_peer)

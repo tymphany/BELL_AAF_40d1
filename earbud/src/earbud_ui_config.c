@@ -26,6 +26,10 @@
 #include "1_button.h"
 #endif
 
+#ifdef ENABLE_TYM_PLATFORM
+#include "audio_curation.h"
+#endif
+
 /* Needed for UI contexts - transitional; when table is code generated these can be anonymised
  * unsigned ints and these includes can be removed. */
 #include "av.h"
@@ -136,7 +140,37 @@ const touchEventConfig touch_event_table [] =
 /*! \brief ui config table*/
 const ui_config_table_content_t earbud_ui_config_table[] =
 {
- {APP_POWER_OFF,                    ui_provider_phy_state,              context_phy_state_out_of_case,                ui_input_power_off                            },
+    {APP_POWER_OFF,                    ui_provider_phy_state,               context_phy_state_in_case,              ui_input_power_off                            },
+    {APP_CHANGE_USB_PORT,              ui_provider_phy_state,               context_phy_state_in_case,              ui_input_change_usb_port                      },
+    {APP_FACTORY_MODE,                 ui_provider_phy_state,               context_phy_state_in_case,              ui_input_factory_mode                         },
+    {APP_POWER_ON,                     ui_provider_phy_state,               context_phy_state_in_case,              ui_input_power_on                             },
+    {APP_MFB_ANC_CAL,                  ui_provider_phy_state,               context_phy_state_in_case,              ui_input_anc_cal                              },
+    {APP_POWER_OFF,                    ui_provider_phy_state,               context_phy_state_out_of_case,          ui_input_power_off                            },
+    {APP_CHANGE_USB_PORT,              ui_provider_phy_state,               context_phy_state_out_of_case,          ui_input_change_usb_port                      },
+    {APP_FACTORY_MODE,                 ui_provider_phy_state,               context_phy_state_out_of_case,          ui_input_factory_mode                         },
+    {APP_POWER_ON,                     ui_provider_phy_state,               context_phy_state_out_of_case,          ui_input_power_on                             },
+    {APP_MFB_ANC_CAL,                  ui_provider_phy_state,               context_phy_state_out_of_case,          ui_input_anc_cal                              },
+    {APP_BUTTON_TAPX1,                 ui_provider_hfp,                     context_hfp_voice_call_incoming,        ui_input_voice_call_accept                    },
+    {APP_BUTTON_TAPX2,                 ui_provider_hfp,                     context_hfp_voice_call_incoming,        ui_input_voice_call_reject                    },
+    {APP_BUTTON_TAPX2,                 ui_provider_hfp,                     context_hfp_voice_call_sco_active,      ui_input_voice_call_hang_up                   },
+    {APP_BUTTON_TAPX1,                 ui_provider_media_player,            context_av_is_streaming,                ui_input_toggle_play_pause                    },
+    {APP_BUTTON_TAPX1,                 ui_provider_media_player,            context_av_connected,                   ui_input_toggle_play_pause                    },
+    {APP_BUTTON_TAP_BISTO,             ui_provider_voice_ui,                context_voice_ui_default,               ui_input_va_notify                            },
+    {APP_BUTTON_TAP_ANC,               ui_provider_audio_curation,          context_ambient_enabled,                ui_input_bell_ui_anc_on                       }, /*ambient enable change to anc*/
+    {APP_BUTTON_TAP_ANC,               ui_provider_audio_curation,          context_ambient_disabled,               ui_input_bell_ui_ambient_on                   }, /*ambient disable change to ambient*/
+    {APP_BUTTON_VOLUME_UP,             ui_provider_hfp,                     context_hfp_voice_call_sco_active,      ui_input_hfp_volume_up_start                  },
+    {APP_BUTTON_VOLUME_UP,             ui_provider_av,                      context_av_is_streaming,                ui_input_av_volume_up_start                   },
+    {APP_BUTTON_VOLUME_UP,             ui_provider_hfp,                     context_hfp_connected,                  ui_input_hfp_volume_up_start                  },
+    {APP_BUTTON_VOLUME_DOWN,           ui_provider_hfp,                     context_hfp_voice_call_sco_active,      ui_input_hfp_volume_down_start                },
+    {APP_BUTTON_VOLUME_DOWN,           ui_provider_av,                      context_av_is_streaming,                ui_input_av_volume_down_start                 },
+    {APP_BUTTON_VOLUME_DOWN,           ui_provider_hfp,                     context_hfp_connected,                  ui_input_hfp_volume_down_start                },
+    {APP_BUTTON_FORWARD,               ui_provider_media_player,            context_av_is_streaming,                ui_input_av_forward                           },
+    {APP_BUTTON_BACKWARD,              ui_provider_media_player,            context_av_is_streaming,                ui_input_av_backward                          },
+    {APP_BUTTON_FORWARD,               ui_provider_media_player,            context_av_connected,                   ui_input_av_forward                           },
+    {APP_BUTTON_BACKWARD,              ui_provider_media_player,            context_av_connected,                   ui_input_av_backward                          },
+    {APP_BUTTON_DELETE_HANDSET,        ui_provider_phy_state,               context_phy_state_in_case,              ui_input_sm_delete_handsets                   },
+    {APP_BUTTON_HANDSET_PAIRING,       ui_provider_phy_state,               context_phy_state_out_of_case,          ui_input_sm_pair_handset                      },
+    {APP_BUTTON_HANDSET_PAIRING,       ui_provider_phy_state,               context_phy_state_in_case,              ui_input_sm_pair_handset                      },
 };
 #else
 /*! \brief ui config table*/

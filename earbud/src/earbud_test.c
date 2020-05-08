@@ -84,6 +84,14 @@
 #include <stdio.h>
 #include <bdaddr.h>
 
+#ifdef ENABLE_TYM_PLATFORM
+#include "local_name.h"
+#include "ui_prompts.h"
+#include "tws_topology_rule_events.h"
+#include "tws_topology_private.h"
+#include "earbud_tym_sync.h"
+#endif
+
 #ifdef INCLUDE_ACCESSORY
 #include "accessory.h"
 #include "request_app_launch.h"
@@ -2256,11 +2264,18 @@ void appTestVaTap(void)
     DEBUG_LOG_ALWAYS("appTestVaTap");
     /* Simulates a "Button Down -> Button Up -> Single Press Detected" sequence
     for the default configuration of a dedicated VA button */
+#ifdef ENABLE_TYM_PLATFORM
+    LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_1);
+    LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_6);
+    LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_2);
+    LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_3);
+#else
 #ifndef INCLUDE_AMA
     LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_1);
     LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_6);
 #endif
     LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_3);
+#endif
 }
 
 void appTestVaDoubleTap(void)
@@ -2268,11 +2283,17 @@ void appTestVaDoubleTap(void)
     DEBUG_LOG_ALWAYS("appTestVaDoubleTap");
     /* Simulates a "Button Down -> Button Up -> Button Down -> Button Up -> Double Press Detected" 
     sequence for the default configuration of a dedicated VA button */
+#ifdef ENABLE_TYM_PLATFORM
+    LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_1);
+    LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_6);
+    LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_4);
+#else
     LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_1);
     LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_6);
     LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_1);
     LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_6);
     LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_4);
+#endif
 }
 
 void appTestVaPressAndHold(void)
@@ -2758,6 +2779,85 @@ void appTestShowKeptSymbols(void)
 #endif
 
 #ifdef ENABLE_TYM_PLATFORM
+void appTestHfpState(void)
+{
+    DEBUG_LOG("Call %d,CallAct %d,Call In coming %d",appHfpIsCall(),appHfpIsCallActive(),appHfpIsCallIncoming());
+    DEBUG_LOG("FwdIsStream %d,Recv %d,Send %d,In coming %d",ScoFwdIsStreaming(),ScoFwdIsReceiving(),ScoFwdIsSending(),ScoFwdIsCallIncoming());
+}
+
+void appTestTap1(void)
+{
+    MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX1, NULL);
+}
+
+void appTestTap2(void)
+{
+    MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
+}
+
+void appTestTap2Bisto(void)
+{
+    MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_BISTO, NULL);
+}
+
+void appTestTymPowerOff(void)
+{
+    MessageSend(LogicalInputSwitch_GetTask(), APP_POWER_OFF, NULL);
+}
+
+void appTestTymDelHandSet(void)
+{
+    MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_DELETE_HANDSET, NULL);
+}
+
+void appTestTymHandsetPair(void)
+{
+    MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_HANDSET_PAIRING, NULL);
+}
+
+void appTestBattPrompt(void)
+{
+    appBatteryLowTest();
+}
+
+void appTestBellAmbientOn(void)
+{
+     Ui_InjectUiInput(ui_input_bell_ui_ambient_on);
+}
+
+
+void appTestBellAmbientOff(void)
+{
+    Ui_InjectUiInput(ui_input_bell_ui_ambient_off);
+}
+
+void appTestInterANCSetMode(uint8 mode)
+{
+    ui_input_t anc_mode = ui_input_anc_set_mode_1 + mode;
+    Ui_InjectUiInput(anc_mode);
+}
+
+
+void appTestSendPrompt(void)
+{
+    UiPrompts_SendTymPrompt(PROMPT_POWER_ON);
+}
+
+void appTestPromptCheck(void)
+{
+    Ui_InjectUiInput(ui_input_prompt_poweron);
+}
+void appTestChangeName(void)
+{
+    uint8 name[]="abcde";
+    LocalName_ChangeByApp(name,strlen((char *)name));
+}
+
+void appTestEnterStandby(void)
+{
+    tymSyncdata(sleepStandbyModeCmd, phy_state_event_enter_standbymode);
+}
+
 void appTestSwitchPresetEQ(uint8 eq)
 {
     Ui_InjectUiInput(ui_input_bell_ui_switch_preset_bank0+eq);

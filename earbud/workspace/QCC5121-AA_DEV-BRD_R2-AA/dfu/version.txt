@@ -1,0 +1,25 @@
+# Upgrade version major.minor
+0.17
+# Number of compatible versions
+5
+# Compatible version #1 (major.minor)
+0.*
+# Compatible version #2 (major.minor)
+1.*
+# Compatible version #3 (major.minor)
+2.*
+# Compatible version #4 (major.minor)
+3.*
+# Compatible version #5 (major.minor)
+4.*
+# PS config version
+1
+# Number of previous compatible PS config versions
+3
+# Compatible PS config version #0
+0
+# Compatible PS config version #1
+1
+# Compatible PS config version #2
+2
+

@@ -155,6 +155,12 @@
 #include "earbud_setup_unexpected_message.h"
 #include "earbud_setup_fast_pair.h"
 
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_cc_communication.h"
+#include "earbud_tym_sync.h"
+#include "manufacturer_data.h"
+#endif
+
 /*!< Structure used while initialising */
 initData    app_init;
 
@@ -602,6 +608,9 @@ static const init_table_entry_t appInitTable[] =
 #endif
     {LedManager_Init,       0, NULL},
     {appPowerInit,          APP_POWER_INIT_CFM, NULL},
+#ifdef ENABLE_TYM_PLATFORM
+    {tymChargingCaseCommunicationInit, 0, NULL},
+#endif
     {appConnectionInit,     CL_INIT_CFM, NULL},
     {appMessageDispatcherRegister, 0, NULL},
 #ifdef USE_BDADDR_FOR_LEFT_RIGHT
@@ -666,6 +675,9 @@ static const init_table_entry_t appInitTable[] =
     {GattHandlerInit,      0, NULL},
     {appInitPeerPairLeInitFixup, 0, NULL},
     {KeySync_Init,          0, NULL},
+#ifdef ENABLE_TYM_PLATFORM
+    {TymSync_Init,          0, NULL},
+#endif
     {ProfileManager_Init,   0, NULL},
     {HandsetService_Init,   0, NULL},
     {PeerFindRole_Init,     0, NULL},
@@ -709,6 +721,9 @@ static const init_table_entry_t appInitTable[] =
     {UiLeds_Init,        0, NULL},
     {PeerUi_Init,        0, NULL},
     {EarbudUi_Init,      0, NULL},
+#ifdef ENABLE_TYM_PLATFORM
+    {ManufacturerData_Init, 0, NULL},
+#endif
     {TelephonyService_Init, 0, NULL},
 
 #ifdef INCLUDE_FAST_PAIR
