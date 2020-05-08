@@ -222,10 +222,10 @@ static void appPhyStateHandleInternalOutOfCaseEvent(void)
             appPhyStateSetState(PhyStateGetTaskData(), PHY_STATE_OUT_OF_EAR);
             if (phy_state->in_proximity)
             {
+                appPhyStateSetState(PhyStateGetTaskData(), PHY_STATE_IN_EAR);
 #ifdef ENABLE_TYM_PLATFORM
                 appPhyStateInEarPromptCheck();
-#endif
-                appPhyStateSetState(PhyStateGetTaskData(), PHY_STATE_IN_EAR);
+#endif                
             }
             else if (!phy_state->in_motion)
             {
@@ -265,10 +265,10 @@ static void appPhyStateHandleInternalInEarEvent(void)
 
         case PHY_STATE_UNKNOWN:
         case PHY_STATE_OUT_OF_EAR:
+            appPhyStateSetState(PhyStateGetTaskData(), PHY_STATE_IN_EAR);
 #ifdef ENABLE_TYM_PLATFORM
             appPhyStateInEarPromptCheck();
-#endif
-            appPhyStateSetState(PhyStateGetTaskData(), PHY_STATE_IN_EAR);
+#endif            
             break;
 
         default:
