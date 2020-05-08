@@ -271,7 +271,6 @@ static rule_action_t ruleAutoHandsetPair(void)
     /* NOTE: Ordering of these checks is important */
 #ifdef ENABLE_TYM_PLATFORM
     PRIMARY_RULE_LOG("ruleAutoHandsetPair, not ignore, we're in the case");
-    tymSyncdata(btStatusCmd,btConnectable);
 #else
     if (appSmIsInCase())
     {
@@ -315,7 +314,10 @@ static rule_action_t ruleAutoHandsetPair(void)
         PRIMARY_RULE_LOG("ruleAutoHandsetPair, ignore, not a primary Earbud");
         return rule_action_ignore;
     }
-
+#ifdef ENABLE_TYM_PLATFORM
+    PRIMARY_RULE_LOG("ruleAutoHandsetPair, before pairing set connectable mode");
+    tymSyncdata(btStatusCmd,btConnectable);
+#endif
     PRIMARY_RULE_LOG("ruleAutoHandsetPair, run, primary out of the case with no handset pairing");
     return rule_action_run;
 }
