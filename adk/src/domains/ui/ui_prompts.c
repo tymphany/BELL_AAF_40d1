@@ -376,6 +376,10 @@ static void uiPrompts_UiInputProcess(MessageId id)
         if(StateProxy_IsInEar() == TRUE)
             Ui_InjectUiInput(ui_input_prompt_pairing);
     }
+    else if(id == ui_input_prompt_connected)
+    {
+        DEBUG_LOG("check connect prompt"); 
+    }    
     else if(StateProxy_IsInCase() == TRUE )
     {
         DEBUG_LOG("In Case don't play prompts");
@@ -394,7 +398,7 @@ static void uiPrompts_UiInputProcess(MessageId id)
             UiPrompts_SendTymPrompt(PROMPT_PAIRING_FAILED);
             break;
         case ui_input_prompt_connected:
-            if(StateProxy_IsInEar() == TRUE)
+            if((StateProxy_IsInEar() == TRUE) || (StateProxy_IsPeerInEar() == TRUE))
             {
                 the_prompts.ever_connected_prompt = TRUE;
                 UiPrompts_SendTymPrompt(PROMPT_CONNECTED);
@@ -447,7 +451,14 @@ static void uiPrompts_UiInputProcess(MessageId id)
             break;
         case ui_input_prompt_connected_check:
             if(StateProxy_IsInEar() == TRUE)
+            {
+                DEBUG_LOG("ui_input_prompt_connected_check run exe after 1s");
                 UiPrompts_SendTymPromptLater(ui_input_prompt_connected_execute, D_SEC(1));
+            }
+            else
+            {
+               DEBUG_LOG("ui_input_prompt_connected_check not in ear");
+            }    
             break;
         case ui_input_prompt_connected_execute:
             if(StateProxy_IsInEar() == TRUE)
