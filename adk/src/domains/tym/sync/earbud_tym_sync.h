@@ -24,7 +24,8 @@ typedef enum btSyncCmd_e{
     noCasePairCmd,
     ambientLevelCmd,
     speechLevelCmd,    
-    sleepStandbyModeCmd,     
+    sleepStandbyModeCmd,   
+    connectPromptCmd,  
 }btSyncCmd_t;
 
 /*\{*/

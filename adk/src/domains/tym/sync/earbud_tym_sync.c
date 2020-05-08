@@ -22,6 +22,7 @@
 #include "1_button.h"
 #include "tym_anc.h"
 #include "earbud_tym_psid.h"
+#include "ui_prompts.h"
 
 /* ------------------------ Defines ------------------------ */
 
@@ -177,7 +178,10 @@ static void handleSync_Command(tym_sync_data_t* tym_data)
             break;        
         case sleepStandbyModeCmd:
             appPhyChangeSleepStandbyMode(tym_data->data);
-            break;    
+            break;  
+        case connectPromptCmd:
+            UiPrompt_ConnectedPrompt();
+            break;      
         default:
             xprint("can't find command");        
     }

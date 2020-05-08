@@ -23,7 +23,10 @@
 
 #include <stdlib.h>
 #ifdef ENABLE_TYM_PLATFORM
+#include <earbud_sm.h>
 #include "state_proxy.h"
+#include "earbud_tym_sync.h"
+
 #endif
 #include "system_clock.h"
 
@@ -360,6 +363,16 @@ void UiPrompts_SendTymPromptLater(MessageId id,uint32 delay)
     MessageSendLater(&the_prompts.task, id, NULL, delay);
 }
 
+void UiPrompt_ConnectedPrompt(void)
+{
+    if(the_prompts.ever_connected_prompt == FALSE)
+    {    
+        the_prompts.ever_connected_prompt = TRUE;
+        if(appSmIsPrimary())
+            Ui_InjectUiInput(ui_input_prompt_connected);    
+    }
+}
+
 static void prompts_RegisterMessageGroup(Task task, message_group_t group)
 {
     PanicFalse(group == PROMPTS_MESSAGE_GROUP);
@@ -398,11 +411,8 @@ static void uiPrompts_UiInputProcess(MessageId id)
             UiPrompts_SendTymPrompt(PROMPT_PAIRING_FAILED);
             break;
         case ui_input_prompt_connected:
-            if((StateProxy_IsInEar() == TRUE) || (StateProxy_IsPeerInEar() == TRUE))
-            {
-                the_prompts.ever_connected_prompt = TRUE;
+            if(StateProxy_IsInEar() == TRUE)
                 UiPrompts_SendTymPrompt(PROMPT_CONNECTED);
-            }
             break;
         case ui_input_prompt_disconnected:
             UiPrompts_SendTymPrompt(PROMPT_DISCONNECTED);
@@ -457,12 +467,12 @@ static void uiPrompts_UiInputProcess(MessageId id)
             }
             else
             {
-               DEBUG_LOG("ui_input_prompt_connected_check not in ear");
+                DEBUG_LOG("ui_input_prompt_connected_check not in ear");
             }    
             break;
         case ui_input_prompt_connected_execute:
-            if(StateProxy_IsInEar() == TRUE)
-                Ui_InjectUiInput(ui_input_prompt_connected);
+            if((StateProxy_IsInEar() == TRUE) || (StateProxy_IsPeerInEar() == TRUE))
+                tymSyncdata(connectPromptCmd,0);
             break;
         default:
             break;

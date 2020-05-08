@@ -123,6 +123,7 @@ void Prompts_SetConnectedStatus(bool connected);
 void Prompts_CancelPairingContinue(void);
 void UiPrompts_SendTymPrompt(MessageId id);
 void UiPrompts_SendTymPromptLater(MessageId id,uint32 delay);
+void UiPrompt_ConnectedPrompt(void);
 #endif/*ENABLE_TYM_PLATFORM*/
 
 #endif // UI_PROMPTS_H
