@@ -324,6 +324,9 @@ void factory_fwversion(void *dataptr)
     xprint("factory_fwversion");    
     UpgradeGetVersion(&major, &minor, NULL);
     memset(verstr,0x0,sizeof(verstr));
+#ifdef ENABLE_UART
+    major |= (1 << 8);
+#endif    
     snprintf((char *)verstr,sizeof(verstr),"%d.%d.%d.%d",(major >> 8),(major & 0xff),(minor >> 8),(minor & 0xff));
     tymSendDatatoHost(verstr,sizeof(verstr));
 }

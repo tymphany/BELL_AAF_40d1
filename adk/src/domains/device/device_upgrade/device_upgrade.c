@@ -53,11 +53,8 @@ typedef enum device_upgrade_internal_messages
 #ifdef ENABLE_TYM_PLATFORM
 #define BellFW_LVer              17
 
-#ifdef ENABLE_UART
-#define BellFW_HVer              1*256
-#else
 #define BellFW_HVer              0
-#endif
+
 
 static const upgrade_version earbud_upgrade_init_version = { BellFW_HVer, BellFW_LVer };  /* Values should come from config file */
 
