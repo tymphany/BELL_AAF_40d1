@@ -26,6 +26,7 @@
 #include "logging.h"
 #include "state_proxy.h"
 #include "earbud_config.h"
+#include "multidevice.h"
 /* ------------------------ Defines ------------------------ */
 
 #define xprint(x)            DEBUG_LOG(x)
@@ -687,7 +688,7 @@ void runSwipeFunction(uint8 swipe)
     if(swipe == swipeLAction)
     {
     	DEBUG_LOG("call swipe left");
-        if(appConfigIsLeft()) /*left earbud need invert*/
+        if(Multidevice_IsLeft()) /*left earbud need invert*/
         {
             TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_SWIPER);            
         }
@@ -699,7 +700,7 @@ void runSwipeFunction(uint8 swipe)
     else if(swipe == swipeRAction)
     {
     	DEBUG_LOG("call swipe right");
-        if(appConfigIsLeft()) /*left earbud need invert*/
+        if(Multidevice_IsLeft()) /*left earbud need invert*/
         {
             TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_SWIPEL);            
         }

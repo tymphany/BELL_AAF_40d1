@@ -601,6 +601,7 @@ void BellUiAncControl(MessageId ui_input)
     {
         case ui_input_bell_ui_anc_on:
             tymAnc->curAncMode = ancon;
+            tymAnc->onceAnc = 1;
             BellUiAncOn();
             bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 1);
             break;
@@ -611,6 +612,7 @@ void BellUiAncControl(MessageId ui_input)
             break;
         case ui_input_bell_ui_speech_on:
             tymAnc->curAncMode = speech;
+            tymAnc->onceAnc = 1;
             BellUiSpeechOn();
             bell_gaia_anc_notify_event(BELL_GAIA_SPEECH_NOTIFY, 1);
             break;

@@ -16,6 +16,7 @@
 #include "earbud_tym_util.h"
 #include "tym_i2c_control.h"
 #include "earbud_config.h"
+#include "multidevice.h"
 /* ------------------------ Defines ------------------------ */
 
 /*! \brief Returns the PIOs bank number.
@@ -157,7 +158,7 @@ void tymGPIOInit(void)
     {
         case UARTtype: 
         {
-            if(appConfigIsLeft())
+            if(Multidevice_IsLeft())
                 uart_data_stream_init(STATUS_PIN, POWER_PIN, 86400);
             else
                 uart_data_stream_init(STATUS_PIN, POWER_PIN, 57600);

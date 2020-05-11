@@ -502,7 +502,7 @@ void bell_gaia_get_batterylevel(GAIA_UNHANDLED_COMMAND_IND_T *command)
     uint8 payload[payload_len];
     if(command->size_payload == 0)
     {
-        if(appConfigIsLeft() == TRUE)
+        if(Multidevice_IsLeft() == TRUE)
         {
             //local : left
             StateProxy_GetLocalAndRemoteBatteryLevels(&left_batt, &right_batt); //local,peer
@@ -524,7 +524,7 @@ void bell_gaia_get_batterylevel(GAIA_UNHANDLED_COMMAND_IND_T *command)
 
 void bell_gaia_get_twsstatus(GAIA_UNHANDLED_COMMAND_IND_T *command)
 {
-    bool left = appConfigIsLeft();
+    bool left = Multidevice_IsLeft();
     //bool primary = appSmIsPrimary();
     bool connected = appPeerSigIsConnected();   
     uint16 payload_len = 2;
@@ -838,7 +838,7 @@ void bell_gaia_anc_notify_event(uint16 notifyid,uint8 val)
 
 void bell_gaia_battery_notify_event(void)
 {
-    bool left = appConfigIsLeft();
+    bool left = Multidevice_IsLeft();
     uint16 payload_size = 1;
     uint8 payload[payload_size];
     uint8 val;
@@ -860,7 +860,7 @@ void bell_gaia_battery_notify_event(void)
 
 void bell_gaia_tws_link_notify_event(void)
 {
-    bool left = appConfigIsLeft();
+    bool left = Multidevice_IsLeft();
     bool connected = appPeerSigIsConnected();  
     uint8 val;
     uint16 payload_size = 1;

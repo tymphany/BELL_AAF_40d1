@@ -34,6 +34,7 @@ void sendCmdToChargingCase(uint8 command);
 void reportACKReport(void);
 void earbudCC_RecoveryCommPort(void);
 void earbudCC_ChangeUSBPort(void);
+void reportPowerOnStatus(void);
 #endif
 
 

@@ -148,7 +148,7 @@ typedef enum {
 void UARTStreamMessageHandler (Task pTask, MessageId pId, Message pMessage);
 void uart_data_stream_rx_data(Source src);
 void UART_RX_ISR(char Input);
-
+static void receviedPowerOn(void);
 //----------Global Function----------
 void uart_data_stream_init(uint16 PIO_UART_TX, uint16 PIO_UART_RX, int BRD);
 void uart_data_stream_tx_data(const uint8 *data, uint16 length);
@@ -252,6 +252,14 @@ void UARTStreamMessageHandler (Task pTask, MessageId pId, Message pMessage) {
         uart_data_stream_rx_data(((MessageMoreData *)pMessage)->source);
     }
 }
+
+static void receviedPowerOn(void)
+{
+    /*set ready and report battery for battery report to slow*/
+    reportPowerOnStatus();
+    MessageSend(LogicalInputSwitch_GetTask(), APP_POWER_ON, NULL);   
+}
+
 /*----------------------------------------------------------------------------*/
 void UART_RX_ISR(char Input) {
 
@@ -292,7 +300,7 @@ void UART_RX_ISR(char Input) {
                       //case 0x53454e8E: UR_NG_CMD = 0;  uart_data_stream_tx_data((const uint8*)"SEN@",4);  break;  /* SEN  reserve  xetx_statusEndCmd               = 14 return "SEN@" when receive whole command  */
 
 
-                        case 0x505731D8: UR_NG_CMD = 0;  MessageSend(LogicalInputSwitch_GetTask(), APP_POWER_ON, NULL);      break;  /* PW1           xerx_APP_POWER_ON               = 15 */
+                        case 0x505731D8: UR_NG_CMD = 0;  receviedPowerOn();     break;  /* PW1           xerx_APP_POWER_ON               = 15 */
                       //case 0x41444890: UR_NG_CMD = 0;  uart_data_stream_tx_data((const uint8*)"ADH", 3);  break;  /* ADH           xerx_APP_BUTTON_DELETE_HANDSET  = 16 */
                       //case 0x505730D7: UR_NG_CMD = 0; uart_data_stream_tx_data((const uint8*)"PW0", 3);  break;  /* PW0           xerx_APP_POWER_OFF              = 17 */
                         case 0x435054E7: UR_NG_CMD = 0;  MessageSend(LogicalInputSwitch_GetTask(), APP_CHANGE_USB_PORT, NULL);   break;  /* CPT           xerx_APP_CHANGE_USB_PORT        = 18 */

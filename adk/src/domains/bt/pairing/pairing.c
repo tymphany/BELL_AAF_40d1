@@ -41,6 +41,7 @@
 #include "earbud_tym_sync.h"
 #include "ui.h"
 #include "ui_prompts.h"
+#include "tym_anc.h"
 #endif
 
 /*! Macro for simplifying creating messages */
@@ -156,6 +157,9 @@ static void pairing_ExitIdle(pairingTaskData *thePairing)
 
 static void pairing_EnterDiscoverable(pairingTaskData *thePairing)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
+#endif    
     static const uint32 iac_array[] = { 0x9E8B33 };
 
     DEBUG_LOG("pairing_EnterHandsetDiscoverable");
@@ -192,7 +196,8 @@ static void pairing_EnterDiscoverable(pairingTaskData *thePairing)
         TaskList_MessageSendId(TaskList_GetFlexibleBaseTaskList(PairingGetClientList()), PAIRING_ACTIVE);
     }
 #ifdef ENABLE_TYM_PLATFORM
-    Ui_InjectUiInput(ui_input_prompt_pairing_continue);
+    if(tymAnc->onceAnc == 0)
+        Ui_InjectUiInput(ui_input_prompt_pairing_continue);
 #endif
     /* notify clients that pairing is in progress */
     pairing_MsgActivity(pairingInProgress, NULL);

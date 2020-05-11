@@ -386,6 +386,15 @@ void reportPowerOffStatus(void)
     _sendStatusCmd(statusPowerOff);
 }
 
+/*! \brief report power on battery to CC */
+/*! \brief report power off to CC */
+void reportPowerOnStatus(void)
+{
+    setSystemReady(TRUE);
+    procCmd.battpercent = appBatteryGetPercent(); 
+    reportBattStatus();        
+    
+}
 /*! \brief report ACK status */
 void reportACKReport(void)
 {

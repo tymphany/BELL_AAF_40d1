@@ -192,61 +192,62 @@ void stanc3_audiomute(bool enable)
 /*! \brief  register ANC to phy*/
 bool appAncClientRegister(Task task)
 {
-    tymAncTaskData *tymanc = TymAncGetTaskData();
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
 
-    if (NULL == tymanc->clients)
+    if (NULL == tymAnc->clients)
     {
         ancConfig *config = appConfigAnc();
-        tymanc->config = config;
-        tymanc->clients = TaskList_Create();
+        tymAnc->config = config;
+        tymAnc->clients = TaskList_Create();
         tym_power_on(i2c_device_anc_id);
         stanc3_init(config);
-        tymanc->prevAncMode = amcinvalid;
-        tymanc->curAncMode = ambient;
+        tymAnc->prevAncMode = amcinvalid;
+        tymAnc->curAncMode = ambient;
     }
 
-    return TaskList_AddTask(tymanc->clients, task);
+    return TaskList_AddTask(tymAnc->clients, task);
 }
 
 /*! \brief  Unregister ANC to phy*/
 void appAncClientUnregister(Task task)
 {
-    tymAncTaskData *tymanc = TymAncGetTaskData();
-    if(tymanc->clients != NULL)
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
+    if(tymAnc->clients != NULL)
     {
-        TaskList_RemoveTask(tymanc->clients, task);
-        if (0 == TaskList_Size(tymanc->clients))
+        TaskList_RemoveTask(tymAnc->clients, task);
+        if (0 == TaskList_Size(tymAnc->clients))
         {
             DEBUG_LOG("appAncClientUnregister");
-            stanc3_deinit(tymanc->config);
+            stanc3_deinit(tymAnc->config);
             tym_i2cdevice_deinit(i2c_device_anc_id);
             tym_power_off(i2c_device_anc_id);
-            TaskList_Destroy(tymanc->clients);
-            tymanc->clients = NULL;
-            tymanc->prevAncMode = amcinvalid;
-            tymanc->curAncMode = amcinvalid;
+            TaskList_Destroy(tymAnc->clients);
+            tymAnc->clients = NULL;
+            tymAnc->prevAncMode = amcinvalid;
+            tymAnc->curAncMode = amcinvalid;
         }
     }
 }
 
 void appAncPowerOn(void)
 {
-    tymAncTaskData *tymanc = TymAncGetTaskData();
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
     ancConfig *config = appConfigAnc(); 
     tym_power_on(i2c_device_anc_id);   
     stanc3_init(config);
-    tymanc->prevAncMode = amcinvalid;
-    tymanc->curAncMode = ambient;     
+    tymAnc->prevAncMode = amcinvalid;
+    tymAnc->curAncMode = ambient;     
 }
 
 void appAncPowerOff(void)
 {
-    tymAncTaskData *tymanc = TymAncGetTaskData();
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
     ancConfig *config = appConfigAnc();     
     stanc3_deinit(config);
     tym_power_off(i2c_device_anc_id);  
-    tymanc->prevAncMode = amcinvalid;
-    tymanc->curAncMode = amcinvalid;        
+    tymAnc->prevAncMode = amcinvalid;
+    tymAnc->curAncMode = amcinvalid;     
+    tymAnc->onceAnc = 0;   
 }
 
 /*! \brief  stanc3 anc off*/

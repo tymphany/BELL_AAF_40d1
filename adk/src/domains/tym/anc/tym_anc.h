@@ -37,6 +37,7 @@ typedef struct
     uint8      curAncMode;    
     uint8      ambientLevel;
     uint8      speechLevel;  
+    uint8      onceAnc;
 } tymAncTaskData;
 
 /*!< Task information for proximity sensor */

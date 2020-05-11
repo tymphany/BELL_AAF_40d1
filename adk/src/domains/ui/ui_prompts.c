@@ -26,7 +26,7 @@
 #include <earbud_sm.h>
 #include "state_proxy.h"
 #include "earbud_tym_sync.h"
-
+#include "tym_anc.h"
 #endif
 #include "system_clock.h"
 
@@ -382,10 +382,14 @@ static void prompts_RegisterMessageGroup(Task task, message_group_t group)
 
 static void uiPrompts_UiInputProcess(MessageId id)
 {
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
+        
     if(id == ui_input_prompt_pairing_continue)
-    {
+    {        
+        if(tymAnc->onceAnc != 0) /*have set ANC don't play pairing prompt*/
+            return;
         MessageCancelFirst(&the_prompts.task, ui_input_prompt_pairing_continue);
-        MessageSendLater(&the_prompts.task, ui_input_prompt_pairing_continue, NULL, D_SEC(3));
+        MessageSendLater(&the_prompts.task, ui_input_prompt_pairing_continue, NULL, D_SEC(5));//interval 3 second + 2 second pairing play time
         if(StateProxy_IsInEar() == TRUE)
             Ui_InjectUiInput(ui_input_prompt_pairing);
     }
