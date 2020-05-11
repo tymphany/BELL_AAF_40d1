@@ -2539,6 +2539,10 @@ static void appSm_HandleTwsTopologyRoleChange(tws_topology_role new_role)
             break;
 
         case tws_topology_role_dfu:
+#ifdef ENABLE_TYM_PLATFORM            
+            appPhyStateCancelTriggerSleepMode();            
+            appPhyStateCancelTriggerStandbyMode();
+#endif            
             DEBUG_LOG_STATE("appSm_HandleTwsTopologyRoleChange DFU. Make no changes");
             if (SmGetTaskData()->dfu_has_been_restarted)
             {
