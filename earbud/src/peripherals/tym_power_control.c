@@ -133,7 +133,7 @@ void tymGPIOInit(void)
     const xe_tymComMode COMType = GPIOtype;
 #endif    
     uint8 debug_port;
-
+    gpower_ctrl_config.power_init_dev = 0;//re-init GPIO
     _pinCtrlInOut(ENABLE_PIN,GPIO_CTR_OUT);   
     pioDriverPio(ENABLE_PIN,1);
     

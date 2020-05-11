@@ -641,6 +641,7 @@ void appPhyStatePrepareToEnterDormant(void)
 {
 #ifdef ENABLE_TYM_PLATFORM
     DEBUG_LOG("appPhyStatePrepareToEnterDormant");
+    appTouchPowerOff();
     if(getFactoryModeTopEnable() == TRUE)
     {
         DEBUG_LOG("ByPass Prox/anc register");
@@ -654,7 +655,6 @@ void appPhyStatePrepareToEnterDormant(void)
         //appProximityClientUnregister(&phy_state->task);
     }
     //appTouchClientUnregister(&phy_state->task);
-    appTouchPowerOff();
     setPSPresetEQ();
     if((getFactoryModeEnable() == TRUE) || (getFactoryModeTopEnable() == TRUE))
         setFactoryModeStatus(factory_disable);
