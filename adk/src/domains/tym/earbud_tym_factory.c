@@ -307,7 +307,7 @@ void factory_getsn(void* dataptr)
         if(buffer != NULL)
             free(buffer);
 
-        tymSendDatatoHost(snstr,sizeof(snstr));
+        tymSendDatatoHost(snstr,strlen((char *)snstr));
     }
     else
     {
@@ -319,16 +319,18 @@ void factory_getsn(void* dataptr)
 void factory_fwversion(void *dataptr)
 {
     UNUSED(dataptr);
-    uint16 major,minor;
+    uint16 major,minor,config;
     uint8  verstr[32];    
     xprint("factory_fwversion");    
-    UpgradeGetVersion(&major, &minor, NULL);
+    UpgradeGetVersion(&major, &minor, &config);
     memset(verstr,0x0,sizeof(verstr));
 #ifdef ENABLE_UART
     major |= (1 << 8);
-#endif    
+#endif
+
     snprintf((char *)verstr,sizeof(verstr),"%d.%d.%d.%d",(major >> 8),(major & 0xff),(minor >> 8),(minor & 0xff));
-    tymSendDatatoHost(verstr,sizeof(verstr));
+
+    tymSendDatatoHost(verstr,strlen((char *)verstr));
 }
 
 /*! \brief  factory get eq version */
@@ -338,7 +340,7 @@ void factory_eqversion(void *dataptr)
     uint8  verstr[32];
     memset(verstr,0x0,sizeof(verstr));
     snprintf((char *)verstr,sizeof(verstr),"%s",EQ_VER);
-    tymSendDatatoHost(verstr,sizeof(verstr));
+    tymSendDatatoHost(verstr,strlen((char *)verstr));
 }
 
 /*! \brief  factory get mac address */
@@ -472,7 +474,7 @@ void factory_readir(void *dataptr)
 	memset(outd,0x0,sizeof(outd));    
     snprintf(outd,sizeof(outd),"IR read:%d",read);
 
-    tymSendDatatoHost((uint8 *)outd,sizeof(outd));
+    tymSendDatatoHost((uint8 *)outd,strlen(outd));
 }
 
 /*! \brief  factory calibration hi value*/
@@ -1088,7 +1090,7 @@ void factory_get_eq_preset(void *dataptr)
     char data[8] = {0};
     snprintf((char *)data,sizeof(data),"%d",eq);
 
-    tymSendDatatoHost((uint8 *)data,sizeof(data));
+    tymSendDatatoHost((uint8 *)data,strlen(data));
 }
 
 /* ----------------- Global Function ----------------------- */

@@ -114,11 +114,11 @@ void tym_gaia_send_notification(uint16 event, uint8 status, uint16 payload_lengt
 void gaia_send_application_version(uint16 vendor_id)
 {
     GAIA_TRANSPORT *transport = GaiaGetTransport();
-    uint16 major,minor;
+    uint16 major,minor,config;
     /*  Read Device ID from config, irrespective of DEVICE_ID_PSKEY  */
     uint8 payload[8];
     uint16 payload_length;
-    UpgradeGetVersion(&major, &minor, NULL);
+    UpgradeGetVersion(&major, &minor, &config);
     memset(payload,0x0,sizeof(payload));
     payload[0] = (major >> 8);
     payload[1] = (major & 0xff);
