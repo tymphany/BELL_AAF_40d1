@@ -158,9 +158,11 @@ const ui_config_table_content_t earbud_ui_config_table[] =
     {APP_BUTTON_TAP_BISTO,             ui_provider_voice_ui,                context_voice_ui_default,               ui_input_va_notify                            },
     {APP_BUTTON_TAP_ANC,               ui_provider_audio_curation,          context_ambient_enabled,                ui_input_bell_ui_anc_on                       }, /*ambient enable change to anc*/
     {APP_BUTTON_TAP_ANC,               ui_provider_audio_curation,          context_ambient_disabled,               ui_input_bell_ui_ambient_on                   }, /*ambient disable change to ambient*/
+    {APP_BUTTON_VOLUME_UP,             ui_provider_hfp,                     context_hfp_voice_call_incoming,        ui_input_hfp_volume_up_start                  },
     {APP_BUTTON_VOLUME_UP,             ui_provider_hfp,                     context_hfp_voice_call_sco_active,      ui_input_hfp_volume_up_start                  },
     {APP_BUTTON_VOLUME_UP,             ui_provider_media_player,            context_av_is_streaming,                ui_input_av_volume_up_start                   },
     {APP_BUTTON_VOLUME_UP,             ui_provider_hfp,                     context_hfp_connected,                  ui_input_hfp_volume_up_start                  },
+    {APP_BUTTON_VOLUME_DOWN,           ui_provider_hfp,                     context_hfp_voice_call_incoming,        ui_input_hfp_volume_down_start                },    
     {APP_BUTTON_VOLUME_DOWN,           ui_provider_hfp,                     context_hfp_voice_call_sco_active,      ui_input_hfp_volume_down_start                },
     {APP_BUTTON_VOLUME_DOWN,           ui_provider_media_player,            context_av_is_streaming,                ui_input_av_volume_down_start                 },
     {APP_BUTTON_VOLUME_DOWN,           ui_provider_hfp,                     context_hfp_connected,                  ui_input_hfp_volume_down_start                },
