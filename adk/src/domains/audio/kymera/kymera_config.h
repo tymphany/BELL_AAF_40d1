@@ -18,7 +18,11 @@
 #ifdef QCC3020_FF_ENTRY_LEVEL_AA
 #define KYMERA_CONFIG_PROMPT_VOLUME             (-16)   /* Reduce for Aura LC RDP as -10dB is too loud */
 #else
+#ifdef ENABLE_TYM_PLATFORM
+#define KYMERA_CONFIG_PROMPT_VOLUME             (-20)
+#else
 #define KYMERA_CONFIG_PROMPT_VOLUME             (-10)
+#endif
 #endif
 /*! \brief Defining USB as downloadable capability for Aura2.1 variant */
 #if defined(HAVE_STR_ROM_2_0_1)

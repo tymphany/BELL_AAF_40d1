@@ -647,6 +647,8 @@ void appKymeraSpeakerEqOnOff(bool spk_eq1_enable, bool spk_eq2_enable);
 void appKymeraSelectUsrEQPreset(unsigned char preset_no);
 void set_cur_preset_eq(uint8 eq);
 uint8 get_cur_preset_eq(void);
+void appKymeraSetPromptVol(uint8 lv);
+int appKymeraGetPromptVol(uint8 flag);
 #endif
 
 #endif /* KYMERA_PRIVATE_H */

@@ -15,6 +15,12 @@
 #define VOLUME_CONTROL_SET_AUX_TTP_VERSION_MSB 0x2
 #define BUFFER_SIZE_FACTOR 4
 
+#ifdef ENABLE_TYM_PLATFORM
+#define KYMERA_CONFIG_PROMPT_HIGH_VOLUME     (-10)
+#define KYMERA_CONFIG_PROMPT_FINDME_VOLUME     (-3)
+uint8 prompt_level = 0;
+#endif
+
 /*! \brief Setup the prompt audio source.
     \param source The prompt audio source.
 */
@@ -143,6 +149,9 @@ void appKymeraHandleInternalTonePromptPlay(const KYMERA_INTERNAL_TONE_PROMPT_PLA
 {
     kymeraTaskData *theKymera = KymeraGetTaskData();
     Operator op;
+    #ifdef ENABLE_TYM_PLATFORM
+    uint8 idle_flag = 0;
+    #endif
 
     DEBUG_LOG("appKymeraHandleInternalTonePromptPlay, prompt %x, tone %p, ttp %d, int %u, lock 0x%x, mask 0x%x",
                 msg->prompt, msg->tone, msg->time_to_play, msg->interruptible, msg->client_lock, msg->client_lock_mask);
@@ -166,6 +175,9 @@ void appKymeraHandleInternalTonePromptPlay(const KYMERA_INTERNAL_TONE_PROMPT_PLA
             ChainStart(theKymera->chainu.output_vol_handle);
             op = ChainGetOperatorByRole(theKymera->chainu.output_vol_handle, OPR_VOLUME_CONTROL);
             OperatorsVolumeMute(op, FALSE);
+            #ifdef ENABLE_TYM_PLATFORM
+            idle_flag = 1;
+            #endif
 
         // fall-through
         case KYMERA_STATE_SCO_ACTIVE:
@@ -178,8 +190,13 @@ void appKymeraHandleInternalTonePromptPlay(const KYMERA_INTERNAL_TONE_PROMPT_PLA
             capablity_version_t vol_op_version;
             kymera_chain_handle_t output_chain = theKymera->chainu.output_vol_handle;
             Source aux_source = appKymeraCreateTonePromptChain(msg);
+            #ifndef ENABLE_TYM_PLATFORM
             int16 volume_db = (msg->tone != NULL) ? (KYMERA_DB_SCALE * KYMERA_CONFIG_TONE_VOLUME) :
                                                     (KYMERA_DB_SCALE * KYMERA_CONFIG_PROMPT_VOLUME);
+            #else
+            int16 volume_db = (msg->tone != NULL) ? (KYMERA_DB_SCALE * KYMERA_CONFIG_TONE_VOLUME) :
+                                                    (KYMERA_DB_SCALE * appKymeraGetPromptVol(idle_flag));
+            #endif
 
             /* Connect tone/prompt chain to output */
             ChainConnectInput(output_chain, aux_source, EPR_VOLUME_AUX);
@@ -313,3 +330,18 @@ void appKymeraTonePromptStop(void)
         theKymera->tone_client_lock_mask = 0;
     }
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+void appKymeraSetPromptVol(uint8 lv)
+{
+    prompt_level = lv;
+}
+
+int appKymeraGetPromptVol(uint8 flag)
+{
+    if(flag)
+        return (prompt_level ? KYMERA_CONFIG_PROMPT_FINDME_VOLUME: KYMERA_CONFIG_PROMPT_VOLUME);
+    else
+        return (prompt_level ? KYMERA_CONFIG_PROMPT_FINDME_VOLUME: KYMERA_CONFIG_PROMPT_HIGH_VOLUME);
+}
+#endif
