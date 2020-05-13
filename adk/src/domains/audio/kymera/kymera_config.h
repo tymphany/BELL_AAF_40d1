@@ -19,7 +19,7 @@
 #define KYMERA_CONFIG_PROMPT_VOLUME             (-16)   /* Reduce for Aura LC RDP as -10dB is too loud */
 #else
 #ifdef ENABLE_TYM_PLATFORM
-#define KYMERA_CONFIG_PROMPT_VOLUME             (-20)
+#define KYMERA_CONFIG_PROMPT_VOLUME             (-16)
 #else
 #define KYMERA_CONFIG_PROMPT_VOLUME             (-10)
 #endif

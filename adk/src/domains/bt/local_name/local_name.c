@@ -121,11 +121,7 @@ void LocalName_ChangeByApp(uint8 *btname,uint16 size)
 {
     uint16 pskeystore[32];
     int  retbytes;
-
-    /*change name now*/
-    ConnectionChangeLocalName(size, btname);
-    ConnectionReadLocalName((Task) &local_name_task);
-    /* update name to psid*/
+    memset(pskeystore, 0x0, sizeof(pskeystore));
     ByteUtilsMemCpyPackString(pskeystore,btname,size);
     retbytes = ByteUtilsGetPackedStringLen(pskeystore,64);
     retbytes = PsStore(PSID_BTNAME,pskeystore,PS_SIZE_ADJ(retbytes));

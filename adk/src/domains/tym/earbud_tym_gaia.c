@@ -100,13 +100,16 @@ void bell_gaia_no_operation(GAIA_UNHANDLED_COMMAND_IND_T *command);
  */
 void bell_gaia_rename(GAIA_UNHANDLED_COMMAND_IND_T *command)
 {
+    int max_len = 15,len = command->size_payload;
     //Add rename function at chip init
-    if(command->size_payload < 64)
+    if((command->size_payload < 64) && (command->size_payload > 0))
     {
         uint8 btname[64];
         memset(btname, 0x0, sizeof(btname));
-        memcpy(btname, command->payload, command->size_payload);
-        LocalName_ChangeByApp(btname, command->size_payload);
+        if(len > max_len)
+            len = max_len;            
+        memcpy(btname, command->payload, len);
+        LocalName_ChangeByApp(btname, len);
         /* send response */
         tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
         appPowerRebootWaitSec(1);
