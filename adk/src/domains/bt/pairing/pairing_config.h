@@ -14,9 +14,9 @@
 /*! Minimum RSSI to pair with a device */
 #define appConfigPeerPairingMinRssi() (-60)
 #else
-#ifdef ENABLE_TYM_PLATFORM /*for factory -50 can't tws pairing success*/
+#ifdef ENABLE_TYM_PLATFORM /*for E.E.request*/
 /*! Minimum RSSI to pair with a device */
-#define appConfigPeerPairingMinRssi() (-90)
+#define appConfigPeerPairingMinRssi() (-50)
 #else
 /*! Minimum RSSI to pair with a device */
 #define appConfigPeerPairingMinRssi() (-50)
