@@ -77,6 +77,11 @@ inline static bool uiPrompt_isNotARepeatPlay(uint16 prompt_index)
     return prompt_index != the_prompts.last_prompt_played_index;
 }
 
+bool uiPrompt_NoPromptPlay(void)
+{
+    return (the_prompts.last_prompt_played_index == PROMPT_NONE);
+}
+
 /*! \brief Play prompt.
 
     \param prompt_index The prompt to play from the mappings table.

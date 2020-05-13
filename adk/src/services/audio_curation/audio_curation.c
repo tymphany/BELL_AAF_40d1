@@ -19,6 +19,7 @@
 #include "kymera_private.h"
 #include "earbud_tym_gaia.h"
 #include "state_proxy.h"
+#include "ui_prompts.h"
 #endif
 
 #define audioCuration_SendEvent(msg_id) TaskList_MessageSendId(audioCuration_GetMessageClients(), msg_id)
@@ -235,12 +236,26 @@ static void handleUiDomainInput(MessageId ui_input)
     {
         case ui_input_anc_on:
             DEBUG_LOG("handleUiDomainInput, anc on input");
+#ifdef ENABLE_TYM_PLATFORM        /*temp solution, prompt play will cut when enable internal ANC*/    
+            if(uiPrompt_NoPromptPlay() == TRUE)
+                AncStateManager_Enable();
+            else                                    
+                MessageSendLater(audioCuration_UiTask(), ui_input, NULL, D_SEC(1));
+#else
             AncStateManager_Enable();
+#endif                
             break;
 
         case ui_input_anc_off:
             DEBUG_LOG("handleUiDomainInput, anc off input");
+#ifdef ENABLE_TYM_PLATFORM                
+            if(uiPrompt_NoPromptPlay() == TRUE)
+                AncStateManager_Disable();
+            else
+                MessageSendLater(audioCuration_UiTask(), ui_input, NULL, D_SEC(1));   
+#else
             AncStateManager_Disable();
+#endif                
             break;
 
         case ui_input_anc_toggle_on_off:
@@ -267,9 +282,15 @@ static void handleUiDomainInput(MessageId ui_input)
         case ui_input_anc_set_mode_9:
         case ui_input_anc_set_mode_10:
             DEBUG_LOG("handleUiDomainInput, anc set mode input");
-            AncStateManager_SetMode(getAncModeFromUiInput(ui_input));
+#ifdef ENABLE_TYM_PLATFORM        /*temp solution, prompt play will cut when enable internal ANC*/                
+            if(uiPrompt_NoPromptPlay() == TRUE)
+                AncStateManager_SetMode(getAncModeFromUiInput(ui_input));
+            else                    
+                MessageSendLater(audioCuration_UiTask(), ui_input, NULL, D_SEC(1));
             break;
-
+#else
+            AncStateManager_SetMode(getAncModeFromUiInput(ui_input));
+#endif
         case ui_input_anc_set_next_mode:
             DEBUG_LOG("handleUiDomainInput, anc next mode input");
             AncStateManager_SetNextMode();
