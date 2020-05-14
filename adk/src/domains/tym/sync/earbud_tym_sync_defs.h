@@ -12,7 +12,7 @@ typedef struct tym_sync_app_configuration
     uint8 auto_power_off_cmd;
     uint8 auto_power_off_timer;
     uint8 enable_auto_wear;
-    uint8 resversed;
+    uint8 enable_auto_play;
     uint8 custom_ui[8];
 }tym_sync_app_configuration_t;
 

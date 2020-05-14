@@ -388,7 +388,17 @@ static rule_action_t ruleInEarA2dpRestart(void)
 {
 #ifdef ENABLE_TYM_PLATFORM
    /*default auto play disable*/
-   return rule_action_ignore;
+    if(!(TymGet_AppSetting()->enable_auto_play))
+        return rule_action_ignore;
+    else
+    {
+        if (appSmIsA2dpRestartPending())
+        {
+            PRIMARY_RULE_LOG("ruleInEarA2dpRestart, run as A2DP is paused within restart timer");
+            return rule_action_run;
+        }else
+            return rule_action_ignore;
+    }
 #else
     if (appSmIsA2dpRestartPending())
     {
