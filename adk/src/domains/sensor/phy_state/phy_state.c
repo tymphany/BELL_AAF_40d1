@@ -897,7 +897,11 @@ void appPhySateAppConfiguration(void)
         app_set->custom_ui[uiseq_left_tapx1] = uifunc_play_pause_with_amb;
         app_set->custom_ui[uiseq_right_tapx1] = uifunc_play_pause_with_amb;
         app_set->custom_ui[uiseq_left_tapx2] = uifunc_anc_amb;
+#ifdef INCLUDE_GAA        
         app_set->custom_ui[uiseq_right_tapx2] = uifunc_google_notification;
+#else
+        app_set->custom_ui[uiseq_right_tapx2] = uifunc_anc_amb;
+#endif        
         app_set->custom_ui[uiseq_left_tapx3] = uifunc_disable;
         app_set->custom_ui[uiseq_right_tapx3] = uifunc_disable;
         PsStore(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
@@ -1031,11 +1035,20 @@ void appPhyStateCustomIdTapx1(uint8 act)
     uint8 id = appPhyStateGetCustomUiId(act);
     if(id == uifunc_play_pause_with_amb)
     {
+#ifdef INCLUDE_GAA        
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel_ambient);
+#else
+        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_pp_ambient);//first ambient check,play ->ambient
+        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);
+#endif        
     }
     else if(id == uifunc_play_pause)
     {
+#ifdef INCLUDE_GAA          
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel);
+#else
+        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);
+#endif        
     }
 }
 
