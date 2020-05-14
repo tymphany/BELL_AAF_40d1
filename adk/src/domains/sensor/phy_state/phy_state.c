@@ -890,6 +890,8 @@ void appPhySateAppConfiguration(void)
         app_set->auto_power_off_cmd = 0x02;//app power off configure 30 min
         app_set->auto_power_off_timer = 30;//30 min;
         app_set->enable_auto_wear = 1; //default no wear pause
+        app_set->enable_auto_play = 0; //add default value auto play is zero
+        app_set->ambient_ext_anc = 1;
         app_set->custom_ui[uiseq_left_swipe] = uifunc_track;
         app_set->custom_ui[uiseq_right_swipe] = uifunc_vol;
         app_set->custom_ui[uiseq_left_tapx1] = uifunc_play_pause_with_amb;

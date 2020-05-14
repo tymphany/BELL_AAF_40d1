@@ -20,6 +20,7 @@
 #include "earbud_tym_gaia.h"
 #include "state_proxy.h"
 #include "ui_prompts.h"
+#include "earbud_tym_sync.h"
 #endif
 
 #define audioCuration_SendEvent(msg_id) TaskList_MessageSendId(audioCuration_GetMessageClients(), msg_id)
@@ -539,9 +540,20 @@ void setupSpeechLevel(void)
 /*\brief external ANC on,internal ANC on, choose different mode */
 static void BellUiAmbientOn(void)
 {
-    if(getExtAncEnableStatus() == FALSE)
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    if(app_set->ambient_ext_anc)
     {
-        Ui_InjectUiInput(ui_input_ext_anc_on);
+        if(getExtAncEnableStatus() == FALSE)
+        {
+            Ui_InjectUiInput(ui_input_ext_anc_on);
+        }
+    }
+    else
+    {
+        if(getExtAncEnableStatus() == TRUE)
+        {
+            Ui_InjectUiInput(ui_input_ext_anc_off);
+        }
     }
     setupAmbientLevel();
     if(AncStateManager_IsEnabled() == FALSE)
