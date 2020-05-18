@@ -51,7 +51,7 @@ typedef enum device_upgrade_internal_messages
    will be written to the upgrade PS key and used in future.
 */
 #ifdef ENABLE_TYM_PLATFORM
-#define BellFW_LVer              20
+#define BellFW_LVer              21
 
 #define BellFW_HVer              0
 
