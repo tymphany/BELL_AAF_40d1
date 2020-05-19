@@ -384,13 +384,13 @@ static void handleUiDomainInput(MessageId ui_input)
         case ui_input_bell_ui_speech_on:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_speech_on");
             if(StateProxy_IsInCase() == FALSE)
-                Ui_InjectUiInput(ui_input_prompt_speech_off);
+                Ui_InjectUiInput(ui_input_prompt_speech_on);
             BellUiAncControl(ui_input);
             break;
         case ui_input_bell_ui_speech_off:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_speech_off");
             if(StateProxy_IsInCase() == FALSE)
-                Ui_InjectUiInput(ui_input_prompt_speech_on);
+                Ui_InjectUiInput(ui_input_prompt_speech_off);
             BellUiAncControl(ui_input);
             break;
         case ui_input_bell_ui_pp_ambient:
