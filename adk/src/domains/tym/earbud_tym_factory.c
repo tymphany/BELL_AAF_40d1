@@ -116,8 +116,9 @@ void factory_dmic1start(void *);
 void factory_dmic1end(void *);
 void factory_dmic2start(void *);
 void factory_dmic2end(void *);
-void factory_anc(void *);
+void factory_externalanc(void *);
 void factory_ancvol(void *);
+void factory_internalanc(void *);
 void factory_powercharge(void *);
 void factory_cvcmic(void *);
 void factory_reboot(void *);
@@ -176,8 +177,9 @@ const tymFactory_s tymFactoryCmdList[] = {
   { "023", factory_dmic1end},
   { "024", factory_dmic2start},
   { "025", factory_dmic2end},  
-  { "031", factory_anc}, 
+  { "031", factory_externalanc}, 
   { "032", factory_ancvol},
+  { "033", factory_internalanc},
   { "037", factory_powercharge},
   { "038", factory_cvcmic},
   { "039", factory_reboot},
@@ -552,8 +554,8 @@ void factory_dmic2end(void *dataptr)
     dmicend(AUDIO_CHANNEL_B,AUDIO_CHANNEL_A);   
 }
 
-/*! \brief  factory anc on/off*/
-void factory_anc(void *dataptr)
+/*! \brief  factory external anc on/off*/
+void factory_externalanc(void *dataptr)
 {
     const char delim[2] = " ";
     uint8 par[3];
@@ -604,6 +606,47 @@ void factory_ancvol(void *dataptr)
     memset(volstr,0x0,sizeof(volstr));
 	snprintf((char *)volstr,sizeof(volstr),"anc vol %d",vol);
     tymSendDatatoHost((uint8 *)volstr,strlen(volstr));            
+}
+
+/*! \brief  factory internal anc on/off*/
+void factory_internalanc(void *dataptr)
+{
+    const char delim[2] = " ";
+    uint8 par[3];
+    int dataindex = 0;
+    if(dataptr == NULL)
+    {
+        tymSendDatatoHost((uint8 *)"Err_00", sizeof("Err_00"));
+        return;
+    }
+
+    while(dataptr != NULL)
+    {
+        par[dataindex] = atoi(dataptr);
+        dataindex++;
+        dataptr = strtok(NULL,delim);
+        if(dataindex > 1)
+            break;
+    }
+    if(dataindex > 1)
+    {
+        tymSendDatatoHost((uint8 *)"Err_00", sizeof("Err_00"));
+        return;
+    }    
+    if(par[0] == 0) //disable
+    {
+        AncStateManager_Disable();
+        tymSendDatatoHost((uint8 *)"1", sizeof("1"));
+    }    
+    else if(par[0] == 1) //enable       
+    {    
+        AncStateManager_Enable();
+        tymSendDatatoHost((uint8 *)"1", sizeof("1"));        
+    }
+    else
+    {
+        tymSendDatatoHost((uint8 *)"Err_00", sizeof("Err_00"));        
+    }    
 }
 
 /*! \brief  factory get power change */
