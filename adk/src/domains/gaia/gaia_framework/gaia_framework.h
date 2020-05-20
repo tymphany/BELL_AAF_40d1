@@ -126,7 +126,7 @@ void GaiaFramework_SendError(uint8 feature_id, uint8 pdu_id, uint8 status_code);
 void GaiaFramework_SendNotification(uint8 feature_id, uint8 notification_id, uint8 length, uint8 * payload);
 #ifdef ENABLE_TYM_PLATFORM
 #define   GAIA_COMMAND_SET_DFU_START_COMMAND  (0x0333)
-void gaia_send_application_version(uint16 vendor_id);
+void gaia_send_application_version(uint16 vendor_id, uint16 command_id);
 bool tym_gaia_is_acknowledgement(uint16 command_id);
 void tym_gaia_send_simple_response(uint16 command_id,uint8 status);
 void tym_gaia_send_response(uint16 command_id,uint8 status,uint16 payload_length, uint8 *payload);

@@ -111,7 +111,7 @@ void tym_gaia_send_notification(uint16 event, uint8 status, uint16 payload_lengt
     GaiaBuildAndSendSynch(transport, BELL_VENDOR_QTIL, event | GAIA_ACK_MASK, status, payload_length, payload);
 }
 
-void gaia_send_application_version(uint16 vendor_id)
+void gaia_send_application_version(uint16 vendor_id,uint16 command_id)
 {
     GAIA_TRANSPORT *transport = GaiaGetTransport();
     uint16 major,minor,config;
@@ -120,14 +120,19 @@ void gaia_send_application_version(uint16 vendor_id)
     uint16 payload_length;
     UpgradeGetVersion(&major, &minor, &config);
     memset(payload,0x0,sizeof(payload));
+    #ifdef ENABLE_UART
+    payload[0] = (major |(1 << 8));
+    #else
     payload[0] = (major >> 8);
+    #endif
+
     payload[1] = (major & 0xff);
     payload[2] = (minor >> 8);
     payload[3] = (minor & 0xff);
     DEBUG_LOG("payload 0x%x 0x%x 0x%x 0x%x\n",payload[0],payload[1],payload[2],payload[3]);
     payload_length = 4;
 
-    GaiaBuildAndSendSynch(transport, vendor_id, GAIA_COMMAND_GET_APPLICATION_VERSION | GAIA_ACK_MASK, GAIA_STATUS_SUCCESS, payload_length, payload);
+    GaiaBuildAndSendSynch(transport, vendor_id, command_id | GAIA_ACK_MASK, GAIA_STATUS_SUCCESS, payload_length, payload);
 }
 
 void tym_send_switch_eq_preset(uint16 vendor_id, uint8 size_payload, uint8* payload)
@@ -150,7 +155,7 @@ void tym_send_switch_eq_preset(uint16 vendor_id, uint8 size_payload, uint8* payl
     }
 
     package_length = TYM_SWITCH_EQ_COMMAND_PAY_LOAD_SIZE;
-    GaiaBuildAndSendSynch(transport, vendor_id, GAIA_COMMAND_SWITCH_EQ_CONTROL | GAIA_ACK_MASK, GAIA_STATUS_SUCCESS, package_length, package);
+    GaiaBuildAndSendSynch(transport, vendor_id, BELL_GAIA_SET_EQ_CONTROL_COMMAND | GAIA_ACK_MASK, GAIA_STATUS_SUCCESS, package_length, package);
 }
 
 bool appTYMHandleControlCommand(Task task, const GAIA_UNHANDLED_COMMAND_IND_T *command)

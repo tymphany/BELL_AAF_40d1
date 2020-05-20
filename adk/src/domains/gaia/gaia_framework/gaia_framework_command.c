@@ -121,7 +121,7 @@ void GaiaFrameworkCommand_CommandHandler(Task task, const GAIA_UNHANDLED_COMMAND
                         gaiaFrameworkCommand_ReplyV2GetApiVersion(command);
                         break;
                     case GAIA_COMMAND_GET_APPLICATION_VERSION:
-                        gaia_send_application_version(command->vendor_id);
+                        gaia_send_application_version(command->vendor_id,command->command_id);
                         break;
                     default:
                         DEBUG_LOG("GAIA_COMMAND_TYPE_STATUS does not support");

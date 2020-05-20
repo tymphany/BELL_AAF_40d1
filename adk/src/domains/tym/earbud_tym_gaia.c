@@ -27,6 +27,10 @@
 #include "earbud_config.h"
 #include "proximity.h"
 #include "multidevice.h"
+#include "kymera_private.h"
+#include "earbud_tym_psid.h"
+#include "logical_input_switch.h"
+#include "1_button.h"
 /* Todo
 #include "sink_tym_anc.h"
 #include "sink_tym_main.h"
@@ -89,6 +93,10 @@ void bell_gaia_get_twslinkstate(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_get_psval(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_set_ir_config(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_get_play_pause_status(GAIA_UNHANDLED_COMMAND_IND_T *command);
+void bell_gaia_get_fw_version(GAIA_UNHANDLED_COMMAND_IND_T *command);
+void bell_gaia_get_serial_number(GAIA_UNHANDLED_COMMAND_IND_T *command);
+void bell_gaia_set_findme(GAIA_UNHANDLED_COMMAND_IND_T *command);
+void bell_gaia_set_audio_contorl(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_set_eq_control(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_get_eq_contorl(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_no_operation(GAIA_UNHANDLED_COMMAND_IND_T *command);
@@ -684,19 +692,124 @@ void bell_gaia_get_play_pause_status(GAIA_UNHANDLED_COMMAND_IND_T *command)
 
 void bell_gaia_set_eq_control(GAIA_UNHANDLED_COMMAND_IND_T *command)
 {
-    //Todo : Not implement function yet
-    tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
+    if(command->size_payload == 1)
+    {
+        tym_send_switch_eq_preset(command->vendor_id, command->size_payload, command->payload);
+    }
+    else
+    {
+        tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_INVALID_PARAMETER);
+    }
 }
 
 void bell_gaia_get_eq_contorl(GAIA_UNHANDLED_COMMAND_IND_T *command)
 {
-    //Todo : Not implement function yet
-    tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
+    uint16 payload_len = 1;
+    uint8 payload[payload_len];
+
+    if(command->size_payload == 0)
+    {
+        payload[0] = get_cur_preset_eq();
+        tym_gaia_send_response(command->command_id, GAIA_STATUS_SUCCESS, payload_len, payload);
+    }
+    else
+    {
+        tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_INVALID_PARAMETER);
+    }
 }
 
 void bell_gaia_no_operation(GAIA_UNHANDLED_COMMAND_IND_T *command)
 {
     tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
+}
+
+void bell_gaia_get_fw_version(GAIA_UNHANDLED_COMMAND_IND_T *command)
+{
+    gaia_send_application_version(command->vendor_id, command->command_id);
+}
+
+void bell_gaia_get_serial_number(GAIA_UNHANDLED_COMMAND_IND_T *command)
+{
+    #define PSKEY_SN_STRING             0x02C3
+    uint16 payload_len;
+    uint8 payload[10] = {0};
+
+    if(command->size_payload == 0)
+    {
+        payload_len = PsFullRetrieve(PSKEY_SN_STRING, NULL, 0);
+        if(payload_len)
+        {
+            PsFullRetrieve(PSKEY_SN_STRING, payload, payload_len);
+            DEBUG_LOG("sn %s\n",payload);
+            tym_gaia_send_response(command->command_id, GAIA_STATUS_SUCCESS, payload_len*2, payload);
+        }
+    }
+    else
+    {
+        tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_INVALID_PARAMETER);
+    }
+}
+
+void bell_gaia_set_findme(GAIA_UNHANDLED_COMMAND_IND_T *command)
+{
+    if(command->size_payload == 1)
+    {
+        DEBUG_LOG("FindMe %x\n",command->payload[0]);
+        appKymeraSetPromptVol(command->payload[0]);
+        tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
+    }
+    else
+    {
+        tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_INVALID_PARAMETER);
+    }
+}
+
+void bell_gaia_set_audio_contorl(GAIA_UNHANDLED_COMMAND_IND_T *command)
+{
+    if(command->size_payload == 1)
+    {
+        DEBUG_LOG("Audio contorl %x\n",command->payload[0]);
+        switch(command->payload[0])
+        {
+            case BELL_GAIA_AUDIO_CONTROL_VOL_UP:
+                MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_UP, NULL);
+                tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_SUCCESS);
+                break;
+            case BELL_GAIA_AUDIO_CONTROL_VOL_DOWN:
+                MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_DOWN, NULL);
+                tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_SUCCESS);
+                break;
+            case BELL_GAIA_AUDIO_CONTROL_PLAY:
+                Ui_InjectUiInput(ui_input_play);
+                tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_SUCCESS);
+                break;
+            case BELL_GAIA_AUDIO_CONTROL_PAUSE:
+                Ui_InjectUiInput(ui_input_pause);
+                tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_SUCCESS);
+                break;
+            case BELL_GAIA_AUDIO_CONTROL_Stop:
+                Ui_InjectUiInput(ui_input_stop_av_connection);
+                tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_SUCCESS);
+                break;
+            case BELL_GAIA_AUDIO_CONTROL_SKIP_FORWARD:
+                Ui_InjectUiInput(ui_input_av_forward);
+                tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_SUCCESS);
+                break;
+            case BELL_GAIA_AUDIO_CONTROL_BACK_FORWARD:
+                Ui_InjectUiInput(ui_input_av_backward);
+                tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_SUCCESS);
+                break;
+            case BELL_GAIA_AUDIO_CONTROL_MIC_MUTE:
+            case BELL_GAIA_AUDIO_CONTROL_MIC_UNMUTE:
+            default:
+                tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_NOT_SUPPORTED);
+            break;
+        }
+    }
+    else
+    {
+        tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_INVALID_PARAMETER);
+    }
 }
 
 void bell_gaia_set_auto_play(GAIA_UNHANDLED_COMMAND_IND_T *command)
@@ -861,6 +974,18 @@ bool _bell_GAIAMessageHandle(Task task, const GAIA_UNHANDLED_COMMAND_IND_T *mess
         case BELL_GAIA_GET_PLAYPAUSE_STATUS_COMMAND:
             bell_gaia_get_play_pause_status(command);
             break;    
+        case BELL_GAIA_GET_FIRMWARE_VERSION_COMMAND:
+            bell_gaia_get_fw_version(command);
+            break;
+        case BELL_GAIA_GET_SERIAL_NUMBER_COMMAND:
+            bell_gaia_get_serial_number(command);
+            break;
+        case BELL_GAIA_SET_FINDME_COMMAND:
+            bell_gaia_set_findme(command);
+            break;
+        case BELL_GAIA_SER_AUDIO_CONTROL_COMMAND:
+            bell_gaia_set_audio_contorl(command);
+            break;
         case BELL_GAIA_SET_EQ_CONTROL_COMMAND:
             bell_gaia_set_eq_control(command);
             break;
