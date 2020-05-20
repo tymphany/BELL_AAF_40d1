@@ -146,6 +146,8 @@
     UI_INPUT(ui_input_prompt_battery_low) \
     UI_INPUT(ui_input_prompt_role_switch) \
     UI_INPUT(ui_input_prompt_findme) \
+    UI_INPUT(ui_input_prompt_stop_findme) \
+    UI_INPUT(ui_input_prompt_repeat_findme) \
     UI_INPUT(ui_input_prompt_poweron) \
     UI_INPUT(ui_input_prompt_poweroff) \
     UI_INPUT(ui_input_prompt_connected_check) \

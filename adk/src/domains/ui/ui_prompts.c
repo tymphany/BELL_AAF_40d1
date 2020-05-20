@@ -401,7 +401,13 @@ static void uiPrompts_UiInputProcess(MessageId id)
     else if(id == ui_input_prompt_connected)
     {
         DEBUG_LOG("check connect prompt"); 
-    }    
+    }
+    else if(id == ui_input_prompt_repeat_findme)
+    {
+        MessageCancelFirst(&the_prompts.task, ui_input_prompt_repeat_findme);
+        MessageSendLater(&the_prompts.task, ui_input_prompt_repeat_findme, NULL, D_SEC(5));//interval 3 second + 2 second pairing play time
+        Ui_InjectUiInput(ui_input_prompt_findme);
+    }
     else if(StateProxy_IsInCase() == TRUE )
     {
         DEBUG_LOG("In Case don't play prompts");
@@ -461,6 +467,9 @@ static void uiPrompts_UiInputProcess(MessageId id)
             break;
         case ui_input_prompt_findme:
             UiPrompts_SendTymPrompt(PROMPT_FINDME);
+            break;
+        case ui_input_prompt_stop_findme:
+            MessageCancelFirst(&the_prompts.task, ui_input_prompt_repeat_findme);
             break;
         case ui_input_prompt_poweron:
             UiPrompts_SendTymPrompt(PROMPT_POWER_ON);
