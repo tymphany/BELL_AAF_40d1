@@ -498,7 +498,6 @@ static void twsTopology_HandleProcPeerPairResult(PROC_PAIR_PEER_RESULT_T* pppr)
 static void twsTopology_HandlePhyStateChangedInd(PHY_STATE_CHANGED_IND_T* ind)
 {
 #ifdef ENABLE_TYM_PLATFORM
-    twsTopologyTaskData *tws_taskdata = TwsTopologyGetTaskData();
     bdaddr peer_addr;
 #endif
     DEBUG_LOG("twsTopology_HandlePhyStateChangedInd ev %u", ind->event);
