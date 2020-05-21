@@ -1,5 +1,5 @@
 # Upgrade version major.minor
-0.21
+0.22
 # Number of compatible versions
 5
 # Compatible version #1 (major.minor)
