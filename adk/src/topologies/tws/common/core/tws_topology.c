@@ -214,12 +214,8 @@ static void twsTopology_EvaluatePhyState(rule_events_t event_mask)
         DEBUG_LOG("twsTopology_EvaluatePhyState setting unhandled IN_CASE event in new rule set");
         if(appDeviceGetPeerBdAddr(&peer_addr))
         {
-            if(TwsTopology_IsAnyGoalPending() == FALSE)
-            {
-                twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
-                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
-            }
-
+            twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+            twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
         }
 
     }
@@ -229,11 +225,8 @@ static void twsTopology_EvaluatePhyState(rule_events_t event_mask)
         DEBUG_LOG("twsTopology_EvaluatePhyState setting unhandled OUT_CASE event in new rule set");
         if(appDeviceGetPeerBdAddr(&peer_addr))
         {
-            if(TwsTopology_IsAnyGoalPending() == FALSE)
-            {
-                twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
-                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);
-            }
+            twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+            twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);
         }
     }
 #else
@@ -516,47 +509,15 @@ static void twsTopology_HandlePhyStateChangedInd(PHY_STATE_CHANGED_IND_T* ind)
         case phy_state_event_user_poweron:
             if(appDeviceGetPeerBdAddr(&peer_addr))
             {
-                if(TwsTopology_IsAnyGoalPending() == FALSE)
-                {
-                    twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
-                    twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);
-                    tws_taskdata->try_again = FALSE;
-                }
-                else
-                {
-                    if(tws_taskdata->try_again == FALSE)
-                    {
-                        PHY_STATE_CHANGED_IND_T *message = PanicUnlessNew(PHY_STATE_CHANGED_IND_T);
-                        tws_taskdata->try_again = TRUE;
-                        MessageCancelAll(&tws_taskdata->task, PHY_STATE_CHANGED_IND);
-                        message->new_state = PHY_STATE_IN_CASE;
-                        message->event = phy_state_event_user_poweron;
-                        MessageSendLater(&tws_taskdata->task, PHY_STATE_CHANGED_IND, message, D_SEC(2));
-                    }
-                }
+                twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);
             }
             break;
         case phy_state_event_user_poweroff:
             if(appDeviceGetPeerBdAddr(&peer_addr))
             {
-                if(TwsTopology_IsAnyGoalPending() == FALSE)
-                {
-                    twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
-                    twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
-                    tws_taskdata->try_again = FALSE;
-                }
-                else
-                {
-                    if(tws_taskdata->try_again == FALSE)
-                    {
-                        PHY_STATE_CHANGED_IND_T *message = PanicUnlessNew(PHY_STATE_CHANGED_IND_T);
-                        tws_taskdata->try_again = TRUE;
-                        MessageCancelAll(&tws_taskdata->task, PHY_STATE_CHANGED_IND);
-                        message->new_state = PHY_STATE_IN_CASE;
-                        message->event = phy_state_event_user_poweroff;
-                        MessageSendLater(&tws_taskdata->task, PHY_STATE_CHANGED_IND, message, D_SEC(2));
-                    }
-                }
+                twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
             }
             break;
 #else
