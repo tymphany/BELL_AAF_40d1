@@ -65,6 +65,7 @@ void swipeRightAction(void);
 void cancelTouchPadTimer(void);
 void setTouchPadTimer(void);
 void runSwipeFunction(uint8 swipe);
+void actionRun(void);
 /* --------------- Static Global Variables ----------------- */
 struct __touch_config touch_config = {
     .rdy_interrupt  = IQS_RDY_PIN,
@@ -425,17 +426,19 @@ void _updateIQSEvent(void)
         {
             xprint("Flick Right Event");
             swipeRightAction();
+            actionRun();
         }
         /******************************* FLICK (LEFT) *****************************/
         else if(iqs_events & 0x40)
         {
             xprint("Flick Left Event");
-            swipeLeftAction();  
+            swipeLeftAction(); 
+            actionRun(); 
         }
         /********************************* TAP ************************************/
         else if(iqs_events & 0x20)
         {					
-            if(tconfig->eventHold == FALSE)
+            if(tconfig->eventHold == TRUE)
             {   
                 DEBUG_LOG("tap no hold , error return");
                 return;
@@ -443,6 +446,7 @@ void _updateIQSEvent(void)
             if(tconfig->eventSwipe == 0)
             {
                 tconfig->eventTap = TRUE;
+                actionRun();
             }            
         }
     } 
@@ -541,7 +545,7 @@ static void _iqsProcessMessageHandler ( Task pTask, MessageId pId, Message pMess
 void holdEndOperation(void)
 {
     touchConfig *tconfig = appConfigTouch();
-    uint8 swipeAction = 0;
+    //uint8 swipeAction = 0;
     if(tconfig->eventHold == FALSE)
     {
         DEBUG_LOG("holdend error, eventhold %d",tconfig->eventHold);
@@ -562,6 +566,7 @@ void holdEndOperation(void)
 		//TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_HOLD5SEND);
         MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_HOLD5SEND, NULL);
     }  
+    /* move run action
     if((tconfig->eventTap == FALSE) && (tconfig->eventSwipe == 0))
     {
         tconfig->tapCnt = 0;
@@ -589,11 +594,44 @@ void holdEndOperation(void)
             //create tap timer
             MessageSendLater( (TaskData *)&iqsProcessTask, iqs263_tap, 0, COLLECT_TAP_TIME);
         }        
-    }
+    }*/
     tconfig->debound = TRUE; 
     MessageSendLater( (TaskData *)&iqsProcessTask, iqs263_debound, 0, DEBOUND_TIME);            
 }
-
+/*! \brief action run Operation */
+void actionRun(void)
+{
+    touchConfig *tconfig = appConfigTouch();
+    uint8 swipeAction = 0;    
+    if((tconfig->eventTap == FALSE) && (tconfig->eventSwipe == 0))
+    {
+        tconfig->tapCnt = 0;
+        tconfig->eventHold = FALSE;
+        tconfig->eventSwipe = 0;
+        return;
+    }    
+    if(tconfig->eventTap)
+        tconfig->tapCnt += 1;
+    swipeAction = tconfig->eventSwipe;
+    if(swipeAction)
+    {
+       runSwipeFunction(swipeAction);
+       tconfig->eventSwipe = 0;
+       tconfig->tapCnt = 0;
+    }
+    else if(tconfig->tapCnt)
+    {
+        if(tconfig->tapCnt >= 3)
+        {
+            _processTAPEvent();
+        }
+        else
+        {
+            //create tap timer
+            MessageSendLater( (TaskData *)&iqsProcessTask, iqs263_tap, 0, COLLECT_TAP_TIME);
+        }        
+    }    
+}
 /*! \brief hold Start Operation */
 void holdStartOperation(void)
 {
@@ -615,7 +653,7 @@ void holdStartOperation(void)
 void swipeLeftAction(void)
 {
     touchConfig *tconfig = appConfigTouch();    
-    if(tconfig->eventHold == FALSE)
+    if(tconfig->eventHold == TRUE)
     {
         DEBUG_LOG("swipe Left error,return");
         return;
@@ -628,7 +666,7 @@ void swipeLeftAction(void)
 void swipeRightAction(void)
 {
     touchConfig *tconfig = appConfigTouch();    
-    if(tconfig->eventHold == FALSE)
+    if(tconfig->eventHold == TRUE)
     {
         DEBUG_LOG("swipe Right error,return");    
         return;
