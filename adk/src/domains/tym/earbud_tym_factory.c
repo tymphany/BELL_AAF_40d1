@@ -119,6 +119,7 @@ void factory_dmic2end(void *);
 void factory_externalanc(void *);
 void factory_ancvol(void *);
 void factory_internalanc(void *);
+void factory_internalanc_level(void *);
 void factory_powercharge(void *);
 void factory_cvcmic(void *);
 void factory_reboot(void *);
@@ -180,6 +181,7 @@ const tymFactory_s tymFactoryCmdList[] = {
   { "031", factory_externalanc}, 
   { "032", factory_ancvol},
   { "033", factory_internalanc},
+  { "034", factory_internalanc_level},
   { "037", factory_powercharge},
   { "038", factory_cvcmic},
   { "039", factory_reboot},
@@ -647,6 +649,41 @@ void factory_internalanc(void *dataptr)
     {
         tymSendDatatoHost((uint8 *)"Err_00", sizeof("Err_00"));        
     }    
+}
+/*! \brief  factory internal anc level */
+void factory_internalanc_level(void *dataptr)
+{
+    const char delim[2] = " ";
+    uint8 par[3];
+    int dataindex = 0;
+    if(dataptr == NULL)
+    {
+        tymSendDatatoHost((uint8 *)"Err_00", sizeof("Err_00"));
+        return;
+    }
+
+    while(dataptr != NULL)
+    {
+        par[dataindex] = atoi(dataptr);
+        dataindex++;
+        dataptr = strtok(NULL,delim);
+        if(dataindex > 1)
+            break;
+    }
+    if(dataindex > 1)
+    {
+        tymSendDatatoHost((uint8 *)"Err_00", sizeof("Err_00"));
+        return;
+    }
+    if((par[0] >= 0) && (par[0] <= 9)) //disable
+    {
+        AncStateManager_SetMode(par[0]);
+        tymSendDatatoHost((uint8 *)"1", sizeof("1"));
+    }
+    else
+    {
+        tymSendDatatoHost((uint8 *)"Err_00", sizeof("Err_00"));
+    }
 }
 
 /*! \brief  factory get power change */
