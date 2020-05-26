@@ -416,7 +416,7 @@ void appKymeraExternalAmpControl(bool enable)
                                   appConfigExternalAmpControlDisableMask());
         }
     }
-
+#if 0 /*Qualcomm solution*/
     if(enable)
     {
         /* If we're enabling the amp then also call OperatorFrameworkEnable() so that the audio S/S will
@@ -454,7 +454,11 @@ void appKymeraExternalAmpControl(bool enable)
             audio_ss_client_count = 0;
         }
     }
+#else
+    UNUSED(audio_ss_client_count);
+#endif
 }
+
 
 void appKymeraConfigureSpcMode(Operator op, bool is_consumer)
 {

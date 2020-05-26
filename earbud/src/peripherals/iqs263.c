@@ -640,7 +640,12 @@ void holdStartOperation(void)
     {
         DEBUG_LOG("holdstart error, eventHold %d,debound %d",tconfig->eventHold,tconfig->debound);
         return;
-    }        
+    }      
+    if(PioCommonGetPio(IQS_RDY_PIN) == FALSE)
+    {
+        DEBUG_LOG("miss event");
+        MessageSend ( (TaskData *)&iqsProcessTask, iqs263_event, 0);
+    }      
     tconfig->eventHold = TRUE;
     /*hold start, start tap collect again*/
     MessageCancelAll( (TaskData *)&iqsProcessTask, iqs263_tap);
