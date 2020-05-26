@@ -362,7 +362,7 @@ void reportBtStatus(uint8 status)
     {
         procCmd.otamode = TRUE;
         DEBUG_LOG("tym send startOTA"); 
-        _sendStatusCmd(startOTA);
+        _sendStatusCmd(statusOTA);
     }
     else if(status == OTAFinish)                                
     {
@@ -372,7 +372,7 @@ void reportBtStatus(uint8 status)
     {
         procCmd.otamode = FALSE;
         DEBUG_LOG("tym send happenErr"); 
-        _sendStatusCmd(happenErr);
+        _sendStatusCmd(statusErr);
     }        
     procCmd.btStatus = status; 
     //update touch pad
@@ -387,7 +387,6 @@ void reportPowerOffStatus(void)
 }
 
 /*! \brief report power on battery to CC */
-/*! \brief report power off to CC */
 void reportPowerOnStatus(void)
 {
     setSystemReady(TRUE);
