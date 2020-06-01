@@ -112,6 +112,11 @@ static void appPhyStateEnterInCase(void)
             tymSyncdata(btStatusCmd,btPairing);
         }
     }
+    if(StateProxy_IsStandbyMode())
+    {
+        DEBUG_LOG("report standby mode");
+        reportSleepStandbyStatus(FALSE);
+    }    
 #endif
     appPhyStateMsgSendStateChangedInd(PHY_STATE_IN_CASE, phy_state_event_in_case);
 }
@@ -935,19 +940,10 @@ void appPhyStateInEarPromptCheck(void)
     }
 }
 
-void appPhyCheckSleepMode(void)
-{
-    bool inEar = StateProxy_IsInEar();
-    bool peerInEar = StateProxy_IsPeerInEar();
-    if((inEar == FALSE) && (peerInEar == FALSE))
-        appPhyStateTriggerSleepMode();
-
-}
 /*! \brief Handle tym phy state power on. */
 void appPhyStatePowerOnEvent(void)
 {
     phyStateTaskData* phy_state = PhyStateGetTaskData();
-    bool standby = StateProxy_IsStandbyMode();
     /*add patch for SSP, if anc calibration is no recovery, force recovery it*/
     if(phy_state->anc_cal == TRUE)
     {
@@ -956,8 +952,6 @@ void appPhyStatePowerOnEvent(void)
         dumpANCWriteToPSKey();
     }
     phy_state->poweron = TRUE;
-    if(standby)
-        appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_leave_standbymode);
     appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_user_poweron);
 }
 
@@ -1205,6 +1199,24 @@ void appPhyStateSwipeR(uint8 act)
     }
 }
 
+bool appPhySleepModeIsTriggerCount(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    return phy_state->trigger_sleepmode;
+}
+
+bool appPhyStandbyModeIsTriggerCount(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    return phy_state->trigger_standbymode;
+}
+
+bool appPhyStandbyModeInCaseIsTriggerCount(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    return phy_state->trigger_standbymodeincase;
+}
+
 /*! \brief start count to sleep mode */
 void appPhyStateTriggerSleepMode(void)
 {
@@ -1214,9 +1226,10 @@ void appPhyStateTriggerSleepMode(void)
         return;
     if(phy_state->trigger_sleepmode == FALSE)
     {
-        DEBUG_LOG("appPhyStateTriggerSleepMod wait timeout 10 min");
+        DEBUG_LOG("appPhyStateTriggerSleepMode wait timeout");
         phy_state->trigger_sleepmode = TRUE;
         MessageSendLater(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_SLEEPMODE, NULL, D_MIN(10));
+        //MessageSendLater(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_SLEEPMODE, NULL, D_MIN(1));
     }
 }
 
@@ -1227,6 +1240,7 @@ void appPhyStateCancelTriggerSleepMode(void)
         return;
     if(phy_state->trigger_sleepmode == TRUE)
     {
+        DEBUG_LOG("appPhyStateCancelTriggerSleepMode");
         phy_state->trigger_sleepmode = FALSE;
         MessageCancelFirst(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_SLEEPMODE);
     }
@@ -1242,8 +1256,26 @@ void appPhyStateTriggerStandbyMode(void)
         return;
     if(phy_state->trigger_standbymode == FALSE)
     {
+        DEBUG_LOG("appPhyStateTriggerStandbyMode wait timeout");
         phy_state->trigger_standbymode = TRUE;
         MessageSendLater(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE, NULL, D_MIN(app_set->auto_power_off_timer));
+        //MessageSendLater(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE, NULL, D_MIN(1));
+    }
+}
+
+
+void appPhyStateTriggerStandbyModeInCase(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    if(appSmIsPrimary() == FALSE)
+        return;
+    if(phy_state->trigger_standbymode == FALSE)
+    {
+        DEBUG_LOG("appPhyStateTriggerStandbyModeInCase wait timeout");
+        phy_state->trigger_standbymode = TRUE;
+        phy_state->trigger_standbymodeincase = TRUE;
+        MessageSendLater(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE, NULL, D_MIN(10));
+        //MessageSendLater(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE, NULL, D_MIN(1));        
     }
 }
 
@@ -1254,42 +1286,90 @@ void appPhyStateCancelTriggerStandbyMode(void)
         return;
     if(phy_state->trigger_standbymode == TRUE)
     {
+        DEBUG_LOG("appPhyStateCancelTriggerStandbyMode");
         phy_state->trigger_standbymode = FALSE;
+        phy_state->trigger_standbymodeincase = FALSE;
         MessageCancelFirst(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE);
     }
 }
 
 void appPhyUpdateSleepStandbyMode(void)
 {
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
     bool inEar = StateProxy_IsInEar();
     bool peerInEar = StateProxy_IsPeerInEar();
+    bool peerInCase = StateProxy_IsPeerInCase();
+    bool inCase = StateProxy_IsInCase();    
     bool sleepMode = StateProxy_IsSleepMode();
     bool standbyMode = StateProxy_IsStandbyMode();
+    bool record_peerincase = phy_state->record_peerincase;
+    bool record_incase = phy_state->record_incase; 
+    
     bool poweron = StateProxy_IsPowerOn();
+    bool primary = appSmIsPrimary();
+    uint8 btstatus = tymGetBTStatus();
+    
+    phy_state->record_incase = inCase;
+    phy_state->record_peerincase = peerInCase;
+
+    if(primary == FALSE)
+        return; /* only check mode change from master*/
     if(poweron == FALSE)
-        return; /*power off don't check sleep mode*/
-    if(inEar || peerInEar)
+        return; /*power off don't check mode*/
+    if(btstatus == startOTA)
+        return; /* OTA start don't check mode*/    
+    /*two bud in case trigger standby mode 10 min*/
+    if(standbyMode == FALSE) //not standby
     {
-        appPhyStateCancelTriggerSleepMode();
-        if(sleepMode)
+        if((inCase == TRUE) && (peerInCase == TRUE))
         {
+            //cancel sleep/standby counter, re-counter 10min
+            if(phy_state->trigger_standbymodeincase == FALSE)
+            {    
+                if(sleepMode)
+                {
+                    tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode);   
+                }    
+                appPhyStateCancelTriggerSleepMode();
+                appPhyStateCancelTriggerStandbyMode();
+                appPhyStateTriggerStandbyModeInCase();
+            }
+        }
+        else if(sleepMode)
+        {
+            if((peerInCase != record_peerincase) || (inCase != record_incase))
+            {
+                if(peerInCase || inCase)
+                {
+                    //leave sleep mode when insert one of buds to charging case              
+                    tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode); 
+                }    
+            } 
+            else if(inEar || peerInEar)
+            {
+                tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode); 
+            }    
+        }
+        else if(inEar || peerInEar)
+        {
+            appPhyStateCancelTriggerSleepMode();
             appPhyStateCancelTriggerStandbyMode();
-            tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode);
         }
-    }
-    else
-    {
-        if((sleepMode == FALSE) && (standbyMode == FALSE))
+        else
         {
-            appPhyStateTriggerSleepMode();
-        }
-    }
+            if((sleepMode == FALSE) && (standbyMode == FALSE))
+            {                
+                appPhyStateTriggerSleepMode();
+                appPhyStateCancelTriggerStandbyMode();
+            }
+        }                
+    }        
 }
 
 void appPhyChangeSleepStandbyMode(phy_state_event phyState)
 {
     bdaddr handset_addr;
-    DEBUG_LOG("sleep/standby mode chanage %d",phyState);
+    DEBUG_LOG("sleep/standby mode change %d",phyState);
     appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phyState);
 
     if(appSmIsPrimary())
@@ -1336,12 +1416,14 @@ void appPhyChangeSleepStandbyMode(phy_state_event phyState)
             appPhyStateCancelTriggerSleepMode(); //for next time to trigger sleep mode timeout
             appPhyStateTriggerStandbyMode();
             BellUiAncControl(ui_input_bell_ui_anc_off);
+            reportSleepStandbyStatus(TRUE);
             setSystemReady(FALSE);
             break;
         case phy_state_event_enter_standbymode:
             appPhyStateCancelTriggerSleepMode();
             appPhyStateCancelTriggerStandbyMode();
             BellUiAncControl(ui_input_bell_ui_anc_off);
+            reportSleepStandbyStatus(TRUE);
             appUserStandbyModeRequest();
             break;
         default:

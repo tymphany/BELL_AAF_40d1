@@ -14,6 +14,8 @@ typedef enum statusOutputMsg {
     statusANCCalreport,
     statusACKReport,
     statusSLPReport,
+    statusSTBReport,
+    statusOTADone,    
     statusReportCmdMAX,
     statusAskBattery,
     statusSendCmd,
@@ -35,6 +37,7 @@ void reportACKReport(void);
 void earbudCC_RecoveryCommPort(void);
 void earbudCC_ChangeUSBPort(void);
 void reportPowerOnStatus(void);
+void reportSleepStandbyStatus(bool sleep);
 #endif
 
 

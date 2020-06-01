@@ -2877,4 +2877,20 @@ void appTestDisableLog(void)
 {
     debug_log_level__global = DEBUG_LOG_LEVEL_INFO;
 }
+
+bool appTestSleepIsTriggerCnt(void)
+{
+    return appPhySleepModeIsTriggerCount();
+}
+
+bool appTestStandbyIsTriggerCnt(void)
+{
+    return appPhyStandbyModeIsTriggerCount();
+}
+
+bool appTestStandbyInCaseIsTriggerCnt(void)
+{
+    return appPhyStandbyModeInCaseIsTriggerCount();
+}
+
 #endif

@@ -114,6 +114,9 @@ typedef struct
     bool ota_incase;
     bool trigger_sleepmode;
     bool trigger_standbymode;
+    bool trigger_standbymodeincase;    
+    bool record_incase;
+    bool record_peerincase;
 #endif
     /*! Lock used to conditionalise sending of PHY_STATE_INIT_CFM. */
     uint16 lock;
@@ -239,10 +242,13 @@ void appPhyStateCancelTriggerStandbyMode(void);
 void appPhyUpdateSleepStandbyMode(void);
 void appPhyChangeSleepStandbyMode(phy_state_event phyState);
 void appPhyStatePrepareToEnterStandbyMode(void);
-void appPhyCheckSleepMode(void);
 void appPhySateAppConfiguration(void);
 void appPhySetPowerOffMode(uint8 poweroffmode);
 uint8 appPhyGetPowerOffMode(void);
+void appPhyStateTriggerStandbyModeInCase(void);
+bool appPhyStandbyModeIsTriggerCount(void);
+bool appPhySleepModeIsTriggerCount(void);
+bool appPhyStandbyModeInCaseIsTriggerCount(void);
 #endif/*ENABLE_TYM_PLATFORM*/
 #endif /* PHY_STATE_H */
 
