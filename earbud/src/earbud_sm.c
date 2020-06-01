@@ -2484,6 +2484,15 @@ static void appSm_HandleTwsTopologyRoleChange(tws_topology_role new_role)
             {
                 DEBUG_LOG_STATE("appSm_HandleTwsTopologyRoleChange staying in role:%d, DFU was in progress (app)", old_role);
             }
+#ifdef ENABLE_TYM_PLATFORM            
+            if((old_role != tws_topology_role_dfu) && (APP_STATE_IN_CASE_DFU != appSmGetState()))
+            {
+                if(StateProxy_IsPowerOn() == TRUE)
+                {
+                    appPhyStatePowerOnEvent();//Trigger TWS pairing
+                }    
+            }    
+#endif             
             break;
 
         case tws_topology_role_primary:
@@ -2539,6 +2548,8 @@ static void appSm_HandleTwsTopologyRoleChange(tws_topology_role new_role)
 #ifdef ENABLE_TYM_PLATFORM            
             appPhyStateCancelTriggerSleepMode();            
             appPhyStateCancelTriggerStandbyMode();
+            DEBUG_LOG("$$$ TYM Start Upgrade");
+            tymSyncdata(btStatusCmd,startOTA);            
 #endif            
             DEBUG_LOG_STATE("appSm_HandleTwsTopologyRoleChange DFU. Make no changes");
             if (SmGetTaskData()->dfu_has_been_restarted)
@@ -3488,10 +3499,7 @@ void appSmEnterDfuModeInCase(bool enable, bool inform_peer)
 
         /*! We will be entering DFU mode. Make sure that the topology is aware */
         TwsTopology_SwitchToDfuRole();
-#ifdef ENABLE_TYM_PLATFORM
-        DEBUG_LOG("$$$ TYM Start Upgrade");
-        tymSyncdata(btStatusCmd,startOTA);
-#endif
+
     }
 
     if (inform_peer)
@@ -3516,7 +3524,33 @@ static void appSmEnterDfuOnStartup(bool upgrade_reboot)
 /*! \brief Notification to the state machine of Upgrade start */
 static void appSmNotifyUpgradeStarted(void)
 {
-    /* Set the topology role, device role and DFU mode when upgrade starts
+#ifdef ENABLE_TYM_PLATFORM
+    if(StateProxy_IsInCase() && StateProxy_IsPeerInCase())
+    {
+        DEBUG_LOG_DEBUG("appSmNotifyUpgradeStarted - INCASE DFU");
+        appSmEnterDfuModeInCase(TRUE, TRUE);
+        appPhyStateInCaseEvent();
+    }
+    else
+    {
+        /* Set the topology role, device role and DFU mode when upgrade starts
+        For in case DFU it is already set using appEnterInCaseDfu.
+        For out of case DFU, it is set here.
+        */
+        if (TwsTopology_GetRole() != tws_topology_role_dfu)
+        {
+            DEBUG_LOG_DEBUG("appSmNotifyUpgradeStarted - switching to DFU topology");
+
+            /*! We have entered DFU mode. Make sure that the topology catches up */
+            TwsTopology_SwitchToDfuRole();
+            /*! Set the is_out_case_dfu information in UPGRADE_LIB_PSKEY */
+            UpgradeSetIsOutCaseDFU(TRUE);
+            /*! Also, set the DFU mode for Secondary device to be in sync.  */
+            earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_dfu_active_when_out_case_t));
+        }             
+    }       
+#else
+ /* Set the topology role, device role and DFU mode when upgrade starts
        For in case DFU it is already set using appEnterInCaseDfu.
        For out of case DFU, it is set here.
      */
@@ -3530,7 +3564,9 @@ static void appSmNotifyUpgradeStarted(void)
         UpgradeSetIsOutCaseDFU(TRUE);
         /*! Also, set the DFU mode for Secondary device to be in sync.  */
         earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_dfu_active_when_out_case_t));
-    }
+    }     
+#endif    
+   
     /*
      * ToDo: Set Role can now be deprecated because this is done early on
      * GAIA connection and before the initial DFU Protocol PDU exchange.
