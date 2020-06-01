@@ -1159,5 +1159,8 @@ void appTestSwitchPresetEQ(uint8 eq);
 void appTestShipp(void);
 void appTestShowLog(void);
 void appTestDisableLog(void);
+bool appTestSleepIsTriggerCnt(void);
+bool appTestStandbyIsTriggerCnt(void);
+bool appTestStandbyInCaseIsTriggerCnt(void);
 #endif
 #endif /* EARBUD_TEST_H */

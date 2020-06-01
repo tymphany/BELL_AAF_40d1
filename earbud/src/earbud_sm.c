@@ -2498,9 +2498,6 @@ static void appSm_HandleTwsTopologyRoleChange(tws_topology_role new_role)
             TaskList_MessageSendId(SmGetTaskData()->client_tasks, EARBUD_ROLE_PRIMARY);
 
             PrimaryRules_SetEvent(RULE_EVENT_ROLE_SWITCH);
-#ifdef ENABLE_TYM_PLATFORM
-            appPhyCheckSleepMode();
-#endif
             if (appPhyStateGetState() != PHY_STATE_IN_CASE)
             {
                 PrimaryRules_SetEvent(RULE_EVENT_OUT_CASE);

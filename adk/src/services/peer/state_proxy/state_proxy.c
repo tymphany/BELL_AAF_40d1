@@ -180,6 +180,7 @@ static void stateProxy_HandleInitialState(const state_proxy_initial_state_t* ini
     stateProxy_MsgStateProxyEventInitialStateReceived();
 #ifdef ENABLE_TYM_PLATFORM
     updateTouchPadMode();
+    appPhyUpdateSleepStandbyMode();    
 #endif
 }
 

@@ -21,6 +21,7 @@
 #include "ui_prompts.h"
 #include "tym_power_control.h"
 #include "earbud_tym_factory.h"
+#include "state_proxy.h"
 /* ------------------------ Defines ------------------------ */
 
 #define xprint(x)            DEBUG_LOG(x)
@@ -258,9 +259,14 @@ void _sendStatusCmd(uint8 event)
     }
     else
     {
-        /*for shipping mode, force reprot ack*/
-        if(event == statusACKReport)
-            sendCmdToChargingCase(statusACKReport);
+        /* force send status don't care ready */
+        /* ack, sleep mode,standby mode*/
+        if((event == statusACKReport) || (event == statusSLPReport) || (event == statusSTBReport))
+        {
+            MESSAGE_MAKE(sendCmdId, statusSendCmd_T);
+            sendCmdId->event = event;
+            MessageSend((TaskData *)&_statusReportTask, statusSendCmd, sendCmdId);   
+        }        
     }
 }
 
@@ -367,6 +373,7 @@ void reportBtStatus(uint8 status)
     else if(status == OTAFinish)                                
     {
         procCmd.otamode = FALSE;
+        _sendStatusCmd(statusOTADone);
     }
     else if(status == happenErr)
     {
@@ -391,9 +398,18 @@ void reportPowerOnStatus(void)
 {
     setSystemReady(TRUE);
     procCmd.battpercent = appBatteryGetPercent(); 
-    reportBattStatus();        
-    
+    reportBattStatus();            
 }
+
+/*! \brief report standby battery to CC */
+void reportSleepStandbyStatus(bool sleep)
+{
+    if(sleep)
+        _sendStatusCmd(statusSLPReport);
+    else  
+        _sendStatusCmd(statusSTBReport);           
+}
+
 /*! \brief report ACK status */
 void reportACKReport(void)
 {
@@ -409,11 +425,6 @@ uint8 tymGetBTStatus(void)
 /*! \brief set system ready */
 void setSystemReady(bool ready)
 {
-    if(ready == FALSE)
-    {
-        //send sleep
-        _sendStatusCmd(statusSLPReport);
-    }    
     procCmd.systemReady = ready;
 }
 
