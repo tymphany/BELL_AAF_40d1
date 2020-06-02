@@ -478,7 +478,7 @@ static void uiPrompts_UiInputProcess(MessageId id)
             UiPrompts_SendTymPrompt(PROMPT_POWER_OFF);
             break;
         case ui_input_prompt_connected_check:
-            if(StateProxy_IsInEar() == TRUE)
+            if((StateProxy_IsInEar() == TRUE) || (StateProxy_IsPeerInEar() == TRUE))
             {
                 DEBUG_LOG("ui_input_prompt_connected_check run exe after 1s");
                 UiPrompts_SendTymPromptLater(ui_input_prompt_connected_execute, D_SEC(1));
