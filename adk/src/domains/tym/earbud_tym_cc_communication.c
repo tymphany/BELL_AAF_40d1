@@ -182,7 +182,7 @@ void statusCommunicationMessage(MessageId pId,statusSendCmd_T *cmdId)
             if(procCmd.askBattery == 0)
             {
                 DEBUG_LOG("startOTA");    
-                _sendStatusCmd(startOTA);
+                _sendStatusCmd(statusOTA);
             }
         }
         else

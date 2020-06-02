@@ -1236,8 +1236,6 @@ void appPhyStateTriggerSleepMode(void)
 void appPhyStateCancelTriggerSleepMode(void)
 {
     phyStateTaskData* phy_state = PhyStateGetTaskData();
-    if(appSmIsPrimary() == FALSE)
-        return;
     if(phy_state->trigger_sleepmode == TRUE)
     {
         DEBUG_LOG("appPhyStateCancelTriggerSleepMode");
@@ -1282,8 +1280,6 @@ void appPhyStateTriggerStandbyModeInCase(void)
 void appPhyStateCancelTriggerStandbyMode(void)
 {
     phyStateTaskData* phy_state = PhyStateGetTaskData();
-    if(appSmIsPrimary() == FALSE)
-        return;
     if(phy_state->trigger_standbymode == TRUE)
     {
         DEBUG_LOG("appPhyStateCancelTriggerStandbyMode");
