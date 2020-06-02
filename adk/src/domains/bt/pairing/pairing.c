@@ -791,6 +791,9 @@ static void pairing_HandleClSmRemoteIoCapabilityIndication(const CL_SM_REMOTE_IO
 /*! \brief Handle request to start pairing with a device. */
 static void pairing_HandleInternalPairRequest(pairingTaskData *thePairing, PAIR_REQ_T *req)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
+#endif      
     DEBUG_LOG("pairing_HandleInternalPairRequest, state %d", pairing_GetState(thePairing));
 
     switch (pairing_GetState(thePairing))
@@ -807,6 +810,7 @@ static void pairing_HandleInternalPairRequest(pairingTaskData *thePairing, PAIR_
             if (BdaddrIsZero(&req->addr))
             {
 #ifdef ENABLE_TYM_PLATFORM
+                tymAnc->onceAnc = 0;
                 tymSyncdata(btStatusCmd,btPairing);
 #endif
                 /* Move to 'discoverable' state to start inquiry & page scan */

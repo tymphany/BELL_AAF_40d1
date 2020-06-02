@@ -640,6 +640,7 @@ void BellUiAncControl(MessageId ui_input)
             break;
         case ui_input_bell_ui_ambient_on:
             tymAnc->curAncMode = ambient;
+            tymAnc->onceAnc = 1;
             BellUiAmbientOn();
             bell_gaia_anc_notify_event(BELL_GAIA_AMBIENT_NOTIFY, 1);
             break;

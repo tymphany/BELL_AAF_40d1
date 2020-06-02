@@ -38,7 +38,8 @@ typedef enum btStatus_e{
     restoreDefault,
     startOTA,
     OTAFinish,
-    happenErr,        
+    happenErr,
+    btPairingTimeOut,        
 }btStatus_t;
 
 /*!< Task information for proximity sensor */
