@@ -16,6 +16,7 @@ typedef enum statusOutputMsg {
     statusSLPReport,
     statusSTBReport,
     statusOTADone,    
+    statusPairingTimeOut,    
     statusReportCmdMAX,
     statusAskBattery,
     statusSendCmd,

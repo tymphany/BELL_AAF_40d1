@@ -876,6 +876,9 @@ static void pairing_HandleInternalTimeoutIndications(pairingTaskData *thePairing
         case PAIRING_STATE_PENDING_AUTHENTICATION:
             /* Send confirmation with error to main task */
             pairing_Complete(thePairing, pairingTimeout, NULL);
+#ifdef ENABLE_TYM_PLATFORM            
+            tymSyncdata(btStatusCmd,btPairingTimeOut);
+#endif            
             break;
 
         default:

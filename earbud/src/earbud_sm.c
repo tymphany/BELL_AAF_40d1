@@ -3529,7 +3529,7 @@ static void appSmNotifyUpgradeStarted(void)
     {
         DEBUG_LOG_DEBUG("appSmNotifyUpgradeStarted - INCASE DFU");
         appSmEnterDfuModeInCase(TRUE, TRUE);
-        appPhyStateInCaseEvent();
+        //FappPhyStateInCaseEvent();
     }
     else
     {

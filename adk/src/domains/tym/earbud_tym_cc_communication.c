@@ -364,6 +364,11 @@ void reportBtStatus(uint8 status)
             _sendStatusCmd(statusConnetcedMode);
         }    
     }
+    else if(status == btPairingTimeOut)
+    {
+        DEBUG_LOG("statusPairingTimeOut");         
+        _sendStatusCmd(statusPairingTimeOut);  
+    }    
     else if(status == startOTA)
     {
         procCmd.otamode = TRUE;
