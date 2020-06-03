@@ -52,9 +52,9 @@ typedef enum device_upgrade_internal_messages
 */
 #ifdef ENABLE_TYM_PLATFORM
 //AutoBuild BumpVersion
-#define BellFW_LVer              23
+#define BellFW_LVer 23
 
-#define BellFW_HVer              0
+#define BellFW_HVer 0
 
 
 static const upgrade_version earbud_upgrade_init_version = { BellFW_HVer, BellFW_LVer };  /* Values should come from config file */
