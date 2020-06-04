@@ -202,4 +202,8 @@ void TwsTopology_ProhibitHandover(bool prohibit);
 */
 void TwsTopology_ProhibitHandsetConnection(bool prohibit);
 
+#ifdef ENABLE_TYM_PLATFORM
+void TwsTopology_DfuStartInCase(void);
+#endif
+
 #endif /* TWS_TOPOLOGY_H_ */

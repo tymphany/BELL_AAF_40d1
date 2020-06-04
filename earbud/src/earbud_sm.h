@@ -237,7 +237,9 @@ typedef struct
     bool dfu_in_progress:1;             /*!< Set this flag when DFU started */
     bool peer_dfu_in_progress:1;        /*!< Set this flag when Peer DFU started */
     bool enter_dfu_in_case:1;           /*! Flag used to indicate that device has entered in-case in DFU mode. */
-
+#ifdef ENABLE_TYM_PLATFORM
+    bool UpgradeStarted:1;
+#endif
     tws_topology_role role;             /*!< Current primary/secondary/none role of the earbud */
     rule_set_t primary_rules;
     rule_set_t secondary_rules;

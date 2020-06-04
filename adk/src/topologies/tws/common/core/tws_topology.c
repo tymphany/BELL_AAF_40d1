@@ -50,7 +50,10 @@
 
 /*! Instance of the TWS Topology. */
 twsTopologyTaskData tws_topology = {0};
-
+#ifdef ENABLE_TYM_PLATFORM
+void twsTopology_HandleDFUPowerOn(void);
+void twsTopology_HandleDFUPowerOff(void);
+#endif
 void twsTopology_RulesSetEvent(rule_events_t event)
 {
     switch (TwsTopologyGetTaskData()->role)
@@ -508,17 +511,45 @@ static void twsTopology_HandlePhyStateChangedInd(PHY_STATE_CHANGED_IND_T* ind)
         case phy_state_event_user_poweron:
             if(appDeviceGetPeerBdAddr(&peer_addr))
             {
-                twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
-                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+                if(TwsTopologyGetTaskData()->role != tws_topology_role_dfu)
+                {    
+                    twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+                    twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+                }
+                else
+                {
+                    twsTopology_HandleDFUPowerOn();                    
+                }    
             }
             break;
         case phy_state_event_user_poweroff:
             if(appDeviceGetPeerBdAddr(&peer_addr))
-            {
-                twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
-                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+            {    
+                if(TwsTopologyGetTaskData()->role != tws_topology_role_dfu)
+                {                              
+                    twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+                    twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+                }
+                else
+                {
+                    twsTopology_HandleDFUPowerOff();  
+                }    
             }
             break;
+       case phy_state_event_out_of_case: /*for dfu */
+            if(TwsTopologyGetTaskData()->role == tws_topology_role_dfu)
+            {                                
+                twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);                
+            }
+            break;
+       case phy_state_event_in_case:
+            if(TwsTopologyGetTaskData()->role == tws_topology_role_dfu)
+            {                                
+                twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);                
+            }
+            break;           
 #else
         case phy_state_event_out_of_case:
             /* Reset the In case rule event set out of case rule event */
@@ -1173,3 +1204,58 @@ bool twsTopology_IsRunning(void)
 
     return twst->app_task && twst->started;
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+void TwsTopology_DfuStartInCase(void)
+{
+    DEBUG_LOG("TwsTopology_DfuStartInCase");
+    twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+    twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);//before in case status
+}
+
+void twsTopology_HandleDFUPowerOn(void)
+{
+    if (appUpgradeIsDFUPrimary())
+    {                    
+        /* Subsequently run Primary rule set */
+        TwsTopologyGetTaskData()->role = tws_topology_role_primary;
+        TwsTopologyPrimaryRules_ResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+        TwsTopologyPrimaryRules_SetEvent(TWSTOP_RULE_EVENT_START_TRIG);        
+        /* Restore DFU role */
+        TwsTopologyGetTaskData()->role = tws_topology_role_dfu;
+    }
+    else
+    {
+        /* Subsequently run Secondary rule set */
+        TwsTopologyGetTaskData()->role = tws_topology_role_secondary;
+        TwsTopologySecondaryRules_ResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+        TwsTopologySecondaryRules_SetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+        /* Restore DFU role */
+        TwsTopologyGetTaskData()->role = tws_topology_role_dfu;
+    }
+}
+
+void twsTopology_HandleDFUPowerOff(void)
+{
+    if (appUpgradeIsDFUPrimary())
+    {                    
+        /* Subsequently run Primary rule set */
+        TwsTopologyGetTaskData()->role = tws_topology_role_primary;
+        TwsTopologyPrimaryRules_ResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+        TwsTopologyPrimaryRules_SetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+        /* Restore DFU role */
+        TwsTopologyGetTaskData()->role = tws_topology_role_dfu;
+    }
+    else
+    {
+        /* Subsequently run Secondary rule set */
+        TwsTopologyGetTaskData()->role = tws_topology_role_secondary;
+        TwsTopologySecondaryRules_ResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+        TwsTopologySecondaryRules_SetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+        /* Restore DFU role */
+        TwsTopologyGetTaskData()->role = tws_topology_role_dfu;
+    }
+}
+
+#endif
+
