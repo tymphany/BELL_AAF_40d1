@@ -410,8 +410,15 @@ static void uiPrompts_UiInputProcess(MessageId id)
     }
     else if(StateProxy_IsInCase() == TRUE )
     {
-        DEBUG_LOG("In Case don't play prompts");
-        return;
+        if(StateProxy_IsPeerInEar() == TRUE)
+        {
+            DEBUG_LOG("For Play Pairing prompt");
+        }
+        else
+        {        
+            DEBUG_LOG("In Case don't play prompts");
+            return;
+        }
     }
 
     switch(id)
