@@ -2530,6 +2530,15 @@ static void appSm_HandleTwsTopologyRoleChange(tws_topology_role new_role)
             {
                 PrimaryRules_SetEvent(RULE_EVENT_OUT_CASE);
             }
+#ifdef ENABLE_TYM_PLATFORM    
+            if(APP_STATE_IN_CASE_DFU == appSmGetState())        
+            { 
+                appPhyStateCancelTriggerSleepMode();            
+                appPhyStateCancelTriggerStandbyMode();
+                DEBUG_LOG("$$$ TYM Start Upgrade");
+                tymSyncdata(btStatusCmd,startOTA); 
+            }
+#endif             
             break;
 
         case tws_topology_role_secondary:
