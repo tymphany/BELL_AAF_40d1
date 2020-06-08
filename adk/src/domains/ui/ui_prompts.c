@@ -408,17 +408,10 @@ static void uiPrompts_UiInputProcess(MessageId id)
         MessageSendLater(&the_prompts.task, ui_input_prompt_repeat_findme, NULL, D_SEC(5));//interval 3 second + 2 second pairing play time
         Ui_InjectUiInput(ui_input_prompt_findme);
     }
-    else if(StateProxy_IsInCase() == TRUE )
-    {
-        if(StateProxy_IsPeerInEar() == TRUE)
-        {
-            DEBUG_LOG("For Play Pairing prompt");
-        }
-        else
-        {        
-            DEBUG_LOG("In Case don't play prompts");
-            return;
-        }
+    else if((StateProxy_IsInCase() == TRUE) && (StateProxy_IsPeerInEar() == FALSE) )
+    {  
+        DEBUG_LOG("In Case && Peer not InEar don't play prompts");
+        return;
     }
 
     switch(id)

@@ -1382,7 +1382,7 @@ void appPhyChangeSleepStandbyMode(phy_state_event phyState)
                 //cancel pairing
                 Pairing_PairStop(NULL);
             }
-            if(StateProxy_IsInCase() == FALSE)
+            if((StateProxy_IsInCase() == FALSE) || (StateProxy_IsPeerInEar() == TRUE))
                 Ui_InjectUiInput(ui_input_prompt_poweroff);
         }
         else if(phyState == phy_state_event_leave_sleepmode)
@@ -1393,7 +1393,7 @@ void appPhyChangeSleepStandbyMode(phy_state_event phyState)
                 EarbudTest_ConnectHandset();
             }
             //twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_ROLE_SWITCH);
-            if(StateProxy_IsInCase() == FALSE)
+            if((StateProxy_IsInCase() == FALSE) || (StateProxy_IsPeerInEar() == TRUE))
                 Ui_InjectUiInput(ui_input_prompt_poweron);
         }
         else if(phyState == phy_state_event_enter_standbymode)

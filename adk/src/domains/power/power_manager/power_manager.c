@@ -547,7 +547,7 @@ void appPowerOn(void)
 
     TaskList_MessageSendId(appPowerGetClients(), POWER_ON);
 #ifdef ENABLE_TYM_PLATFORM
-    if(StateProxy_IsInCase() == FALSE)
+    if((StateProxy_IsInCase() == FALSE) || (StateProxy_IsPeerInEar() == TRUE))
         Ui_InjectUiInput(ui_input_prompt_poweron);
 
 #if ENABLE_UPDATE_AUDIO_PS_KEY
@@ -846,6 +846,7 @@ bool appUserPowerOffAction(void)
         appPhyStatePrepareToEnterStandbyMode();
     else
         appPhyStatePrepareToEnterDormant();
+
     if(getFactoryModeEnable() == TRUE)
         setFactoryModeStatus(factory_disable);
     setSystemReady(FALSE);

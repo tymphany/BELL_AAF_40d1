@@ -115,14 +115,7 @@ static bool handsetServiceSm_AllConnectionsDisconnected(handset_service_state_ma
     {
         ble_connected = HandsetServiceSm_IsLeConnected(sm);
     }
-#ifdef ENABLE_TYM_PLATFORM
-    if((bredr_connected == 1) && (connected_profiles == 0))
-    {    
-        Prompts_SetConnectedStatus(0); //disconnect
-        if(StateProxy_IsInCase() == FALSE)
-            Ui_InjectUiInput(ui_input_prompt_disconnected);
-    }
-#endif
+
     DEBUG_LOG("handsetServiceSm_AllConnectionsDisconnected bredr %d profiles 0x%x le %d",
               bredr_connected, connected_profiles, ble_connected);
 
@@ -205,6 +198,11 @@ static void handsetServiceSm_EnterDisconnected(handset_service_state_machine_t *
     if (handsetServiceSm_AllConnectionsDisconnected(sm, FALSE))
     {
         HS_LOG("handsetServiceSm_EnterDisconnected destroying sm for dev 0x%x", sm->handset_device);
+#ifdef ENABLE_TYM_PLATFORM
+        Prompts_SetConnectedStatus(0); //disconnect
+        if((StateProxy_IsInCase() == FALSE) || (StateProxy_IsPeerInEar() == TRUE))
+            Ui_InjectUiInput(ui_input_prompt_disconnected);
+#endif        
         HandsetServiceSm_DeInit(sm);
     }
 }
