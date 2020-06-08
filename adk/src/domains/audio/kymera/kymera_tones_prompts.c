@@ -16,7 +16,7 @@
 #define BUFFER_SIZE_FACTOR 4
 
 #ifdef ENABLE_TYM_PLATFORM
-#define KYMERA_CONFIG_PROMPT_HIGH_VOLUME     (-10)
+#define KYMERA_CONFIG_PROMPT_HIGH_VOLUME      (-20)//(-10),RHA think prompt too loud,reduce to -20
 #define KYMERA_CONFIG_PROMPT_FINDME_VOLUME     (-3)
 uint8 prompt_level = 0;
 #endif
