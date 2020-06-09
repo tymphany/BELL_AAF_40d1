@@ -569,6 +569,14 @@ static void appEnterHandsetPairing(void)
 
     if(appSmIsUserPairing())
     {
+#ifdef ENABLE_TYM_PLATFORM    
+        bdaddr handset_addr = {0};        
+        if(appDeviceGetHandsetBdAddr(&handset_addr))
+        {
+            DEBUG_LOG("HandsetService_SetDisconnectAfterPairing");
+            HandsetService_SetDisconnectAfterPairing(&handset_addr);
+        }    
+#endif                    
         TwsTopology_ProhibitHandsetConnection(TRUE);
     }
     else
@@ -578,6 +586,14 @@ static void appEnterHandsetPairing(void)
                                    POST_DISCONNECT_ACTION_HANDSET_PAIRING);
     }
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+static void appExitHandsetPairingStateMachine(void)
+{
+    DEBUG_LOG_DEBUG("appExitHandsetPairingStateMachine");
+    appSmRulesSetRuleComplete(CONN_RULES_HANDSET_PAIR);       
+}
+#endif
 
 /*! \brief Exit actions when handset pairing completed.
  */
@@ -930,7 +946,11 @@ void appSmSetState(appState new_state)
             break;
 
         case APP_STATE_HANDSET_PAIRING:
+#ifdef  ENABLE_TYM_PLATFORM /* for fixed don't leave pairing mode when in case */
+            appExitHandsetPairingStateMachine();
+#else
             appExitHandsetPairing();
+#endif            
             break;
 
         case APP_STATE_IN_CASE_IDLE:
@@ -1459,7 +1479,12 @@ static void appSmHandleConnRulesHandsetPair(void)
         case APP_STATE_IN_CASE_IDLE: /*in case support pairing*/
 #endif
             DEBUG_LOG_DEBUG("appSmHandleConnRulesHandsetPair, rule said pair with handset");
-            appSmClearUserPairing();
+#ifdef ENABLE_TYM_PLATFORM            
+
+            DEBUG_LOG("HAVE pairing,need clean");
+            appExitHandsetPairing();
+#endif             
+            appSmClearUserPairing();            
             appSmSetState(APP_STATE_HANDSET_PAIRING);
             break;
         default:
@@ -2120,6 +2145,8 @@ static void appSmHandleInternalPairHandset(void)
 #ifdef ENABLE_TYM_PLATFORM
     if (appSmIsPrimary())
     {
+        DEBUG_LOG("HAVE pairing,need clean");
+        appExitHandsetPairing();   
         appSmSetUserPairing();
         appSmSetState(APP_STATE_HANDSET_PAIRING);
     }

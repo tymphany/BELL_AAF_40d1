@@ -478,7 +478,7 @@ void _processTAPEvent(void)
     {
         TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx2);
     }
-    else //cnt > 3
+    else if(tapCnt > 2)//cnt > 3
     {
         TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx3);        
     }

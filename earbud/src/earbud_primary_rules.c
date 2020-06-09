@@ -116,11 +116,12 @@ const rule_entry_t primary_rules_set[] =
 
     RULE(RULE_EVENT_OUT_CASE,                   ruleOutOfCaseTerminateDfu,          CONN_RULES_EXIT_DFU),
 
+#ifndef  ENABLE_TYM_PLATFORM /* for out case don't enter pairing handset */
     /*! \{
         Rule to enable automatic handset pairing when taken out of the case. */
     RULE(RULE_EVENT_OUT_CASE,                   ruleAutoHandsetPair,                CONN_RULES_HANDSET_PAIR),
     /*! \} */
-
+#endif
     /*! \{
         Rules to synchronise link keys.
         \todo will be moving into TWS topology */

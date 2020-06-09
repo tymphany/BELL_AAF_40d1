@@ -200,8 +200,12 @@ static void handsetServiceSm_EnterDisconnected(handset_service_state_machine_t *
         HS_LOG("handsetServiceSm_EnterDisconnected destroying sm for dev 0x%x", sm->handset_device);
 #ifdef ENABLE_TYM_PLATFORM
         Prompts_SetConnectedStatus(0); //disconnect
-        if((StateProxy_IsInCase() == FALSE) || (StateProxy_IsPeerInEar() == TRUE))
-            Ui_InjectUiInput(ui_input_prompt_disconnected);
+        HS_LOG("sm pairing %d",sm->disconnect_pairing);
+        if(sm->disconnect_pairing == FALSE)
+        {    
+            if((StateProxy_IsInCase() == FALSE) || (StateProxy_IsPeerInEar() == TRUE))
+                Ui_InjectUiInput(ui_input_prompt_disconnected);
+        }
 #endif        
         HandsetServiceSm_DeInit(sm);
     }
@@ -1142,6 +1146,9 @@ void HandsetServiceSm_DeInit(handset_service_state_machine_t *sm)
     sm->profiles_requested = 0;
     sm->acl_create_called = FALSE;
     sm->state = HANDSET_SERVICE_STATE_NULL;
+#ifdef ENABLE_TYM_PLATFORM
+    sm->disconnect_pairing = FALSE;
+#endif    
 }
 
 void HandsetServiceSm_CompleteConnectRequests(handset_service_state_machine_t *sm, handset_service_status_t status)

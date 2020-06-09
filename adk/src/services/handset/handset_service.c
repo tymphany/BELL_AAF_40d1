@@ -1084,3 +1084,16 @@ void HandsetService_SetBleConnectable(bool connectable)
         }
     }
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+void HandsetService_SetDisconnectAfterPairing(const bdaddr *addr)
+{
+    handset_service_state_machine_t *sm = handsetService_GetSmForBdAddr(addr);
+    if(sm)
+    {
+        DEBUG_LOG("HandsetService_SetDisconnectAfterPairing get sm 0x%x",sm);
+        sm->disconnect_pairing = TRUE;
+    }     
+}
+#endif
+

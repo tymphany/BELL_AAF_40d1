@@ -113,6 +113,9 @@ typedef struct
 
     /*! Reason for handset disconnection. */
     hci_status disconnect_reason;
+#ifdef ENABLE_TYM_PLATFORM
+    bool disconnect_pairing;
+#endif    
 } handset_service_state_machine_t;
 
 #define HandsetServiceSm_GetLeBdaddr(sm) sm->le_addr.taddr.addr

@@ -324,5 +324,8 @@ bool HandsetService_GetConnectedLeHandsetAddress(bdaddr *addr);
 void HandsetService_SetBleConnectable(bool connectable);
 
 /*@}*/
+#ifdef ENABLE_TYM_PLATFORM
+void HandsetService_SetDisconnectAfterPairing(const bdaddr *addr);
+#endif
 
 #endif /* HANDSET_SERVICE_H_ */
