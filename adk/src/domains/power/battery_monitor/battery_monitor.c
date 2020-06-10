@@ -506,6 +506,9 @@ void appBatteryGetPredictVoltage(void)
             else
                 battery->predict_volt -= 2;
         }
+        /*battery lower 5% save key*/
+        if(battery->predict_volt < disch_table[1])
+            updatePredictVoltToPSKEY();
     }
     DEBUG_LOG("Qual %d,predict %d,charging %d",voltage,battery->predict_volt,charging);
 }

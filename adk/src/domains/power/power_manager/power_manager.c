@@ -468,6 +468,10 @@ static void appPowerHandlePowerEvent(void)
             if (appPowerNeedsToPowerOff())
             {
                 DEBUG_LOG("appPowerHandlePowerEvent need to shutdown");
+#ifdef ENABLE_TYM_PLATFORM
+                /*Do power off,keep current battery to PSKEY*/
+                updatePredictVoltToPSKEY();
+#endif                
                 appPowerSetState(POWER_STATE_TERMINATING_CLIENTS_NOTIFIED);
             }
             else if (appPowerAllClientsHaveFlagSet(APP_POWER_ALLOW_SLEEP))
