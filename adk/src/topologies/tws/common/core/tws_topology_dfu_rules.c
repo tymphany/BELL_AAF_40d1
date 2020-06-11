@@ -362,12 +362,19 @@ static rule_action_t ruleTwsTopDfuLEPriAbortCleanup(void)
 /*! \brief Rule that runs if out of the case */
 static rule_action_t ruleTwsTopOutOfCase(void)
 {
-
+#ifdef ENABLE_TYM_PLATFORM
+    if (appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_DFU_RULE_LOG("ruleTwsTopOutOfCase, ignore as still in power off");
+        return rule_action_ignore;
+    }
+#else
     if (!appPhyStateIsOutOfCase())
     {
         TWSTOP_DFU_RULE_LOG("ruleTwsTopOutOfCase, ignore as still in case");
         return rule_action_ignore;
     }
+#endif    
 
     TWSTOP_DFU_RULE_LOG("ruleTwsTopOutOfCase, run as out of case");
     return rule_action_run;
@@ -377,13 +384,19 @@ static rule_action_t ruleTwsTopOutOfCase(void)
 /*! \brief Rule that runs if out of the case */
 static rule_action_t ruleTwsTopInCase(void)
 {
-
+#ifdef ENABLE_TYM_PLATFORM
+    if (appPhyStateGetPowerState() == TRUE)
+    {
+        TWSTOP_DFU_RULE_LOG("ruleTwsTopInCase, ignore as still in power on");
+        return rule_action_ignore;
+    }
+#else
     if (appPhyStateIsOutOfCase())
     {
         TWSTOP_DFU_RULE_LOG("ruleTwsTopInCase, ignore as out of case");
         return rule_action_ignore;
     }
-
+#endif
     TWSTOP_DFU_RULE_LOG("ruleTwsTopInCase, run as in case");
     return rule_action_run;
 }

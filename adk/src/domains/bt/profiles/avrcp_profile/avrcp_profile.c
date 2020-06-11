@@ -1461,8 +1461,7 @@ static void appAvrcpHandleAvrcpPassthroughConfirm(avInstanceTaskData *theInst, c
                     if (cfm->status != avrcp_success)
                     {
 #ifdef ENABLE_TYM_PLATFORM
-                        if((StateProxy_IsInCase() == FALSE) || (StateProxy_IsPeerInEar() == TRUE))
-                            Ui_InjectUiInput(ui_input_prompt_volume_limit);
+                        Ui_InjectUiInput(ui_input_prompt_volume_limit);
 #else
                         appAvSendUiMessageId(AV_VOLUME_LIMIT);
 #endif
@@ -1479,8 +1478,7 @@ static void appAvrcpHandleAvrcpPassthroughConfirm(avInstanceTaskData *theInst, c
                     if (cfm->status != avrcp_success)
                     {
 #ifdef ENABLE_TYM_PLATFORM
-                        if((StateProxy_IsInCase() == FALSE) || (StateProxy_IsPeerInEar() == TRUE))
-                            Ui_InjectUiInput(ui_input_prompt_volume_limit);
+                        Ui_InjectUiInput(ui_input_prompt_volume_limit);
 #else
                         appAvSendUiMessageId(AV_VOLUME_LIMIT);
 #endif

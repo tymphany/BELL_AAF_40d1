@@ -551,8 +551,7 @@ void appPowerOn(void)
 
     TaskList_MessageSendId(appPowerGetClients(), POWER_ON);
 #ifdef ENABLE_TYM_PLATFORM
-    if((StateProxy_IsInCase() == FALSE) || (StateProxy_IsPeerInEar() == TRUE))
-        Ui_InjectUiInput(ui_input_prompt_poweron);
+    Ui_InjectUiInput(ui_input_prompt_poweron);
 
 #if ENABLE_UPDATE_AUDIO_PS_KEY
     UpdateAudioPSKey();
@@ -830,8 +829,7 @@ void appUserPowerOn(void)
     getPSPresetEQ();
     if(appSmIsPrimary())
     {
-        if(StateProxy_IsInCase() == FALSE)
-            Ui_InjectUiInput(ui_input_prompt_poweron);
+        Ui_InjectUiInput(ui_input_prompt_poweron);
     }
 }
 

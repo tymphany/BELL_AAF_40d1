@@ -230,15 +230,17 @@ static void handlePowerClientEvents(MessageId id)
 
 static void handleUiDomainInput(MessageId ui_input)
 {
-
+#ifdef ENABLE_TYM_PLATFORM
+    kymeraTaskData *theKymera = KymeraGetTaskData();
+#endif
     anc_mode = AncStateManager_GetMode();
 
     switch(ui_input)
     {
         case ui_input_anc_on:
             DEBUG_LOG("handleUiDomainInput, anc on input");
-#ifdef ENABLE_TYM_PLATFORM        /*temp solution, prompt play will cut when enable internal ANC*/    
-            if(uiPrompt_NoPromptPlay() == TRUE)
+#ifdef ENABLE_TYM_PLATFORM        /*temp solution, prompt play will cut when enable internal ANC*/   
+            if(theKymera->chain_tone_handle == NULL)
                 AncStateManager_Enable();
             else                                    
                 MessageSendLater(audioCuration_UiTask(), ui_input, NULL, D_SEC(1));
@@ -250,7 +252,7 @@ static void handleUiDomainInput(MessageId ui_input)
         case ui_input_anc_off:
             DEBUG_LOG("handleUiDomainInput, anc off input");
 #ifdef ENABLE_TYM_PLATFORM                
-            if(uiPrompt_NoPromptPlay() == TRUE)
+            if(theKymera->chain_tone_handle == NULL)
                 AncStateManager_Disable();
             else
                 MessageSendLater(audioCuration_UiTask(), ui_input, NULL, D_SEC(1));   
@@ -359,38 +361,32 @@ static void handleUiDomainInput(MessageId ui_input)
             break;
         case ui_input_bell_ui_anc_on:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_anc_on");
-            if(StateProxy_IsInCase() == FALSE)
-                Ui_InjectUiInput(ui_input_prompt_anc_on);
+            Ui_InjectUiInput(ui_input_prompt_anc_on);
             BellUiAncControl(ui_input);
             break;
         case ui_input_bell_ui_anc_off:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_anc_off");
-            if(StateProxy_IsInCase() == FALSE)
-                Ui_InjectUiInput(ui_input_prompt_anc_off);
+            Ui_InjectUiInput(ui_input_prompt_anc_off);
             BellUiAncControl(ui_input);
             break;
         case ui_input_bell_ui_ambient_on:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_ambient_on");
-            if(StateProxy_IsInCase() == FALSE)
-                Ui_InjectUiInput(ui_input_prompt_ambient_on);
+            Ui_InjectUiInput(ui_input_prompt_ambient_on);
             BellUiAncControl(ui_input);
             break;
         case ui_input_bell_ui_ambient_off:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_ambient_off");
-            if(StateProxy_IsInCase() == FALSE)
-                Ui_InjectUiInput(ui_input_prompt_ambient_off);
+            Ui_InjectUiInput(ui_input_prompt_ambient_off);
             BellUiAncControl(ui_input);
             break;
         case ui_input_bell_ui_speech_on:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_speech_on");
-            if(StateProxy_IsInCase() == FALSE)
-                Ui_InjectUiInput(ui_input_prompt_speech_on);
+            Ui_InjectUiInput(ui_input_prompt_speech_on);
             BellUiAncControl(ui_input);
             break;
         case ui_input_bell_ui_speech_off:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_speech_off");
-            if(StateProxy_IsInCase() == FALSE)
-                Ui_InjectUiInput(ui_input_prompt_speech_off);
+            Ui_InjectUiInput(ui_input_prompt_speech_off);
             BellUiAncControl(ui_input);
             break;
         case ui_input_bell_ui_pp_ambient:

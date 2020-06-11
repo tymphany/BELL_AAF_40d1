@@ -287,8 +287,7 @@ static void appBatteryServiceClients(batteryTaskData *battery)
                     {
                         if(new_state == battery_level_critical)
                         {
-                            if((StateProxy_IsInCase() == FALSE) || (StateProxy_IsPeerInEar() == TRUE))
-                                Ui_InjectUiInput(ui_input_prompt_battery_low);
+                            Ui_InjectUiInput(ui_input_prompt_battery_low);
                         }
                     }
 #endif

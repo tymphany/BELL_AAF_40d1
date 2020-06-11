@@ -68,8 +68,7 @@ static void volumeService_NotifyMinOrMaxVolume(volume_t volume)
     if(volume.value >= volume.config.range.max)
     {
 #ifdef ENABLE_TYM_PLATFORM
-        if(StateProxy_IsInCase() == FALSE)
-            Ui_InjectUiInput(ui_input_prompt_volume_limit);
+        Ui_InjectUiInput(ui_input_prompt_volume_limit);
 #else
         TaskList_MessageSendId(TaskList_GetFlexibleBaseTaskList(VolumeServiceGetClientLIst()), VOLUME_SERVICE_MAX_VOLUME);
 #endif
@@ -77,8 +76,7 @@ static void volumeService_NotifyMinOrMaxVolume(volume_t volume)
     if(volume.value <= volume.config.range.min)
     {
 #ifdef ENABLE_TYM_PLATFORM
-        if(StateProxy_IsInCase() == FALSE)
-            Ui_InjectUiInput(ui_input_prompt_volume_limit);
+        Ui_InjectUiInput(ui_input_prompt_volume_limit);
 #else
         TaskList_MessageSendId(TaskList_GetFlexibleBaseTaskList(VolumeServiceGetClientLIst()), VOLUME_SERVICE_MIN_VOLUME);
 #endif

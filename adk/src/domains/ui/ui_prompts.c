@@ -130,13 +130,7 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
                              the_prompts.no_repeat_period_in_ms);
             the_prompts.last_prompt_played_index = prompt_index;
         }
-    }
-#ifdef ENABLE_TYM_PLATFORM    
-    else
-    {
-        uiPrompts_RunUiPowerOff();     
-    }
-#endif        
+    }      
 }
 
 static void uiPrompts_SchedulePromptPlay(uint16 prompt_index)
@@ -198,10 +192,12 @@ static void uiPrompts_HandleMessage(Task task, MessageId id, Message message)
         {
             appPowerShutdownPrepareResponse(&the_prompts.task);
         }
+#ifdef ENABLE_TYM_PLATFORM        
         if (the_prompts.indicate_when_user_poweroff_prepared)
         {
             uiPrompts_RunUiPowerOff();       
         }    
+#endif        
     }
     else if (id == APP_POWER_SHUTDOWN_PREPARE_IND)
     {
@@ -219,20 +215,18 @@ static void uiPrompts_HandleMessage(Task task, MessageId id, Message message)
     else if(id == APP_POWER_USERPOWEROFF_PREPARE_IND)
     {
         the_prompts.indicate_when_user_poweroff_prepared = TRUE;
-        if((StateProxy_IsInCase () == TRUE) &&  (StateProxy_IsPeerInCase () == TRUE))
-        {
-            DEBUG_LOG("No prompts play");
-            uiPrompts_RunUiPowerOff();
-        }
-        else
+        if((StateProxy_IsInEar() == TRUE)||(StateProxy_IsPeerInEar() == TRUE))
         {
             if(the_prompts.generate_ui_events)
             {
-                if(StateProxy_IsInCase() == FALSE)
-                    Ui_InjectUiInput(ui_input_prompt_poweroff);
+                Ui_InjectUiInput(ui_input_prompt_poweroff);
             }
             //wait 1 second, wait master send power off prompts, if not send ,force 1 seconds power off.
             MessageSendLater(&the_prompts.task, APP_POWER_USERPOWEROFF_RESPOND_IND, NULL, D_SEC(1));
+        }
+        else
+        {
+            uiPrompts_RunUiPowerOff();
         }
         DEBUG_LOG("UI_PROMPTS recv APP_POWER_USERPOWEROFF_PREPARE_IND");
     }

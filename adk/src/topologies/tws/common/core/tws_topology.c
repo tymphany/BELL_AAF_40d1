@@ -477,8 +477,7 @@ static void twsTopology_HandleClearHandoverPlay(void)
 {
     DEBUG_LOG("twsTopology_HandleClearHandoverPlay");
 #ifdef ENABLE_TYM_PLATFORM
-    if(StateProxy_IsInCase() == FALSE)
-        Ui_InjectUiInput(ui_input_prompt_role_switch);
+    Ui_InjectUiInput(ui_input_prompt_role_switch);
 #endif
     appAvPlayOnHandsetConnection(FALSE);
 }
