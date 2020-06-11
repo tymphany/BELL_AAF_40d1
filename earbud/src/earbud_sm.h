@@ -239,6 +239,7 @@ typedef struct
     bool enter_dfu_in_case:1;           /*! Flag used to indicate that device has entered in-case in DFU mode. */
 #ifdef ENABLE_TYM_PLATFORM
     bool UpgradeStarted:1;
+    bool pairing_req:1;
 #endif
     tws_topology_role role;             /*!< Current primary/secondary/none role of the earbud */
     rule_set_t primary_rules;

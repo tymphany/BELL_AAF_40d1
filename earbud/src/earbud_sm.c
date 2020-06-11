@@ -588,27 +588,46 @@ static void appEnterHandsetPairing(void)
 }
 
 #ifdef ENABLE_TYM_PLATFORM
-static void appExitHandsetPairingStateMachine(void)
-{
-    DEBUG_LOG_DEBUG("appExitHandsetPairingStateMachine");
-    appSmRulesSetRuleComplete(CONN_RULES_HANDSET_PAIR);       
-}
-#endif
-
 /*! \brief Exit actions when handset pairing completed.
  */
 static void appExitHandsetPairing(void)
 {
     smTaskData *sm = SmGetTaskData();
-
     DEBUG_LOG_DEBUG("appExitHandsetPairing");
-
-    PeerFindRole_UnregisterPrepareClient(&sm->task);
-    appSmRulesSetRuleComplete(CONN_RULES_HANDSET_PAIR);
+    sm->pairing_req = FALSE;
     Pairing_PairStop(NULL);
     appSmClearUserPairing();
     TwsTopology_ProhibitHandsetConnection(FALSE);
 }
+
+static void appExitHandsetPairingStateMachine(void)
+{
+    smTaskData *sm = SmGetTaskData();
+    DEBUG_LOG_DEBUG("appExitHandsetPairingStateMachine");
+    PeerFindRole_UnregisterPrepareClient(&sm->task);
+    appSmRulesSetRuleComplete(CONN_RULES_HANDSET_PAIR);     
+    if(appPhyStateGetPowerState() == FALSE) /*power off exit pairing*/
+    {
+        appExitHandsetPairing();
+    }    
+}
+
+#else
+
+/*! \brief Exit actions when handset pairing completed.
+ */
+static void appExitHandsetPairing(void)
+{
+    DEBUG_LOG_DEBUG("appExitHandsetPairing");
+    PeerFindRole_UnregisterPrepareClient(&sm->task);
+    appSmRulesSetRuleComplete(CONN_RULES_HANDSET_PAIR);       
+    Pairing_PairStop(NULL);
+    appSmClearUserPairing();
+    TwsTopology_ProhibitHandsetConnection(FALSE);
+}
+
+#endif
+
 
 /*! \brief Enter
  */
@@ -1469,6 +1488,9 @@ static void appSmHandlePowerShutdownCancelledInd(void)
 
 static void appSmHandleConnRulesHandsetPair(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    smTaskData *sm = SmGetTaskData();
+#endif
     DEBUG_LOG_DEBUG("appSmHandleConnRulesHandsetPair");
 
     switch (appSmGetState())
@@ -1480,9 +1502,11 @@ static void appSmHandleConnRulesHandsetPair(void)
 #endif
             DEBUG_LOG_DEBUG("appSmHandleConnRulesHandsetPair, rule said pair with handset");
 #ifdef ENABLE_TYM_PLATFORM            
-
-            DEBUG_LOG("HAVE pairing,need clean");
-            appExitHandsetPairing();
+            if(sm->pairing_req)
+            {    
+                DEBUG_LOG("HAVE pairing,need clean");
+                appExitHandsetPairing();
+            }
 #endif             
             appSmClearUserPairing();            
             appSmSetState(APP_STATE_HANDSET_PAIRING);
@@ -2143,10 +2167,14 @@ bool appSmHandleConnectionLibraryMessages(MessageId id, Message message, bool al
 static void appSmHandleInternalPairHandset(void)
 {
 #ifdef ENABLE_TYM_PLATFORM
+    smTaskData *sm = SmGetTaskData();
     if (appSmIsPrimary())
     {
-        DEBUG_LOG("HAVE pairing,need clean");
-        appExitHandsetPairing();   
+        if(sm->pairing_req)
+        {
+            DEBUG_LOG("HAVE pairing,need clean");
+            appExitHandsetPairing();   
+        }
         appSmSetUserPairing();
         appSmSetState(APP_STATE_HANDSET_PAIRING);
     }
@@ -2438,6 +2466,9 @@ static void appSmHandleInternalReboot(void)
 static void appSm_ContinuePairingHandsetAfterDisconnect(void)
 {
     smTaskData *sm = SmGetTaskData();
+#ifdef ENABLE_TYM_PLATFORM
+    sm->pairing_req = TRUE;
+#endif    
     PeerFindRole_RegisterPrepareClient(&sm->task);
     Pairing_Pair(SmGetTask(), appSmIsUserPairing());
 }
@@ -3019,6 +3050,9 @@ static void appSm_HandlePeerFindRolePrepareForRoleSelection(void)
     {
         /* Cancel the pairing */
         smTaskData *sm = SmGetTaskData();
+#ifdef ENABLE_TYM_PLATFORM        
+        sm->pairing_req = FALSE;
+#endif        
         Pairing_PairStop(&sm->task);
     }
     else
