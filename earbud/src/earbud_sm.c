@@ -590,14 +590,17 @@ static void appEnterHandsetPairing(void)
 #ifdef ENABLE_TYM_PLATFORM
 /*! \brief Exit actions when handset pairing completed.
  */
-static void appExitHandsetPairing(void)
+void appExitHandsetPairing(void)
 {
     smTaskData *sm = SmGetTaskData();
     DEBUG_LOG_DEBUG("appExitHandsetPairing");
-    sm->pairing_req = FALSE;
-    Pairing_PairStop(NULL);
+    if(sm->pairing_req == TRUE)
+    {    
+        sm->pairing_req = FALSE;
+        Pairing_PairStop(NULL);
+        TwsTopology_ProhibitHandsetConnection(FALSE);
+    }
     appSmClearUserPairing();
-    TwsTopology_ProhibitHandsetConnection(FALSE);
 }
 
 static void appExitHandsetPairingStateMachine(void)

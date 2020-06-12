@@ -273,7 +273,11 @@ static rule_action_t ruleAutoHandsetPair(void)
 {
     /* NOTE: Ordering of these checks is important */
 #ifdef ENABLE_TYM_PLATFORM
-    PRIMARY_RULE_LOG("ruleAutoHandsetPair, not ignore, we're in the case");
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        PRIMARY_RULE_LOG("ruleAutoHandsetPair ,ignore as power off");
+        return rule_action_ignore;
+    }
 #else
     if (appSmIsInCase())
     {

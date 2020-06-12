@@ -468,6 +468,7 @@ extern void appSmEnterDfuModeInCase(bool enable, bool inform_peer);
 bool appSmHandleConnectionLibraryMessages(MessageId id, Message message, bool already_handled);
 #ifdef ENABLE_TYM_PLATFORM
 void appDisconnectAll(void);
+void appExitHandsetPairing(void);
 #endif
 
 #endif /* EARBUD_SM_H_ */

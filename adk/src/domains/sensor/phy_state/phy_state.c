@@ -963,7 +963,10 @@ void appPhyStatePowerOffEvent(void)
     appPhyStateCancelTriggerSleepMode();
     appPhyStateCancelTriggerStandbyMode();
     if(appSmIsPrimary())
+    {    
+        appExitHandsetPairing();
         tymSyncdata(btStatusCmd,btConnectable);   //power off sync bt status connectable
+    }
     appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_user_poweroff);
     if(getFactoryModeEnable() == TRUE)
     {
@@ -974,7 +977,7 @@ void appPhyStatePowerOffEvent(void)
         }
         if(tymGetBTStatus() == btPairing)
         {
-            Pairing_PairStop(NULL);
+            appExitHandsetPairing();
         }
     }
 }
@@ -1380,7 +1383,7 @@ void appPhyChangeSleepStandbyMode(phy_state_event phyState)
             else if(tymGetBTStatus() == btPairing)
             {
                 //cancel pairing
-                Pairing_PairStop(NULL);
+                appExitHandsetPairing();
             }
             if((StateProxy_IsInCase() == FALSE) || (StateProxy_IsPeerInEar() == TRUE))
                 Ui_InjectUiInput(ui_input_prompt_poweroff);
