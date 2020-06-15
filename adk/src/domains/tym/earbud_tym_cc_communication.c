@@ -153,7 +153,7 @@ void statusCommunicationMessage(MessageId pId,statusSendCmd_T *cmdId)
 #ifdef ENABLE_UART
             procCmd.haveCmdExist = TRUE;
             sendCmdToChargingCase(cmdId->event);
-            MessageSendLater((TaskData *)&_statusReportTask, statusEndCmd, 0, 100);
+            MessageSendLater((TaskData *)&_statusReportTask, statusEndCmd, 0, 20);
 
 #else
             datanum = sendCmdDataArray[cmdId->event];
@@ -164,7 +164,7 @@ void statusCommunicationMessage(MessageId pId,statusSendCmd_T *cmdId)
         {
             MESSAGE_MAKE(sendCmdId, statusSendCmd_T);
             sendCmdId->event = cmdId->event;
-            MessageSendLater((TaskData *)&_statusReportTask, statusSendCmd, sendCmdId, D_SEC(1));
+            MessageSendLater((TaskData *)&_statusReportTask, statusSendCmd, sendCmdId, 20);
         }        
     }
     else if(pId == statusEndCmd)
