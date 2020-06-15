@@ -57,4 +57,6 @@ void disable_i2c_for_cal(bool enable);
 bool getExtAncEnableStatus(void);
 void appAncPowerOff(void);
 void appAncPowerOn(void);
+bool checkANCVerifyValue(void);
+void stanc3_change_register(uint8 reg,uint8 data);
 #endif/*__EARBUD_TYM_ANC_H__*/

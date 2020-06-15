@@ -61,9 +61,9 @@
 #define LOW_POWER							0x00
 #define ATI_TARGET_TOUCH					0x50
 #define ATI_TARGET_PROX						0x00
-#define TAP_TIMER							0x18 // 0x18 (If use tap event)  0x00 (If use PO pin status)
+#define TAP_TIMER							0x28 //0x18 // 0x18 (If use tap event)  0x00 (If use PO pin status)
 #define FLICK_TIMER							0x30
-#define FLICK_THRESHOLD						0x24
+#define FLICK_THRESHOLD						0x36//0x24
 
 /* Set Active Channels (0x0D) */
 #define ACTIVE_CHS							0x07

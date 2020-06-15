@@ -949,7 +949,8 @@ void appPhyStatePowerOnEvent(void)
     {
         phy_state->anc_cal = FALSE;
         disable_i2c_for_cal(0);//power on
-        dumpANCWriteToPSKey();
+        if(checkANCVerifyValue())
+            dumpANCWriteToPSKey();
     }
     phy_state->poweron = TRUE;
     appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_user_poweron);
@@ -1008,7 +1009,8 @@ void appPhyStateAncCalibration(void)
             /*enable I2C communication*/
             /*read ANC register and write to PSKEY*/
             disable_i2c_for_cal(0);
-            dumpANCWriteToPSKey();
+            if(checkANCVerifyValue())
+                dumpANCWriteToPSKey();
         }
     }
 }

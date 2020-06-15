@@ -408,6 +408,21 @@ void dumpANCWriteToPSKey(void)
 
 }
 
+/*! \brief check ANC verify value */
+bool checkANCVerifyValue(void)
+{
+    bool verify = FALSE;
+    uint8 read_data[1];
+    if(!tym_i2c_read(ANC_CTRL_ADDR,0x07,&read_data[0],1))
+    {
+            DEBUG_LOG("return error tym_i2c_read 0x07");
+            return verify; /* error */
+     }
+     if(read_data[0] == 0x05)
+        verify = TRUE;
+        
+    return verify;                   
+}
 /*! \brief stanc3 ANC calibration diable i2c */
 void disable_i2c_for_cal(bool enable)
 {
@@ -451,3 +466,26 @@ void stanc3_volumedown(bool enable)
     }	
 }
 
+/* charge stanc3 PSKEY value */
+void stanc3_change_register(uint8 reg,uint8 data)
+{
+    int i;
+    int ANCConfigData;
+    uint8 anc_data[SINK_ANC_DATA_BYTES];
+    uint16 pskeydata[SINK_ANC_PS_SIZE];    
+    ANCConfigData = PsRetrieve(PSID_ANCTABLE,0,0);
+    if(ANCConfigData == 0)
+    {
+        stanc3_ancoff();/*default set anc off*/
+        dumpANCWriteToPSKey();        
+    }
+    ANCConfigData = PsRetrieve(PSID_ANCTABLE,pskeydata,SINK_ANC_PS_SIZE);
+    ByteUtilsMemCpyUnpackString(anc_data, pskeydata, SINK_ANC_DATA_BYTES);
+    anc_data[reg] = data;
+    ByteUtilsMemCpyPackString(pskeydata,anc_data,SINK_ANC_DATA_BYTES);
+    DEBUG_LOG("dump calibration value");
+    for(i = 0;i < SINK_ANC_DATA_BYTES;i++)
+        DEBUG_LOG("0x%x ",anc_data[i]);
+    ANCConfigData = PsStore(PSID_ANCTABLE,pskeydata,SINK_ANC_PS_SIZE);
+   
+}

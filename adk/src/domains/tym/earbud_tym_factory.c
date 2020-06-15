@@ -140,6 +140,8 @@ void factory_mutecontrol(void *);
 void factory_stanc3mutecontrol(void *);
 void factory_switching_eq_preset(void *);
 void factory_get_eq_preset(void *);
+void factory_writestanc3_pskey(void *);
+void factory_stanc_checkpass(void *);
 static void configrationInitConnect(void);
 /* --------------- Static Global Variables ----------------- */
 /* The operators */
@@ -188,6 +190,8 @@ const tymFactory_s tymFactoryCmdList[] = {
   { "048", factory_setvolume},       // "Set volume"
   { "049", factory_getvolume},       // "Get volume"  
   { "052", factory_dutmode},
+  { "053", factory_stanc_checkpass},
+  { "054", factory_writestanc3_pskey},  
    //for TWS
   { "100", factory_twspair},
   { "101", factory_twsrole},  
@@ -732,7 +736,6 @@ void factory_powercharge(void *dataptr)
 /*! \brief  factory set cvc mic */
 void factory_cvcmic(void *dataptr)
 {
-    UNUSED(dataptr); 
     const char delim[2] = " ";
     uint16 par[3];
     int dataindex = 0;
@@ -830,6 +833,40 @@ void factory_dutmode(void *dataptr)
     ConnectionEnterDutMode();
 }
 
+/*! \brief  factory stanc 3 check pass */
+void factory_stanc_checkpass(void *dataptr)
+{
+    UNUSED(dataptr);    
+
+    if(checkANCVerifyValue() == TRUE)
+        tymSendDatatoHost((uint8 *)"1",sizeof("1"));     
+    else   
+        tymSendDatatoHost((uint8 *)"0",sizeof("0"));           
+}
+
+/*! \brief  factory write register PSKEY */
+void factory_writestanc3_pskey(void *dataptr)
+{
+    const char delim[2] = " ";
+    uint16 par[3];
+    int dataindex = 0;
+    
+    if(dataptr == NULL)
+    {
+        tymSendDatatoHost((uint8 *)"Err_00", sizeof("Err_00"));
+        return;
+    }
+
+    while(dataptr != NULL)
+    {
+        par[dataindex] = atoi(dataptr);
+        dataindex++;
+        dataptr = strtok(NULL,delim);
+    }
+    stanc3_change_register(par[0],par[1]);    
+    tymSendDatatoHost((uint8 *)"1",sizeof("1"));    
+            
+}
 /*! \brief  factory pair tws */
 void factory_twspair(void *dataptr)
 {

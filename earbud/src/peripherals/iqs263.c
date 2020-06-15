@@ -60,22 +60,14 @@ static void _iqsProcessMessageHandler ( Task pTask, MessageId pId, Message pMess
 static const TaskData iqsProcessTask = { _iqsProcessMessageHandler };
 void holdEndOperation(void);
 void holdStartOperation(void);
-void swipeLeftAction(void);
-void swipeRightAction(void);
 void cancelTouchPadTimer(void);
-void setTouchPadTimer(void);
 void runSwipeFunction(uint8 swipe);
-void actionRun(void);
 /* --------------- Static Global Variables ----------------- */
 struct __touch_config touch_config = {
     .rdy_interrupt  = IQS_RDY_PIN,
     .hold_interrupt = IQS_HOLD_PIN,
     .chan1threshold = 0,
-    .eventSwipe     = 0,
     .tapCnt         = 0,
-    .eventTap       = FALSE,
-    .eventHold      = FALSE,
-    .debound        = FALSE,
     .holdPio        = FALSE,
     .readyPio       = FALSE,
     .init           = FALSE,
@@ -424,63 +416,63 @@ void _updateIQSEvent(void)
     /******************************* FLICK (RIGHT) ****************************/
         if(iqs_events & 0x80)
         {
-            xprint("Flick Right Event");
-            swipeRightAction();
-            actionRun();
+            if(tconfig->tapCnt>0)
+                 MessageCancelAll( (TaskData *)&iqsProcessTask, iqs263_tap_timeout);
+             tconfig->tapCnt=0;
+             DEBUG_LOG("===Right Event===");
+             runSwipeFunction(swipeRAction);
         }
-        /******************************* FLICK (LEFT) *****************************/
         else if(iqs_events & 0x40)
         {
-            xprint("Flick Left Event");
-            swipeLeftAction(); 
-            actionRun(); 
+            if(tconfig->tapCnt>0)
+                MessageCancelAll( (TaskData *)&iqsProcessTask, iqs263_tap_timeout);
+            tconfig->tapCnt=0;
+            DEBUG_LOG("===Left Event===");
+            runSwipeFunction(swipeLAction);
         }
-        /********************************* TAP ************************************/
         else if(iqs_events & 0x20)
-        {					
-            if(tconfig->eventHold == TRUE)
-            {   
-                DEBUG_LOG("tap no hold , error return");
-                return;
-            }
-            if(tconfig->eventSwipe == 0)
-            {
-                tconfig->eventTap = TRUE;
-                actionRun();
-            }            
+        {
+            if(tconfig->tapCnt>0)
+                MessageCancelAll( (TaskData *)&iqsProcessTask, iqs263_tap_timeout);
+            MessageSendLater( (TaskData *)&iqsProcessTask,iqs263_tap_timeout , 0, 350);
+            tconfig->tapCnt++;
         }
-    } 
+    }
 } 
 
 /*! \brief prcess iqs263 tap event to tigger  */
 void _processTAPEvent(void)
 {
-    touchConfig *tconfig = appConfigTouch();
-    tymTouchTaskData *tymtouch = TymTouchGetTaskData();    
+    touchConfig *tconfig = appConfigTouch();   
     uint8 touchPadMode = tymGetTouchPadMode();
     uint8 tapCnt = tconfig->tapCnt;
     tconfig->tapCnt = 0;
+    DEBUG_LOG("===Tab_%d Event===",tapCnt);
     if(touchPadMode != normalPad)
     {
         if((touchPadMode >= sleepPad) && (tapCnt > 1))
         {
             DEBUG_LOG("tap > 1, standbyPad");
-            TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx2);
+            //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx2);
+            MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_TAPx2, NULL);            
         }    
         DEBUG_LOG("tap != normalPad, bye");
         return;    
     }        
     if(tapCnt == 1)
     {
-        TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx1);
+        //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx1);
+        MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_TAPx1, NULL); 
     }
     else if(tapCnt == 2)
     {
-        TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx2);
+        //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx2);
+        MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_TAPx2, NULL);         
     }
     else if(tapCnt > 2)//cnt > 3
     {
-        TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx3);        
+        //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx3);  
+        MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_TAPx3, NULL);       
     }
 
 }
@@ -493,28 +485,20 @@ static void _iqsProcessMessageHandler ( Task pTask, MessageId pId, Message pMess
     UNUSED(pMessage);
     bool noCasePairing = FALSE;
     uint8 touchPadMode = tymGetTouchPadMode();
-    tymTouchTaskData *tymtouch = TymTouchGetTaskData(); 
     touchConfig *tconfig = appConfigTouch();
         
     if(pId == iqs263_event)
     {
         _updateIQSEvent();  
     }
-    else if(pId == iqs263_tap)        
-    {
-        _processTAPEvent();
-    }
-    else if(pId == iqs263_debound)
-    {
-        tconfig->debound = FALSE;
-    }  
     else if(pId == iqs263_hold2s)
     {
         if(touchPadMode == normalPad)
         {    
             DEBUG_LOG("hold 2s event");
             tconfig->hold2sTrigger = TRUE;
-            TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_HOLD2S);
+            //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_HOLD2S);
+            MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_HOLD2S, NULL); 
         }    
     }
     else if(pId == iqs263_hold5s)
@@ -528,7 +512,8 @@ static void _iqsProcessMessageHandler ( Task pTask, MessageId pId, Message pMess
         if((touchPadMode == btPairingPad) || (noCasePairing  == TRUE))
         {    
             DEBUG_LOG("hold 5s event");
-            TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_HOLD5S);
+            //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_HOLD5S);
+            MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_HOLD5S, NULL); 
         }
     }
     else if(pId == iqs263_hold10s)
@@ -536,192 +521,90 @@ static void _iqsProcessMessageHandler ( Task pTask, MessageId pId, Message pMess
         if(touchPadMode == restoreDefaultPad)
         {    
             DEBUG_LOG("hold 10s event");
-            TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_HOLD10S);            
+            //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_HOLD10S);            
+            MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_HOLD10S, NULL); 
         }
-    }           
+    }
+    else if( pId == iqs263_hold_count)
+    {
+        tconfig->holdDuration++;
+        if(tconfig->holdDuration == 2)
+        {
+            DEBUG_LOG("===HOLD_2s===");
+            MessageSend((TaskData *)&iqsProcessTask, iqs263_hold2s,0);
+        }
+        else if(tconfig->holdDuration == 5)
+        {
+            DEBUG_LOG("===HOLD_5s===");
+            MessageSend((TaskData *)&iqsProcessTask, iqs263_hold5s,0);
+        }
+        else if(tconfig->holdDuration == 10)
+        {
+            DEBUG_LOG("===HOLD_10s===");            
+            MessageSend((TaskData *)&iqsProcessTask, iqs263_hold10s,0);
+        }
+        MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold_count, 0, 900);
+    }
+    else if( pId == iqs263_tap_timeout)
+    {
+        if( 1 <= tconfig->tapCnt && tconfig->tapCnt <=3 )
+        {
+            _processTAPEvent();
+        }
+        tconfig->tapCnt = 0;
+    }               
 }
 
 /*! \brief hold End Operation */
 void holdEndOperation(void)
 {
     touchConfig *tconfig = appConfigTouch();
-    //uint8 swipeAction = 0;
-    if(tconfig->eventHold == FALSE)
-    {
-        DEBUG_LOG("holdend error, eventhold %d",tconfig->eventHold);
-        return;
-    }    
-    tconfig->eventHold = FALSE;
-    cancelTouchPadTimer();
+    MessageCancelAll( (TaskData *)&iqsProcessTask, iqs263_hold_count);
     if(tconfig->hold2sTrigger == TRUE)
     {
-		tconfig->hold2sTrigger = FALSE; 
-		//TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_HOLD2SEND);
-		DEBUG_LOG("&&&&& send hold 2s end &&&&&&&&");
-		MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_HOLD2SEND, NULL);
-    }    
+        tconfig->hold2sTrigger = FALSE;
+        DEBUG_LOG("&&&&& send hold 2s end &&&&&&&&");
+        MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_HOLD2SEND, NULL);
+    }
     if(tconfig->hold5sTrigger == TRUE)
     {
-		tconfig->hold5sTrigger = FALSE; 
-		//TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_HOLD5SEND);
+        tconfig->hold5sTrigger = FALSE;
+        //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_HOLD5SEND);
         MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_HOLD5SEND, NULL);
-    }  
-    /* move run action
-    if((tconfig->eventTap == FALSE) && (tconfig->eventSwipe == 0))
-    {
-        tconfig->tapCnt = 0;
-        tconfig->eventHold = FALSE;
-        tconfig->eventSwipe = 0;
-        return;
-    }    
-    if(tconfig->eventTap)
-        tconfig->tapCnt += 1;
-    swipeAction = tconfig->eventSwipe;
-    if(swipeAction)
-    {
-       runSwipeFunction(swipeAction);
-       tconfig->eventSwipe = 0;
-       tconfig->tapCnt = 0;
-    }
-    else if(tconfig->tapCnt)
-    {
-        if(tconfig->tapCnt >= 3)
-        {
-            _processTAPEvent();
-        }
-        else
-        {
-            //create tap timer
-            MessageSendLater( (TaskData *)&iqsProcessTask, iqs263_tap, 0, COLLECT_TAP_TIME);
-        }        
-    }*/
-    tconfig->debound = TRUE; 
-    MessageSendLater( (TaskData *)&iqsProcessTask, iqs263_debound, 0, DEBOUND_TIME);            
+    }         
 }
-/*! \brief action run Operation */
-void actionRun(void)
-{
-    touchConfig *tconfig = appConfigTouch();
-    uint8 swipeAction = 0;    
-    if((tconfig->eventTap == FALSE) && (tconfig->eventSwipe == 0))
-    {
-        tconfig->tapCnt = 0;
-        tconfig->eventHold = FALSE;
-        tconfig->eventSwipe = 0;
-        return;
-    }    
-    if(tconfig->eventTap)
-        tconfig->tapCnt += 1;
-    swipeAction = tconfig->eventSwipe;
-    if(swipeAction)
-    {
-       runSwipeFunction(swipeAction);
-       tconfig->eventSwipe = 0;
-       tconfig->tapCnt = 0;
-    }
-    else if(tconfig->tapCnt)
-    {
-        if(tconfig->tapCnt >= 3)
-        {
-            _processTAPEvent();
-        }
-        else
-        {
-            //create tap timer
-            MessageSendLater( (TaskData *)&iqsProcessTask, iqs263_tap, 0, COLLECT_TAP_TIME);
-        }        
-    }    
-}
+
 /*! \brief hold Start Operation */
 void holdStartOperation(void)
 {
-    touchConfig *tconfig = appConfigTouch();    
-    if((tconfig->eventHold == TRUE) || (tconfig->debound == TRUE))
-    {
-        DEBUG_LOG("holdstart error, eventHold %d,debound %d",tconfig->eventHold,tconfig->debound);
-        return;
-    }      
+    touchConfig *tconfig = appConfigTouch();
+    MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_hold_count);
+    tconfig->holdDuration=0;
+    MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold_count, 0, 900);
     if(PioCommonGetPio(IQS_RDY_PIN) == FALSE)
     {
         DEBUG_LOG("miss event");
         MessageSend ( (TaskData *)&iqsProcessTask, iqs263_event, 0);
     }      
-    tconfig->eventHold = TRUE;
-    /*hold start, start tap collect again*/
-    MessageCancelAll( (TaskData *)&iqsProcessTask, iqs263_tap);
-    setTouchPadTimer();
-    tconfig->eventTap = FALSE;
-    tconfig->eventSwipe = 0;
-}
-
-/*! \brief Swipe Left Action */
-void swipeLeftAction(void)
-{
-    touchConfig *tconfig = appConfigTouch();    
-    if(tconfig->eventHold == TRUE)
-    {
-        DEBUG_LOG("swipe Left error,return");
-        return;
-    }    
-    tconfig->eventSwipe = swipeLAction;
-    tconfig->eventTap = FALSE;
-}
-
-/*! \brief Swipe Right Action */
-void swipeRightAction(void)
-{
-    touchConfig *tconfig = appConfigTouch();    
-    if(tconfig->eventHold == TRUE)
-    {
-        DEBUG_LOG("swipe Right error,return");    
-        return;
-    }
-    tconfig->eventSwipe = swipeRAction;
-    tconfig->eventTap = FALSE;    
 }
 
 /*! \brief cancel Touch pad timer */
 void cancelTouchPadTimer(void)
 {
-	//DEBUG_LOG("cancel hold timer");
+	//DEBUG_LOG("cancel hold timer");    
     MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_hold2s);
     MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_hold5s);
     MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_hold10s);
+
+    MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_tap_timeout);
+    MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_hold_count);
 }
 
-/*! \brief Setup Touch need follow touch pad mode */
-void setTouchPadTimer(void)
-{
-    uint8 touchPadMode;
-    touchPadMode = tymGetTouchPadMode();
-    DEBUG_LOG("TouchPad Mode %d",touchPadMode);
-
-    if((StateProxy_IsInCase() == TRUE) && (touchPadMode != restoreDefaultPad) )
-    {
-        DEBUG_LOG("hold 5s");  
-        MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold5s, 0, D_SEC(4.5));        
-    }    
-    else if(touchPadMode == normalPad)
-    {
-        MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold2s, 0, D_SEC(2));
-        if((StateProxy_IsPeerInEar() == TRUE) && (StateProxy_IsInEar() == TRUE))//link wear,local wear
-    	{
-            DEBUG_LOG("hold 5s");
-            MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold5s, 0, D_SEC(4.5));
-    	}        
-    }
-    else if(touchPadMode == restoreDefaultPad)                
-    {
-        DEBUG_LOG("hold 10s");
-        MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold10s, 0, D_SEC(9.5));
-    }                
-}
 
 /*! \brief according swipe left/right call mapping function */
 void runSwipeFunction(uint8 swipe)
 {
     uint8 touchPadMode;
-    tymTouchTaskData *tymtouch = TymTouchGetTaskData();
     touchPadMode = tymGetTouchPadMode();
     if(touchPadMode != normalPad)
     {
@@ -730,26 +613,28 @@ void runSwipeFunction(uint8 swipe)
     } 
     if(swipe == swipeLAction)
     {
-    	DEBUG_LOG("call swipe left");
         if(Multidevice_IsLeft()) /*left earbud need invert*/
         {
-            TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_SWIPER);            
+            //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_SWIPER);            
+            MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_SWIPER, NULL);
         }
         else
         {
-            TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_SWIPEL);
+            //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_SWIPEL);
+            MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_SWIPEL, NULL);            
         }        
     }
     else if(swipe == swipeRAction)
     {
-    	DEBUG_LOG("call swipe right");
         if(Multidevice_IsLeft()) /*left earbud need invert*/
         {
-            TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_SWIPEL);            
+            //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_SWIPEL);            
+            MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_SWIPEL, NULL);     
         }
         else
         {
-            TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_SWIPER);
+            //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_SWIPER);
+            MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_SWIPER, NULL);
         }   	
     }  
 }

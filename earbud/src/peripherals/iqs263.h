@@ -11,11 +11,11 @@
 typedef enum iqs263CtrlMsg
 {
     iqs263_event,
-    iqs263_tap,
-    iqs263_debound,
     iqs263_hold2s,
     iqs263_hold5s,
     iqs263_hold10s,
+    iqs263_tap_timeout, //2020-06-12
+    iqs263_hold_count, //2020-06-12
 } iqs263CtrlMsg_t;
 
 
@@ -25,11 +25,8 @@ struct __touch_config
     uint8 hold_interrupt;  //hold pin
     uint8 rdy_interrupt;   //ready pin
     uint8 chan1threshold;
-    uint8 eventSwipe;
+    uint8 holdDuration;        //2020-06-12
     uint8 tapCnt;
-    bool  eventTap;
-    bool  eventHold;
-    bool  debound;
     bool  holdPio;        //hold pio high/low
     bool  readyPio;       //read pin high/low
     bool  init;
