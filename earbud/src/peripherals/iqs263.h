@@ -27,6 +27,7 @@ struct __touch_config
     uint8 chan1threshold;
     uint8 holdDuration;        //2020-06-12
     uint8 tapCnt;
+    uint8 touchpad;
     bool  holdPio;        //hold pio high/low
     bool  readyPio;       //read pin high/low
     bool  init;

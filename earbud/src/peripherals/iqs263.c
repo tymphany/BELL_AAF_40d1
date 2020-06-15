@@ -540,8 +540,9 @@ static void _iqsProcessMessageHandler ( Task pTask, MessageId pId, Message pMess
         }
         else if(tconfig->holdDuration == 10)
         {
-            DEBUG_LOG("===HOLD_10s===");            
-            MessageSend((TaskData *)&iqsProcessTask, iqs263_hold10s,0);
+            DEBUG_LOG("===HOLD_10s===");       
+            if(tconfig->touchpad == restoreDefaultPad)     
+                MessageSend((TaskData *)&iqsProcessTask, iqs263_hold10s,0);
         }
         MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold_count, 0, 900);
     }
@@ -578,8 +579,10 @@ void holdEndOperation(void)
 void holdStartOperation(void)
 {
     touchConfig *tconfig = appConfigTouch();
+    uint8 touchPadMode = tymGetTouchPadMode();
     MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_hold_count);
     tconfig->holdDuration=0;
+    tconfig->touchpad = touchPadMode;
     MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold_count, 0, 900);
     if(PioCommonGetPio(IQS_RDY_PIN) == FALSE)
     {
