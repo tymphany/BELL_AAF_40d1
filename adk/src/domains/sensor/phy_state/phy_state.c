@@ -968,6 +968,10 @@ void appPhyStatePowerOffEvent(void)
         appExitHandsetPairing();
         tymSyncdata(btStatusCmd,btConnectable);   //power off sync bt status connectable
     }
+    else
+    {
+        reportBtStatus(btConnectable); /*power off maybe can't receive btConnectable , force clear bt status*/
+    }    
     appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_user_poweroff);
     if(getFactoryModeEnable() == TRUE)
     {
@@ -1491,7 +1495,6 @@ void appPhyStatePrepareToEnterStandbyMode(void)
 
 void appPhyStateLeaveDormant(void)
 {
-
     DEBUG_LOG("appPhyStateLeaveDormant");
     if(getFactoryModeTopEnable() == TRUE)
     {
