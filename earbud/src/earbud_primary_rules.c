@@ -39,6 +39,7 @@
 #include <voice_ui.h>
 #ifdef ENABLE_TYM_PLATFORM
 #include "earbud_tym_sync.h"
+#include "ui.h"
 #endif
 
 #pragma unitsuppress Unused
@@ -369,6 +370,10 @@ static rule_action_t ruleForwardLinkKeys(void)
 */
 static rule_action_t ruleOutOfEarA2dpActive(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    /* out ear, set ui anc*/
+    Ui_InjectUiInput(ui_input_bell_ui_anc_on_noprompt);
+#endif     
     if (appAvIsStreaming() && (VoiceUi_IsVoiceAssistantA2dpStreamActive() == FALSE))
     {
         PRIMARY_RULE_LOG("ruleOutOfEarA2dpActive, run as A2DP is active and earbud out of ear");

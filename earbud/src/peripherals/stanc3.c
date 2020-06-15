@@ -476,6 +476,7 @@ void stanc3_change_register(uint8 reg,uint8 data)
     ANCConfigData = PsRetrieve(PSID_ANCTABLE,0,0);
     if(ANCConfigData == 0)
     {
+        stanc3_audiomute(FALSE);/*default audio unmute*/
         stanc3_ancoff();/*default set anc off*/
         dumpANCWriteToPSKey();        
     }

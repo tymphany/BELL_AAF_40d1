@@ -129,6 +129,7 @@
     UI_INPUT(ui_input_bell_ui_switch_preset_bank4) \
     UI_INPUT(ui_input_bell_ui_switch_preset_bank5) \
     UI_INPUT(ui_input_bell_ui_switch_preset_bank6) \
+    UI_INPUT(ui_input_bell_ui_anc_on_noprompt) \
     UI_INPUT(ui_input_prompt_pairing = UI_INPUTS_PROMPT_MESSAGE_BASE) \
     UI_INPUT(ui_input_prompt_pairing_successful) \
     UI_INPUT(ui_input_prompt_pairing_failed) \

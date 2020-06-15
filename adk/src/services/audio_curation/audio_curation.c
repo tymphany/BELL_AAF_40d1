@@ -364,6 +364,10 @@ static void handleUiDomainInput(MessageId ui_input)
             Ui_InjectUiInput(ui_input_prompt_anc_on);
             BellUiAncControl(ui_input);
             break;
+        case ui_input_bell_ui_anc_on_noprompt:
+            DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_anc_on_noprompt");        
+            BellUiAncControl(ui_input);
+            break;    
         case ui_input_bell_ui_anc_off:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_anc_off");
             Ui_InjectUiInput(ui_input_prompt_anc_off);
@@ -628,11 +632,16 @@ void BellUiAncControl(MessageId ui_input)
     }
     switch(ui_input)
     {
-        case ui_input_bell_ui_anc_on:
+        case ui_input_bell_ui_anc_on:   
             tymAnc->curAncMode = ancon;
             tymAnc->onceAnc = 1;
             BellUiAncOn();
             bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 1);
+            break;
+        case ui_input_bell_ui_anc_on_noprompt:
+            tymAnc->curAncMode = ancon;    
+            BellUiAncOn();
+            bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 1);             
             break;
         case ui_input_bell_ui_ambient_on:
             tymAnc->curAncMode = ambient;
