@@ -162,9 +162,13 @@ void statusCommunicationMessage(MessageId pId,statusSendCmd_T *cmdId)
         }
         else
         {
-            MESSAGE_MAKE(sendCmdId, statusSendCmd_T);
-            sendCmdId->event = cmdId->event;
-            MessageSendLater((TaskData *)&_statusReportTask, statusSendCmd, sendCmdId, 20);
+            /*CHARGING CONNECT and have command exist,retry*/
+            if (appChargerIsConnected() == CHARGER_CONNECTED_NO_ERROR)
+            {                    
+                MESSAGE_MAKE(sendCmdId, statusSendCmd_T);
+                sendCmdId->event = cmdId->event;
+                MessageSendLater((TaskData *)&_statusReportTask, statusSendCmd, sendCmdId, 20);
+            }
         }        
     }
     else if(pId == statusEndCmd)
