@@ -26,7 +26,7 @@ rule_action_t ruleTwsTopSecPeerLostFindRole(void)
 #ifdef ENABLE_TYM_PLATFORM
     if(appPhyStateGetPowerState() == FALSE)
     {
-        DEBUG_LOG("ruleTwsTopSecStaticHandoverCommand, ignore as power off");
+        TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecStaticHandoverCommand, ignore as power off");
         return rule_action_ignore;
     }
 #else
@@ -59,7 +59,7 @@ rule_action_t ruleTwsTopSecRoleSwitchPeerConnect(void)
 #ifdef ENABLE_TYM_PLATFORM
     if(appPhyStateGetPowerState() == FALSE)
     {
-        DEBUG_LOG("ruleTwsTopSecStaticHandoverFailedOutCase, ignore as power off");
+        TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecStaticHandoverFailedOutCase, ignore as power off");
         return rule_action_ignore;
     }
 #else
@@ -81,11 +81,19 @@ rule_action_t ruleTwsTopSecRoleSwitchPeerConnect(void)
 
 rule_action_t ruleTwsTopSecNoRoleIdle(void)
 {
+#ifdef ENABLE_TYM_PLATFORM
+    if(appPhyStateGetPowerState() != FALSE)
+    {
+        TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecNoRoleIdle, ignore as power on");
+        return rule_action_ignore;
+    }
+#else    
     if (appPhyStateGetState() != PHY_STATE_IN_CASE)
     {
         TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecNoRoleIdle, ignore as out of case");
         return rule_action_ignore;
     }
+#endif    
     TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecNoRoleIdle, run as secondary in case");
     return rule_action_run;
 }
@@ -112,12 +120,19 @@ rule_action_t ruleTwsTopSecSwitchToDfuRole(void)
 rule_action_t ruleTwsTopSecFailedConnectFindRole(void)
 {
     bdaddr primary_addr;
-
+#ifdef ENABLE_TYM_PLATFORM    
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecFailedConnectFindRole, ignore as power off");
+        return rule_action_ignore;
+    }
+#else  
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecFailedConnectFindRole, ignore as in the case");
         return rule_action_ignore;
     }
+#endif    
     
     if (!appDeviceGetPrimaryBdAddr(&primary_addr))
     {
@@ -138,13 +153,19 @@ rule_action_t ruleTwsTopSecFailedConnectFindRole(void)
 rule_action_t ruleTwsTopSecFailedSwitchSecondaryFindRole(void)
 {
     bdaddr primary_addr;
-
+#ifdef ENABLE_TYM_PLATFORM    
+    if(appPhyStateGetPowerState() == FALSE)
+    {
+        TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecFailedSwitchSecondaryFindRole, ignore as power off");
+        return rule_action_ignore;
+    }
+#else 
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
         TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecFailedSwitchSecondaryFindRole, ignore as in the case");
         return rule_action_ignore;
     }
-
+#endif
     if (!appDeviceGetPrimaryBdAddr(&primary_addr))
     {
         TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecFailedSwitchSecondaryFindRole, ignore as unknown primary address");

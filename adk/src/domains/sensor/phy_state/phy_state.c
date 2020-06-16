@@ -646,7 +646,7 @@ void appPhyStatePrepareToEnterDormant(void)
 {
 #ifdef ENABLE_TYM_PLATFORM
     DEBUG_LOG("appPhyStatePrepareToEnterDormant");
-    appTouchPowerOff();
+ 
     if(getFactoryModeTopEnable() == TRUE)
     {
         DEBUG_LOG("ByPass Prox/anc register");
@@ -659,6 +659,7 @@ void appPhyStatePrepareToEnterDormant(void)
         //appAncClientUnregister(&phy_state->task);
         //appProximityClientUnregister(&phy_state->task);
     }
+    appTouchPowerOff(); /*touch power is i2c power so last power off*/
     //appTouchClientUnregister(&phy_state->task);
     setPSPresetEQ();
     if((getFactoryModeEnable() == TRUE) || (getFactoryModeTopEnable() == TRUE))
@@ -892,8 +893,8 @@ void appPhySateAppConfiguration(void)
     tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
     if(PsRetrieve(PSID_APPCONFIG, 0, 0) == 0) //no data run initial information
     {
-        app_set->auto_power_off_cmd = 0x02;//app power off configure 30 min
-        app_set->auto_power_off_timer = 30;//30 min;
+        app_set->auto_power_off_cmd = 0x01;//app power off configure 10 min
+        app_set->auto_power_off_timer = 10;//30 min;
         app_set->enable_auto_wear = 1; //default no wear pause
         app_set->enable_auto_play = 0; //add default value auto play is zero
         app_set->ambient_ext_anc = 0;//default ambient set stanc3 off
@@ -1364,8 +1365,13 @@ void appPhyUpdateSleepStandbyMode(void)
         {
             if((sleepMode == FALSE) && (standbyMode == FALSE))
             {                
-                appPhyStateTriggerSleepMode();
-                appPhyStateCancelTriggerStandbyMode();
+                //appPhyStateTriggerSleepMode();
+                //appPhyStateCancelTriggerStandbyMode();
+                /*for customer new specification, remove sleep mode, start trigger standby mode*/
+                appPhyStateCancelTriggerSleepMode();
+                if(phy_state->trigger_standbymodeincase == TRUE)
+                    appPhyStateCancelTriggerStandbyMode();//for re-counter in case standby
+                appPhyStateTriggerStandbyMode();
             }
         }                
     }        
