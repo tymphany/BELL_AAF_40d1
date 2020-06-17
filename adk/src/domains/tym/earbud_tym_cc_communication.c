@@ -183,6 +183,7 @@ void statusCommunicationMessage(MessageId pId,statusSendCmd_T *cmdId)
         }
         if(procCmd.otamode)
         {
+            DEBUG_LOG("procCmd.otamode %d",procCmd.otamode); 
             if(procCmd.askBattery == 0)
             {
                 DEBUG_LOG("startOTA");    
@@ -243,7 +244,7 @@ static void _statusOutputMessageHandler ( Task pTask, MessageId pId, Message pMe
 /*! \brief reportBattStatus */
 void reportBattStatus(void)
 {
-    if (procCmd.battpercent > 95)
+    if (procCmd.battpercent >= 90) /*>= 90 report 95%*/
     {    
         _sendStatusCmd(statusBattCap_95);          
     }
@@ -382,6 +383,7 @@ void reportBtStatus(uint8 status)
     else if(status == OTAFinish)                                
     {
         procCmd.otamode = FALSE;
+        DEBUG_LOG("tym send OTAFinish"); 
         _sendStatusCmd(statusOTADone);
     }
     else if(status == happenErr)
