@@ -40,19 +40,29 @@ struct __anc_config anc_config = {
     .init = FALSE,
     .state = FALSE,
 };
+
+typedef enum stanc3CtrlMsg
+{
+    stanc3_ancon_step1,
+    stanc3_ancon_step2,
+    stanc3_ancon_step3,
+} stanc3CtrlMsg_t;
 /* --------------- Local Function Prototypes --------------- */
 void stanc3_init(ancConfig *config);
 void stanc3_deinit(ancConfig *config);
+static void stanc3_micbias_set(void);
+static void stanc3_ancmute_set(void);
+static void stanc3_switchbank(void);
+static void writeInitValToPSKey(void);
+static void _stanc3ProcessMessageHandler ( Task pTask, MessageId pId, Message pMessage );
+static const TaskData stanc3ProcessTask = { _stanc3ProcessMessageHandler };
 /* --------------- Static Global Variables ----------------- */
 tymAncTaskData app_tymanc = {
     .ambientLevel = 4,
     .speechLevel = 4,
 };
-/* ------------------ Local Function ----------------------- */
-/*! \brief  stanc3 init function*/
-void stanc3_init(ancConfig *config)
-{
-    const ANC_CONFIG_S ANCData[] = {
+
+ const ANC_CONFIG_S ANCData[] = {
     {0x00, 0x00},
     {0x01, 0x01},
     {0x02, 0x10},
@@ -83,6 +93,31 @@ void stanc3_init(ancConfig *config)
     {0x22, 0x01},
     {0x24, 0x04}
 };
+/* ------------------ Local Function ----------------------- */
+/*stanc3 process task*/
+static void _stanc3ProcessMessageHandler ( Task pTask, MessageId pId, Message pMessage )
+{
+    UNUSED(pTask);
+    UNUSED(pMessage);
+    if(pId == stanc3_ancon_step1)
+    {
+        stanc3_micbias_set();
+        MessageSendLater((TaskData *)&stanc3ProcessTask, stanc3_ancon_step2, NULL, 20); 
+    }
+    else if(pId == stanc3_ancon_step2)
+    {
+        stanc3_ancmute_set();
+        MessageSendLater((TaskData *)&stanc3ProcessTask, stanc3_ancon_step3, NULL, 100); 
+    }
+    else if(pId == stanc3_ancon_step3)
+    {
+        stanc3_switchbank();
+    }                
+}
+
+/*! \brief  stanc3 init function*/
+void stanc3_init(ancConfig *config)
+{   
     uint8 write_data[2];
     uint8 config_len = sizeof(ANCData)/sizeof(ANC_CONFIG_S);
     int i;
@@ -138,7 +173,7 @@ void stanc3_init(ancConfig *config)
         }
     }
     stanc3_audiomute(FALSE);  
-    stanc3_ancon();/*for default enable ambient:internal ANC,STANC on*/ 
+    //stanc3_ancon();/*for default enable ambient:internal ANC,STANC off*/ 
     config->init = TRUE;
 }
 
@@ -257,6 +292,9 @@ void stanc3_ancoff(void)
     uint8 read_addr;
     uint8 read_data[1];
     anc_config.state = FALSE;
+    MessageCancelAll((TaskData *)&stanc3ProcessTask, stanc3_ancon_step1);
+    MessageCancelAll((TaskData *)&stanc3ProcessTask, stanc3_ancon_step2);
+    MessageCancelAll((TaskData *)&stanc3ProcessTask, stanc3_ancon_step3);
     read_addr = 0x17;
     if(!tym_i2c_read(ANC_CTRL_ADDR,read_addr,read_data,1))
     {
@@ -291,15 +329,12 @@ void stanc3_ancoff(void)
     appKymeraSpeakerEqOnOff(TRUE,FALSE);
 }
 
-/*! \brief  stanc3 anc on*/
-void stanc3_ancon(void)
+static void stanc3_micbias_set(void)
 {
     uint8 write_data[2];
     uint8 read_addr;
-    uint8 read_data[1];
-    uint32 clock,cur_clock,timeout;
-    anc_config.state = TRUE;
-    /* read address 0x19 */
+    uint8 read_data[1]; 
+  /* read address 0x19 */
     read_addr = 0x19;
     if(!tym_i2c_read(ANC_CTRL_ADDR,read_addr,read_data,1))
     {
@@ -313,17 +348,14 @@ void stanc3_ancon(void)
     {
         DEBUG_LOG("return error tym_i2c_write %d",write_data[0]);
         return; /* error */
-    }
-    /*wait 20 ms*/
-    clock = VmGetTimerTime();
-    timeout = (20*1000);
-    while(1)
-    {
-        cur_clock = VmGetTimerTime();
-        if(checktimeout(clock, cur_clock,timeout))
-            break;
-    }
-    /* read address 0x17 */
+    }       
+}
+
+static void stanc3_ancmute_set(void)
+{
+    uint8 write_data[2];
+    uint8 read_addr;
+    uint8 read_data[1]; 
     read_addr = 0x17;
     if(!tym_i2c_read(ANC_CTRL_ADDR,read_addr,read_data,1))
     {
@@ -337,17 +369,15 @@ void stanc3_ancon(void)
     {
         DEBUG_LOG("return error tym_i2c_write %d",write_data[0]);
         return; /* error */
-    }
-    /*wait 100 ms*/
-    clock = VmGetTimerTime();
-    timeout = (100*1000);
-    while(1)
-    {
-        cur_clock = VmGetTimerTime();
-        if(checktimeout(clock, cur_clock,timeout))
-            break;
-    }
-    /* read address 0x24 */
+    }   
+}
+
+static void stanc3_switchbank(void)
+{
+    uint8 write_data[2];
+    uint8 read_addr;
+    uint8 read_data[1]; 
+     /* read address 0x24 */
     read_addr = 0x24;
     if(!tym_i2c_read(ANC_CTRL_ADDR,read_addr,read_data,1))
     {
@@ -364,7 +394,14 @@ void stanc3_ancon(void)
     }
 
     //Swtich to SPK-EQ2 for ANC ON
-    appKymeraSpeakerEqOnOff(FALSE,TRUE);
+    appKymeraSpeakerEqOnOff(FALSE,TRUE);   
+}
+
+/*! \brief  stanc3 anc on*/
+void stanc3_ancon(void)
+{
+    anc_config.state = TRUE;
+    MessageSend((TaskData *)&stanc3ProcessTask, stanc3_ancon_step1, NULL); 
 }
 
 /*! \brief  stanc3 anc vol for factory test*/
@@ -406,6 +443,25 @@ void dumpANCWriteToPSKey(void)
     retwords = PsStore(PSID_ANCTABLE,ps_key,SINK_ANC_PS_SIZE);
     DEBUG_LOG("PsStore word %d",retwords);
 
+}
+
+/*! \brief  stanc3 write init value to PSKey */
+static void writeInitValToPSKey(void)
+{
+    int ANCDataNum = SINK_ANC_DATA_BYTES;
+    uint8 read_data[ANCDataNum];
+    uint16 ps_key[SINK_ANC_PS_SIZE];
+    int i,retwords;
+    for(i = 0;i < ANCDataNum;i++)
+    {
+        read_data[i] = ANCData[i].regData;
+    }
+    ByteUtilsMemCpyPackString(ps_key,read_data,ANCDataNum);
+    DEBUG_LOG("dump calibration value");
+    for(i = 0;i < ANCDataNum;i++)
+        DEBUG_LOG("0x%x ",read_data[i]);
+    retwords = PsStore(PSID_ANCTABLE,ps_key,SINK_ANC_PS_SIZE);
+    DEBUG_LOG("PsStore word %d",retwords);    
 }
 
 /*! \brief check ANC verify value */
@@ -476,9 +532,7 @@ void stanc3_change_register(uint8 reg,uint8 data)
     ANCConfigData = PsRetrieve(PSID_ANCTABLE,0,0);
     if(ANCConfigData == 0)
     {
-        stanc3_audiomute(FALSE);/*default audio unmute*/
-        stanc3_ancoff();/*default set anc off*/
-        dumpANCWriteToPSKey();        
+       writeInitValToPSKey();
     }
     ANCConfigData = PsRetrieve(PSID_ANCTABLE,pskeydata,SINK_ANC_PS_SIZE);
     ByteUtilsMemCpyUnpackString(anc_data, pskeydata, SINK_ANC_DATA_BYTES);

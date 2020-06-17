@@ -528,9 +528,9 @@ static void _iqsProcessMessageHandler ( Task pTask, MessageId pId, Message pMess
     else if( pId == iqs263_hold_count)
     {
         tconfig->holdDuration++;
-        if(tconfig->holdDuration == 2)
+        if(tconfig->holdDuration == 1)
         {
-            DEBUG_LOG("===HOLD_2s===");
+            DEBUG_LOG("===HOLD_1s===");
             MessageSend((TaskData *)&iqsProcessTask, iqs263_hold2s,0);
         }
         else if(tconfig->holdDuration == 5)
