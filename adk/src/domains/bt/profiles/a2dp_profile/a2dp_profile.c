@@ -205,7 +205,12 @@ uint8 A2dpProfile_GetDefaultVolume(void)
 {
     /* Set default volume as set in configuration */
     const int rangeDb = appConfigMaxVolumedB() - appConfigMinVolumedB();
+#ifdef ENABLE_TYM_PLATFORM
+    /*set half volume for default volume*/
+    return (uint8)((appConfigDefaultVolumedB() - appConfigMinVolumedB()) * (VOLUME_MAX/2) / rangeDb);    
+#else    
     return (uint8)((appConfigDefaultVolumedB() - appConfigMinVolumedB()) * VOLUME_MAX / rangeDb);
+#endif    
 }
 
 static void connectPeerSource(avInstanceTaskData *theInst)
