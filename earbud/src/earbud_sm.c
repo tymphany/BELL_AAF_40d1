@@ -2635,10 +2635,13 @@ static void appSm_HandleTwsTopologyRoleChange(tws_topology_role new_role)
 
         case tws_topology_role_dfu:
 #ifdef ENABLE_TYM_PLATFORM            
-            appPhyStateCancelTriggerSleepMode();            
-            appPhyStateCancelTriggerStandbyMode();
-            DEBUG_LOG("$$$ TYM Start Upgrade");
-            tymSyncdata(btStatusCmd,startOTA); 
+            if(SmGetTaskData()->dfu_in_progress == TRUE)
+            {    
+                appPhyStateCancelTriggerSleepMode();            
+                appPhyStateCancelTriggerStandbyMode();
+                DEBUG_LOG("$$$ TYM Start Upgrade");
+                tymSyncdata(btStatusCmd,startOTA); 
+            }
             /*if (appPhyStateGetState() == PHY_STATE_IN_CASE)           
             {
                 //trigger tws dfu in case mode
