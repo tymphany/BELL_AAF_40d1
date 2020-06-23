@@ -108,7 +108,7 @@ void tym_gaia_send_response(uint16 command_id,uint8 status,uint16 payload_length
 void tym_gaia_send_notification(uint16 event, uint8 status, uint16 payload_length, uint8 *payload)
 {
     GAIA_TRANSPORT *transport = GaiaGetTransport();
-    GaiaBuildAndSendSynch(transport, BELL_VENDOR_QTIL, event | GAIA_ACK_MASK, status, payload_length, payload);
+    GaiaBuildAndSendSynch(transport, BELL_VENDOR_QTIL, event , status, payload_length, payload);
 }
 
 void gaia_send_application_version(uint16 vendor_id,uint16 command_id)
