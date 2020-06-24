@@ -370,9 +370,9 @@ void bell_gaia_get_anc_feature(GAIA_UNHANDLED_COMMAND_IND_T *command)
             payload[0] = 0x0;
         else if(ancmode == ancon)
             payload[0] = 0x08;
-        else if(ancmode == ambient)
-            payload[0] = 0x04;
         else if(ancmode == speech)
+            payload[0] = 0x04;
+        else if(ancmode == ambient)
             payload[0] = 0x02;
         else
             payload[0] = 0x0;
