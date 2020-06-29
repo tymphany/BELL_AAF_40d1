@@ -131,7 +131,7 @@ bool tym_gaia_is_acknowledgement(uint16 command_id);
 void tym_gaia_send_simple_response(uint16 command_id,uint8 status);
 void tym_gaia_send_response(uint16 command_id,uint8 status,uint16 payload_length, uint8 *payload);
 void tym_gaia_send_notification(uint16 event, uint8 status, uint16 payload_length, uint8 *payload);
-void tym_send_switch_eq_preset(uint16 vendor_id, uint8 size_payload, uint8* payload);
+void tym_send_switch_eq_preset(uint16 command_id, uint8 size_payload, uint8* payload);
 bool appTYMHandleControlCommand(Task task, const GAIA_UNHANDLED_COMMAND_IND_T *command);
 #endif
 

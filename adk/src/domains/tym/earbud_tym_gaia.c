@@ -694,7 +694,7 @@ void bell_gaia_set_eq_control(GAIA_UNHANDLED_COMMAND_IND_T *command)
 {
     if(command->size_payload == 1)
     {
-        tym_send_switch_eq_preset(command->vendor_id, command->size_payload, command->payload);
+        tym_send_switch_eq_preset(command->command_id, command->size_payload, command->payload);
     }
     else
     {

@@ -135,27 +135,30 @@ void gaia_send_application_version(uint16 vendor_id,uint16 command_id)
     GaiaBuildAndSendSynch(transport, vendor_id, command_id | GAIA_ACK_MASK, GAIA_STATUS_SUCCESS, payload_length, payload);
 }
 
-void tym_send_switch_eq_preset(uint16 vendor_id, uint8 size_payload, uint8* payload)
+void tym_send_switch_eq_preset(uint16 command_id, uint8 size_payload, uint8* payload)
 {
-    #define   TYM_SWITCH_EQ_COMMAND_PAY_LOAD_SIZE (1)
+    //#define   TYM_SWITCH_EQ_COMMAND_PAY_LOAD_SIZE (1)
     #define   MAX_EQ_PRESET                       (UCID_USER_EQ_BANK5)
-    GAIA_TRANSPORT *transport = GaiaGetTransport();
-    uint8 package[8];
-    uint16 package_length;
-    memset(package,0x0,sizeof(package));
+    #define   MIN_EQ_PRESET                       (UCID_USER_EQ_BANK0)
+    //GAIA_TRANSPORT *transport = GaiaGetTransport();
+    //uint8 package[8];
+    //uint16 package_length;
+    //memset(package,0x0,sizeof(package));
 
     if(size_payload == 1){
-        if(*payload <= MAX_EQ_PRESET)
+        if(*payload <= MAX_EQ_PRESET && *payload >= MIN_EQ_PRESET)
         {
             Ui_InjectUiInput(ui_input_bell_ui_switch_preset_bank0 + *(payload));
-            package[0] = *(payload);
+            //package[0] = *(payload);
+            tym_gaia_send_simple_response(command_id,GAIA_STATUS_SUCCESS);
         }else{
-            package[0] = get_cur_preset_eq();
+            //package[0] = get_cur_preset_eq();
+            tym_gaia_send_simple_response(command_id,GAIA_STATUS_INVALID_PARAMETER);
         }
     }
 
-    package_length = TYM_SWITCH_EQ_COMMAND_PAY_LOAD_SIZE;
-    GaiaBuildAndSendSynch(transport, vendor_id, BELL_GAIA_SET_EQ_CONTROL_COMMAND | GAIA_ACK_MASK, GAIA_STATUS_SUCCESS, package_length, package);
+    //package_length = TYM_SWITCH_EQ_COMMAND_PAY_LOAD_SIZE;
+    //GaiaBuildAndSendSynch(transport, vendor_id, BELL_GAIA_SET_EQ_CONTROL_COMMAND | GAIA_ACK_MASK, GAIA_STATUS_SUCCESS, 0, NULL);
 }
 
 bool appTYMHandleControlCommand(Task task, const GAIA_UNHANDLED_COMMAND_IND_T *command)
