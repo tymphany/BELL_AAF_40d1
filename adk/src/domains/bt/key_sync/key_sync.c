@@ -140,6 +140,7 @@ static void keySync_AddDeviceAttributes(bdaddr* bd_addr)
     device_t handset_device = PanicNull(BtDevice_GetDeviceCreateIfNew(bd_addr, DEVICE_TYPE_HANDSET));
     PanicFalse(BtDevice_SetDefaultProperties(handset_device));
     PanicFalse(BtDevice_SetFlags(handset_device, DEVICE_FLAGS_PRE_PAIRED_HANDSET, DEVICE_FLAGS_PRE_PAIRED_HANDSET));
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/    
     PanicFalse(BtDevice_SetFlags(handset_device, DEVICE_FLAGS_KEY_SYNC_PDL_UPDATE_IN_PROGRESS, DEVICE_FLAGS_NO_FLAGS));
 #endif    
 }
