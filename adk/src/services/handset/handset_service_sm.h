@@ -118,8 +118,12 @@ typedef struct
 #endif    
 } handset_service_state_machine_t;
 
-#define HandsetServiceSm_GetLeBdaddr(sm) sm->le_addr.taddr.addr
 
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+#define HandsetServiceSm_GetLeTpBdaddr(sm) sm->le_addr
+#else
+#define HandsetServiceSm_GetLeBdaddr(sm) sm->le_addr.taddr.addr
+#endif
 /*! \brief Initialise a state machine instance.
 
     After this is complete the state machine wil be in the

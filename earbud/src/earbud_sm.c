@@ -1860,7 +1860,13 @@ static void appSm_HandleMarshalledMsgChannelRxInd(PEER_SIG_MARSHALLED_MSG_CHANNE
     switch(ind->type)
     {
         case MARSHAL_TYPE(earbud_sm_req_dfu_active_when_in_case_t):
-            appSmEnterDfuModeInCase(TRUE, FALSE);
+#ifdef ENABLE_TYM_PLATFORM            
+            if(appSmGetState() != APP_STATE_IN_CASE_DFU)
+                appSmEnterDfuModeInCase(TRUE, FALSE);
+#else
+                appSmEnterDfuModeInCase(TRUE, FALSE);
+#endif
+                
             break;
 
         case MARSHAL_TYPE(earbud_sm_req_dfu_active_when_out_case_t):
@@ -2154,7 +2160,21 @@ bool appSmHandleConnectionLibraryMessages(MessageId id, Message message, bool al
             {
                 CL_SM_AUTH_DEVICE_DELETED_IND_T *ind = (CL_SM_AUTH_DEVICE_DELETED_IND_T *)message;
 
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+                bdaddr *bd_addr = &ind->taddr.addr;
+                device_t device = BtDevice_GetDeviceForBdAddr(bd_addr);
+                if (device)
+                {
+                    uint16 flags = 0;
+                    Device_GetPropertyU16(device, device_property_flags, &flags);
+                    if ((flags & DEVICE_FLAGS_KEY_SYNC_PDL_UPDATE_IN_PROGRESS) == 0)
+                    {
+                        appSmHandleNotifyPeerDeleteHandset(ind->taddr.addr);
+                    }
+                }
+#else
                 appSmHandleNotifyPeerDeleteHandset(ind->taddr.addr);
+#endif
 
                 handled = TRUE;
             }
@@ -3642,6 +3662,10 @@ static void appSmNotifyUpgradeStarted(void)
             appSmEnterDfuModeInCase(TRUE, TRUE);    
             SmGetTaskData()->UpgradeStarted = TRUE;  
         }
+        else
+        {
+            earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_dfu_active_when_in_case_t)); 
+        }    
     }
     else
     {

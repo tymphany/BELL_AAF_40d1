@@ -472,11 +472,23 @@ bool BtDevice_HandleConnectionLibraryMessages(MessageId id, Message message, boo
                 device = BtDevice_GetDeviceForBdAddr(bd_addr);
                 if (device)
                 {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+                    uint16 flags = 0;
+                    Device_GetPropertyU16(device, device_property_flags, &flags);
+                    if ((flags & DEVICE_FLAGS_KEY_SYNC_PDL_UPDATE_IN_PROGRESS) == 0)
+                    {
+                        DeviceList_RemoveDevice(device);
+                        Device_Destroy(&device);
+                        DeviceDbSerialiser_Serialise();
+                        DEBUG_LOG_VERBOSE("BtDevice_HandleConnectionLibraryMessages device removed");
+                    }
+#else
                     DeviceList_RemoveDevice(device);
                     Device_Destroy(&device);
                     DeviceDbSerialiser_Serialise();
 
                     DEBUG_LOG_VERBOSE("BtDevice_HandleConnectionLibraryMessages device removed");
+#endif
                 }
 
                 handled = TRUE;

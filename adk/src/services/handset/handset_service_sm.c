@@ -160,7 +160,11 @@ static void handsetServiceSm_GetBdAddr(handset_service_state_machine_t *sm, bdad
     }
     else
     {
+#ifdef ENABLE_TYM_PLATFORM
+        *addr = HandsetServiceSm_GetLeTpBdaddr(sm).taddr.addr;
+#else
         *addr = HandsetServiceSm_GetLeBdaddr(sm);
+#endif
     }
 }
 

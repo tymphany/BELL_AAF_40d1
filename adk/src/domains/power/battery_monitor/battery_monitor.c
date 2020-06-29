@@ -456,6 +456,7 @@ void appBatteryGetPredictVoltage(void)
     uint16 voltage = appBatteryGetQualcommVoltage();
     uint16 batt_pskey[2];
     bool charging = appChargerIsCharging();
+    bool connected = (appChargerIsConnected() == CHARGER_CONNECTED_NO_ERROR);
     bool skip = 0;
 
     if(battery->predict_volt == 0)
@@ -484,7 +485,7 @@ void appBatteryGetPredictVoltage(void)
         }
     }
 
-    if(charging == TRUE)
+    if(connected == TRUE)
     {
         if(battery->predict_volt < 4200)
         {
@@ -509,7 +510,7 @@ void appBatteryGetPredictVoltage(void)
         if(battery->predict_volt < disch_table[1])
             updatePredictVoltToPSKEY();
     }
-    DEBUG_LOG("Qual %d,predict %d,charging %d",voltage,battery->predict_volt,charging);
+    DEBUG_LOG("Qual %d,predict %d,charging %d,connected %d",voltage,battery->predict_volt,charging,connected);
 }
 
 /*brief Qualcomm reference voltage*/

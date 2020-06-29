@@ -245,6 +245,23 @@ void HandsetService_ConnectMruRequest(Task task, uint8 profiles);
 */
 void HandsetService_DisconnectRequest(Task task, const bdaddr *addr);
 
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+/*! \brief Disconnect a handset with the given tp_bdaddr.
+
+    Start the disconnection procedure for a handset with the given typed bluetooth address.
+
+    The disconenction procedure will be cancelled if one of the connect request
+    functions are called for the same handset.
+
+    When the request completes, for whatever reason, the result is sent to
+    the client #task in a HANDSET_SERVICE_DISCONNECT_CFM.
+
+    \param task Task the CFM will be sent to when the request is completed.
+    \param tp_addr Typed Address of the handset to disconnect.
+*/
+void HandsetService_DisconnectTpAddrRequest(Task task, const tp_bdaddr *tp_addr);
+#endif
+
 /*! \brief Stop the ACL connection to a handset.
 
     Cancel any in-progress connect to a handset if, and only if, the ACL has
@@ -307,7 +324,16 @@ bool HandsetService_Connected(device_t device);
     \return TRUE if BR/EDR ACL or profile(s) are connected, FALSE otherwise.
 */
 bool HandsetService_IsBredrConnected(const bdaddr *addr);
+#ifdef ENABLE_TYM_PLATFORM
+/*! \brief Get the BT address of a handset with an LE connection.
 
+    \param tp_addr Set to the typed BT address of a handset with an LE connection,
+    if the function return value is TRUE.
+
+    \return TRUE if a handset with an LE connection is found; FALSE if no handset LE connection.
+*/
+bool HandsetService_GetConnectedLeHandsetTpAddress(tp_bdaddr *tp_addr);
+#else
 /*! \brief Get the BT address of a handset with an LE connection.
 
     \param addr Set to the BT address of a handset with an LE connection, 
@@ -316,7 +342,7 @@ bool HandsetService_IsBredrConnected(const bdaddr *addr);
     \return TRUE if a handset with an LE connection is found; FALSE if no handset LE connection.
 */
 bool HandsetService_GetConnectedLeHandsetAddress(bdaddr *addr);
-
+#endif
 /*! Set if the handset is BLE connectable.
 
     \param connectable TRUE if the device is BLE connectable.

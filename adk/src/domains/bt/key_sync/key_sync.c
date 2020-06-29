@@ -75,6 +75,15 @@ static void keySync_HandleMarshalledMsgChannelRxInd(PEER_SIG_MARSHALLED_MSG_CHAN
         {
             key_sync_paired_device_req_t* req = (key_sync_paired_device_req_t*)ind->msg;
             typed_bdaddr taddr = {TYPED_BDADDR_PUBLIC, req->bd_addr};
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+            device_t device = BtDevice_GetDeviceForBdAddr(&taddr.addr);
+            if (device)
+            {
+                PanicFalse(BtDevice_SetFlags(device, DEVICE_FLAGS_KEY_SYNC_PDL_UPDATE_IN_PROGRESS, DEVICE_FLAGS_KEY_SYNC_PDL_UPDATE_IN_PROGRESS));
+            }
+
+            ConnectionSmDeleteAuthDeviceReq(taddr.type, &taddr.addr);
+#endif
             DEBUG_LOG_ALWAYS("keySync_HandleMarshalledMsgChannelRxInd rx paired device to add");
             ConnectionSmAddAuthDeviceRawRequest(keySync_GetTask(), &taddr, req->size_data / sizeof(uint16), (uint16*)req->data);
         }
@@ -131,6 +140,9 @@ static void keySync_AddDeviceAttributes(bdaddr* bd_addr)
     device_t handset_device = PanicNull(BtDevice_GetDeviceCreateIfNew(bd_addr, DEVICE_TYPE_HANDSET));
     PanicFalse(BtDevice_SetDefaultProperties(handset_device));
     PanicFalse(BtDevice_SetFlags(handset_device, DEVICE_FLAGS_PRE_PAIRED_HANDSET, DEVICE_FLAGS_PRE_PAIRED_HANDSET));
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/    
+    PanicFalse(BtDevice_SetFlags(handset_device, DEVICE_FLAGS_KEY_SYNC_PDL_UPDATE_IN_PROGRESS, DEVICE_FLAGS_NO_FLAGS));
+#endif    
 }
 
 static void keySync_SendKeySyncCfm(bdaddr* bd_addr, bool synced)

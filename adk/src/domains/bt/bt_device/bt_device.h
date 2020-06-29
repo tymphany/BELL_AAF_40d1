@@ -62,6 +62,10 @@ typedef enum
 #define DEVICE_FLAGS_PRIMARY_ADDR                   (1 << 8)
 /*! Bit in flags indicating that this device's address is the primary address. */
 #define DEVICE_FLAGS_SECONDARY_ADDR                 (1 << 9)
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+/*! Bit in flags indicating that in process of adding-deleting device */
+#define DEVICE_FLAGS_KEY_SYNC_PDL_UPDATE_IN_PROGRESS  (1 << 10)
+#endif
 /*! Define that can be used when not setting any flags */
 #define DEVICE_FLAGS_NO_FLAGS                       0
 /*! Define the initial capacity of the device version client data task list */

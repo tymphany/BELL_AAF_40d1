@@ -519,7 +519,33 @@ static void handsetService_ConnectReq(Task task, const bdaddr *addr, uint8 profi
         MessageSend(task, HANDSET_SERVICE_CONNECT_CFM, cfm);
     }
 }
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+void HandsetService_DisconnectTpAddrRequest(Task task, const tp_bdaddr *tp_addr)
+{
+    HS_LOG("HandsetService_DisconnectTpAddrRequest transport [%d] type [%d] addr [%04x,%02x,%06lx]",
+              tp_addr->transport, tp_addr->taddr.type,
+              tp_addr->taddr.addr.nap, tp_addr->taddr.addr.uap, tp_addr->taddr.addr.lap);
 
+    handset_service_state_machine_t *sm = handsetService_GetSmForTpBdAddr(tp_addr);
+
+    if (sm)
+    {
+        HandsetServiceSm_CompleteConnectRequests(sm, handset_service_status_cancelled);
+        handsetService_InternalDisconnectReq(sm, &tp_addr->taddr.addr);
+        TaskList_AddTask(&sm->disconnect_list, task);
+    }
+    else
+    {
+        HS_LOG("HandsetService_DisconnectTpAddrRequest sm not found");
+
+        MESSAGE_MAKE(cfm, HANDSET_SERVICE_DISCONNECT_CFM_T);
+        cfm->addr = tp_addr->taddr.addr;
+        cfm->status = handset_service_status_success;
+        MessageSend(task, HANDSET_SERVICE_DISCONNECT_CFM, cfm);
+    }
+}
+
+#else
 /*! \brief Helper function for starting a disconnect req. */
 static void handsetService_DisconnectReq(Task task, const bdaddr *addr)
 {
@@ -541,7 +567,7 @@ static void handsetService_DisconnectReq(Task task, const bdaddr *addr)
         MessageSend(task, HANDSET_SERVICE_DISCONNECT_CFM, cfm);
     }
 }
-
+#endif
 /*
     Message handler functions
 */
@@ -931,8 +957,14 @@ void HandsetService_DisconnectRequest(Task task, const bdaddr *addr)
 {
     HS_LOG("HandsetService_DisconnectRequest addr [%04x,%02x,%06lx]",
             addr->nap, addr->uap, addr->lap);
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+    tp_bdaddr tp_addr = {0};
+    BdaddrTpFromBredrBdaddr(&tp_addr, addr);
+    HandsetService_DisconnectTpAddrRequest(task, &tp_addr);
+#else
     handsetService_DisconnectReq(task, addr);
+#endif
+
 }
 
 void HandsetService_StopConnect(Task task, const bdaddr *addr)
@@ -1034,11 +1066,18 @@ bool HandsetService_IsBredrConnected(const bdaddr *addr)
     return bredr_connected;
 }
 
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+bool HandsetService_GetConnectedLeHandsetTpAddress(tp_bdaddr *tp_addr)
+#else
 bool HandsetService_GetConnectedLeHandsetAddress(bdaddr *addr)
+#endif
 {
     handset_service_state_machine_t *sm = HandsetService_GetSm();
     uint16 index;
     bool le_handset = FALSE;
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+    PanicNull(tp_addr);
+#endif
 
     for (index = 0; index < HANDSET_SERVICE_MAX_SM; index++)
     {
@@ -1046,7 +1085,13 @@ bool HandsetService_GetConnectedLeHandsetAddress(bdaddr *addr)
         {
             if (HandsetServiceSm_IsLeConnected(sm))
             {
+#ifdef ENABLE_TYM_PLATFORM
+                tp_addr->taddr = HandsetServiceSm_GetLeTpBdaddr(sm).taddr;
+                tp_addr->transport = HandsetServiceSm_GetLeTpBdaddr(sm).transport;
+#else
                 *addr = HandsetServiceSm_GetLeBdaddr(sm);
+#endif
+
                 le_handset = TRUE;
                 break;
             }

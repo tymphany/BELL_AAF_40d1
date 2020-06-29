@@ -101,14 +101,22 @@ static void twsTopology_ProcDisconnectHandsetHandleHandsetConnectCfm(const HANDS
 static void twsTopology_ProcDisconnectHandsetHandleHandsetDisconnectCfm(const HANDSET_SERVICE_DISCONNECT_CFM_T *cfm)
 {
     twsTopProcDisconnectHandsetTaskData* td = TwsTopProcDisconnectHandsetGetTaskData();
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+    tp_bdaddr le_handset_tpaddr;
+    bool le_handset = HandsetService_GetConnectedLeHandsetTpAddress(&le_handset_tpaddr);
+#else
     bdaddr le_handset_addr;
     bool le_handset = HandsetService_GetConnectedLeHandsetAddress(&le_handset_addr);
-
+#endif
     DEBUG_LOG("twsTopology_ProcDisconnectHandsetHandleHandsetDisconnectCfm status %d", cfm->status);
 
     if (le_handset)
     {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch */
+        HandsetService_DisconnectTpAddrRequest(TwsTopProcDisconnectHandsetGetTask(), &le_handset_tpaddr);
+#else
         HandsetService_DisconnectRequest(TwsTopProcDisconnectHandsetGetTask(), &le_handset_addr);
+#endif
     }
     else
     {
