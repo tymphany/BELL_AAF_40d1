@@ -416,7 +416,7 @@ void appKymeraExternalAmpControl(bool enable)
                                   appConfigExternalAmpControlDisableMask());
         }
     }
-#if 0 /*Qualcomm solution*/
+#if 1 /*Qualcomm provide another one to fix system crash(fix on kymera)*/
     if(enable)
     {
         /* If we're enabling the amp then also call OperatorFrameworkEnable() so that the audio S/S will
