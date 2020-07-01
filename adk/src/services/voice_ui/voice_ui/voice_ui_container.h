@@ -141,6 +141,11 @@ void VoiceUi_EventHandler(voice_ui_handle_t* va_handle, ui_input_t event_id);
     \param  
  */
 void VoiceUi_Suspend(voice_ui_handle_t* va_handle);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+/*! \brief Reboot the local device after a delay
+ */
+void VoiceUi_RebootLater(void);
+#endif
 
 #endif
 

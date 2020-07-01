@@ -334,5 +334,7 @@ RETURNS
 
 */
 void connectionAddDeviceAtTdlPosition(uint8 pos);
-
+//ENABLE_TYM_PLATFORM, add Qualcomm patch
+/* Update all devices in DM */
+void connectionAuthRefreshAllDevices(void);
 #endif    /* CONNECTION_DM_SECURITY_AUTH_H_ */

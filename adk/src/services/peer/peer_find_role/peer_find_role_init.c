@@ -902,6 +902,20 @@ static inline void peer_find_role_restart_scanning(void)
  */
 static void peer_find_role_handle_ble_security(const CL_DM_BLE_SECURITY_CFM_T *cfm)
 {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch */
+    if (PEER_FIND_ROLE_STATE_SERVER_AWAITING_ENCRYPTION != peer_find_role_get_state())
+    {
+        /* Ignoring an unexpected message is sufficient for a case
+                       where we have seen a problem here.
+                       More general solutions are
+                       * force a disconnect and reconnect
+                       * Panic() as should never happen, at least with success
+                     */
+        DEBUG_LOG("peer_find_role_handle_ble_security, sts:%d. Received in unexpected state",
+                  cfm->status);
+        return;
+    }
+#endif	
     if (cfm->status != ble_security_success)
     {
         DEBUG_LOG("peer_find_role_handle_ble_security. FAILED sts:%d", cfm->status);

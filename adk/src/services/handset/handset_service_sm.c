@@ -160,7 +160,7 @@ static void handsetServiceSm_GetBdAddr(handset_service_state_machine_t *sm, bdad
     }
     else
     {
-#ifdef ENABLE_TYM_PLATFORM
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
         *addr = HandsetServiceSm_GetLeTpBdaddr(sm).taddr.addr;
 #else
         *addr = HandsetServiceSm_GetLeBdaddr(sm);

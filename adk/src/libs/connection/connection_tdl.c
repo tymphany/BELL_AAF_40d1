@@ -2316,6 +2316,26 @@ void connectionAddDeviceAtTdlPosition(uint8 pos)
     dm_sm_add_device_req(td);
     free(td);
 }
+//ENABLE_TYM_PLATFORM, add Qualcomm patch
+void connectionAuthRefreshAllDevices(void)
+{
+    td_data_t *td = (td_data_t *) PanicUnlessMalloc(SIZE_TD_DATA_T);
+    uint16 pos;
+    uint16 idx;
+    uint16 max_trusted_devices = MAX_TRUSTED_DEVICES;
+
+    for (idx = 0;
+         idx < max_trusted_devices && (pos = GET_TDI_CACHE.element[idx].order) != TDI_ORDER_UNUSED;
+         idx++)
+    {
+        if (PsRetrieve(TRUSTED_DEVICE_LIST + pos, td, PS_SIZE_ADJ(SIZE_TD_DATA_T)))
+        {
+            dm_sm_add_device_req(td);
+        }
+    }
+    free(td);
+}
+
 
 #ifndef DISABLE_BLE
 /****************************************************************************

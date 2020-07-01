@@ -29,10 +29,12 @@ void VoiceUi_PeerSignallingInit(void);
     \param reboot if TRUE, reboot the peer when the update is complete
  */
 void VoiceUi_UpdateSelectedPeerVaProvider(bool reboot);
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+/*remove VoiceUi_RebootLater*/
+#else
 /*! \brief Reboot the local device after a delay to allow the peer to synchronize state.
  */
 void VoiceUi_RebootLater(void);
-
+#endif
 
 #endif //VOICE_UI_PEER_SIG_H_

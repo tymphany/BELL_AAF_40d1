@@ -470,6 +470,8 @@ bool HandleAborting(MessageId id, Message message)
         }
 #endif
         UpgradeSMAbort();
+		//ENABLE_TYM_PLATFORM, add Qualcomm patch
+		UpgradeCleanupOnAbort();
         break;
     case UPGRADE_HOST_ABORT_REQ:
         DEBUG_LOG("HandleAborting UPGRADE_HOST_ABORT_REQ recvd");

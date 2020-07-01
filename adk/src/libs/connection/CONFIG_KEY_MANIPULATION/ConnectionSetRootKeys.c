@@ -20,6 +20,8 @@ NOTES
 */
 #include "connection.h"
 #include "connection_private.h"
+//ENABLE_TYM_PLATFORM , add Qualcomm patch
+#include "connection_tdl.h"
 
 #include    <message.h>
 #include    <string.h>
@@ -48,6 +50,8 @@ bool ConnectionSetRootKeys(cl_root_keys* root_keys)
 
     if(VmUpdateRootKeys(&rtks))
     {
+    	//ENABLE_TYM_PLATFORM , add Qualcomm patch
+        connectionAuthRefreshAllDevices();
         return PsStore( PSKEY_SM_KEY_STATE_IR_ER,
                         &irer,
                         PS_SIZE_ADJ(sizeof(DM_SM_KEY_STATE_T))

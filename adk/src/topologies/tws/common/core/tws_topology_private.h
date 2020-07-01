@@ -128,7 +128,7 @@ typedef struct
     /*! Flag to track whether topology has already been started */
     bool                    started;
 #ifdef ENABLE_TYM_PLATFORM
-    bool                try_again;
+    uint8                   retry;
 #endif
 } twsTopologyTaskData;
 

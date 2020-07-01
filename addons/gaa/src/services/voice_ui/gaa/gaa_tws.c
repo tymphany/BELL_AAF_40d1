@@ -23,6 +23,9 @@ static const GSoundTwsInterface *tws_handlers;
 static bool role_state_initialised = FALSE;
 static bool pending_role_change_expected = FALSE;
 static bool rfcomm_disconnection_confirmation_required = FALSE;
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+static tws_topology_role preRoleSwitchRole = tws_topology_role_none;
+#endif
 static Task serverTask = NULL; 
 
 static int32_t min_reconnection_delay = 5000;
@@ -55,6 +58,9 @@ void GSoundTargetTwsInit(const GSoundTwsInterface *handler)
     role_state_initialised = FALSE;
     rfcomm_disconnection_confirmation_required = FALSE;
     pending_role_change_expected = FALSE;
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+    preRoleSwitchRole = tws_topology_role_none;
+#endif
 }
 
 static void gaa_tws_Initialise(Task server, int32_t reconnect_delay)
@@ -80,7 +86,17 @@ static void gaa_tws_ForceRoleChange(void)
     DEBUG_LOG("gaa_tws_ForceRoleChange");
     PanicFalse(tws_handlers && role_state_initialised);
     rfcomm_disconnection_confirmation_required = gaa_is_ble_disconnected();
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+    pending_role_change_expected = TRUE;
+#endif
     tws_handlers->gsound_tws_role_change_force(min_reconnection_delay);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+	if(rfcomm_disconnection_confirmation_required)
+    {
+        DEBUG_LOG("gaa_tws_ForceRoleChange, starting disconnection timer");
+        MessageSendLater(Gaa_GetTwsTask(), GAA_INTERNAL_TWS_DISCONNECTION_TIMEOUT, NULL, disconnection_timeout);
+    }
+#endif
 }
 
 static void gaa_tws_CancelRoleChange(void)
@@ -92,7 +108,11 @@ static void gaa_tws_CancelRoleChange(void)
         MessageCancelAll(Gaa_GetTwsTask(), GAA_INTERNAL_TWS_DISCONNECTION_TIMEOUT);
     }
     tws_handlers->gsound_tws_role_change_cancel();
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+    pending_role_change_expected = FALSE;
+#else    
     pending_role_change_expected = TRUE;
+#endif    
 }
 
 void GSoundTargetTwsRoleChangeResponse(bool accepted)
@@ -114,11 +134,25 @@ static void gaa_tws_PrepareRoleChange(void)
     DEBUG_LOG("gaa_tws_PrepareRoleChange");
     PanicFalse(tws_handlers && role_state_initialised);
     rfcomm_disconnection_confirmation_required = gaa_is_ble_disconnected();
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+    pending_role_change_expected = TRUE;
+#endif
     tws_handlers->gsound_tws_role_change_perform(min_reconnection_delay);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+    if(rfcomm_disconnection_confirmation_required)
+    {
+        DEBUG_LOG("gaa_tws_PrepareRoleChange, starting disconnection timer");  
+        MessageSendLater(Gaa_GetTwsTask(), GAA_INTERNAL_TWS_DISCONNECTION_TIMEOUT, NULL, disconnection_timeout);
+    }
+#endif    
 }
 
 void GSoundTargetTwsRoleChangeGSoundDone(void)
 {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+	DEBUG_LOG("gaa_tws: GSoundTargetTwsRoleChangeGSoundDone");
+   	MessageSend(PanicNull(serverTask), TWS_ROLE_CHANGE_PREPARATION_CFM, NULL); 
+#else	
     if(pending_role_change_expected == FALSE)
     {  
         DEBUG_LOG("gaa_tws: GSoundTargetTwsRoleChangeGSoundDone");
@@ -134,11 +168,16 @@ void GSoundTargetTwsRoleChangeGSoundDone(void)
     }
     else
        DEBUG_LOG("gaa_tws: Unexpected GSoundTargetTwsRoleChangeGSoundDone"); 
+#endif       
 }
 
 static void gaa_tws_DisconnectionConfirmed(void)
 {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+    DEBUG_LOG("gaa_tws_DisconnectionConfirmed, cancel disconnection timer");
+#else	
     DEBUG_LOG("gaa_tws_DisconnectionConfirmed");
+#endif    
     MessageCancelAll(Gaa_GetTwsTask(), GAA_INTERNAL_TWS_DISCONNECTION_TIMEOUT);
     MessageSend(PanicNull(serverTask), TWS_ROLE_CHANGE_PREPARATION_CFM, NULL);
 }
@@ -174,11 +213,17 @@ static void gaa_tws_HandleTwsTopologyInitialRole(tws_topology_role role)
    
         case tws_topology_role_primary:
             PanicFalse(tws_handlers);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+            preRoleSwitchRole = tws_topology_role_primary;
+#endif
             tws_handlers->gsound_tws_role_change_init_role(TRUE);
             break;
             
         case tws_topology_role_secondary:
             PanicFalse(tws_handlers);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+            preRoleSwitchRole = tws_topology_role_secondary;
+#endif
             tws_handlers->gsound_tws_role_change_init_role(FALSE);
             break;
     }
@@ -187,25 +232,75 @@ static void gaa_tws_HandleTwsTopologyInitialRole(tws_topology_role role)
     
 static void gaa_tws_HandleTwsTopologyRoleChange(tws_topology_role role)
 {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+    DEBUG_LOG("gaa_tws_HandleTwsTopologyRoleChange, new role is %d", role);
+    DEBUG_LOG("gaa_tws_HandleTwsTopologyRoleChange pending_role_change_expected is %d",pending_role_change_expected);
+    DEBUG_LOG("gaa_tws_HandleTwsTopologyRoleChange, preRoleSwitchRole is %d", preRoleSwitchRole);	
+#endif
     PanicFalse(tws_handlers && role_state_initialised);
     if (role == tws_topology_role_secondary)
     {  
         if(pending_role_change_expected)
         {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+			if (preRoleSwitchRole == tws_topology_role_primary )
+          	{
+              	DEBUG_LOG("gaa_tws_HandleTwsTopologyRoleChange (primary->secondary)");
+              	tws_handlers->gsound_tws_role_change_target_done(FALSE);
+              	pending_role_change_expected = FALSE;
+            	preRoleSwitchRole = tws_topology_role_secondary;
+          	}
+          	else if (preRoleSwitchRole == tws_topology_role_secondary)
+          	{
+              	DEBUG_LOG("gaa_tws_HandleTwsTopologyRoleChange (secondary->secondary)");
+              	pending_role_change_expected = FALSE;
+          	}
+#else        	
             DEBUG_LOG("gaa_tws_HandleTwsTopologyRoleChange (primary->secondary:expected)");
             tws_handlers->gsound_tws_role_change_target_done(FALSE);
             pending_role_change_expected = FALSE;
+#endif
         }
         else 
         {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+			if (preRoleSwitchRole == tws_topology_role_primary )
+            {
+                DEBUG_LOG("gaa_tws_HandleTwsTopologyRoleChange (primary->secondary:fatal)");
+                tws_handlers->gsound_tws_role_change_fatal(FALSE);
+                preRoleSwitchRole = tws_topology_role_secondary;
+            }
+#else        	
             DEBUG_LOG("gaa_tws_HandleTwsTopologyRoleChange (primary->secondary:fatal)");
             tws_handlers->gsound_tws_role_change_fatal(FALSE);
+#endif
         }
     }
     else if (role == tws_topology_role_primary)
     {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+        if(pending_role_change_expected)
+        {
+            if (preRoleSwitchRole == tws_topology_role_primary)
+            {
+                DEBUG_LOG("gaa_tws_HandleTwsTopologyRoleChange (primary->primary)");
+                pending_role_change_expected = FALSE;
+                tws_handlers->gsound_tws_role_change_cancel();
+            }
+        }
+        else 
+        {
+            if (preRoleSwitchRole == tws_topology_role_secondary )
+            {
+                DEBUG_LOG("gaa_tws_HandleTwsTopologyRoleChange (secondary->primary)");
+                preRoleSwitchRole = tws_topology_role_primary;
+                tws_handlers->gsound_tws_role_change_target_done(TRUE);
+            }
+        }
+#else    	
         DEBUG_LOG("gaa_tws_HandleTwsTopologyRoleChange (secondary->primary:controlled/forced/fatal)");
         tws_handlers->gsound_tws_role_change_target_done(TRUE);
+#endif
     }
     else
     {

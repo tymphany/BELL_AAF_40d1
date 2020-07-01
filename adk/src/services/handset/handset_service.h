@@ -324,7 +324,7 @@ bool HandsetService_Connected(device_t device);
     \return TRUE if BR/EDR ACL or profile(s) are connected, FALSE otherwise.
 */
 bool HandsetService_IsBredrConnected(const bdaddr *addr);
-#ifdef ENABLE_TYM_PLATFORM
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
 /*! \brief Get the BT address of a handset with an LE connection.
 
     \param tp_addr Set to the typed BT address of a handset with an LE connection,

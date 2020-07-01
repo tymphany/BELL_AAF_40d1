@@ -109,7 +109,30 @@ static bool localAddrHostGenToType(local_addr_host_gen_t host, ble_local_addr_ty
             return FALSE;
     }
 }
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+void LocalAddr_ReconfigureBleGeneration(void)
+{
+    if (local_addr_configured == local_addr.state)
+    {
+        DEBUG_LOG_ALWAYS("LocalAddr_ReconfigureBleGeneration - was configured");
+        Task  task = local_addr.client_task;
+        local_addr_host_gen_t host = local_addr.host;
+        local_addr_controller_gen_t controller = local_addr.controller;
 
+
+
+        if (LocalAddr_ReleaseBleGeneration(task))
+        {
+            LocalAddr_ConfigureBleGeneration(task, host, controller);
+            DEBUG_LOG_ALWAYS("LocalAddr_ReconfigureBleGeneration - RE configured");
+        }
+    }
+    else
+    {
+        DEBUG_LOG_ALWAYS("LocalAddr_ReconfigureBleGeneration - was NOT configured");
+    }
+}
+#endif
 void LocalAddr_ConfigureBleGeneration(Task task, local_addr_host_gen_t host, local_addr_controller_gen_t controller)
 {
     ble_local_addr_type type;

@@ -118,5 +118,7 @@ bool LocalAddr_HandleConnectionLibraryMessages(MessageId id, Message message, bo
     \return TRUE if local address is public, otherwise FALSE
 */
 bool LocalAddr_IsPublic(void);
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+void LocalAddr_ReconfigureBleGeneration(void);
+#endif
 #endif /* _DOMAINS_BT_LOCAL_ADDR_ */

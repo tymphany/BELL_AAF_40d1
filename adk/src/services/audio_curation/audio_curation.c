@@ -251,7 +251,7 @@ static void handleUiDomainInput(MessageId ui_input)
 
         case ui_input_anc_off:
             DEBUG_LOG("handleUiDomainInput, anc off input");
-#ifdef ENABLE_TYM_PLATFORM                
+#ifdef ENABLE_TYM_PLATFORM        /*temp solution, prompt play will cut when enable internal ANC*/       
             if(theKymera->chain_tone_handle == NULL)
                 AncStateManager_Disable();
             else

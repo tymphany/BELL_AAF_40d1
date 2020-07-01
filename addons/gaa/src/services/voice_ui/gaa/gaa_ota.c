@@ -20,6 +20,13 @@
 #include "device_upgrade.h"
 #include "gaa_pmalloc_pools.h"
 #include "device_upgrade_peer.h"
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+#include <handset_service.h>
+#include <bt_device.h>
+#include "gsound_target_bt.h"
+#include "gatt_gaa_comm_server.h"
+#include "voice_ui_container.h"
+#endif
 
 /* Define the base of the set of internal GAA OTA messages */
 #define GAA_OTA_MSG_BASE   0x6000
@@ -33,7 +40,20 @@
 /*
  * Define the delay in millisectonds to be used for the GAA OTA rewind timeout.
  */
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+/*
+ * Define the delay in millisectonds to be used for the GAA OTA rewind timeout.
+ */
+#define GAA_OTA_REWIND_TIMEOUT      3000
+
+/*
+ * Define the delay in millisectonds to be used for the GAA OTA disconnect timeout.
+ */
+#define GAA_OTA_DISCONNECT_TIMEOUT  2000
+
+#else 
 #define GAA_OTA_TIMEOUT_DELAY  3000
+#endif
 
 /*
  * Define constants to make calls to UpgradeTransportConnectRequest more readable.
@@ -57,13 +77,22 @@ typedef enum {
     GAA_OTA_STATE_ABORT
 } GAA_OTA_STATE_T;
 
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+/* The message types for GAA OTA entity internal messages. */
+typedef enum {
+    GAA_OTA_INTERNAL_REWIND = GAA_OTA_MSG_BASE,
+    GAA_OTA_INTERNAL_DONE,
+    GAA_OTA_INTERNAL_DISCONNECT
+} _GAA_OTA_INTERNAL_MSG_T;
+
+#else
 /* The message types for GAA OTA entity internal messages. */
 typedef enum {
     GAA_OTA_INTERNAL_ERROR = GAA_OTA_MSG_BASE,
     GAA_OTA_INTERNAL_TIMEOUT,
     GAA_OTA_INTERNAL_OTA_DONE
 } _GAA_OTA_INTERNAL_MSG_T;
-
+#endif
 /* The structre for the GAA OTA entity data. */
 typedef struct
 {
@@ -151,6 +180,9 @@ static void gaa_OtaHandleUpgradeHostTransferCompleteInd(void);
 static void gaa_OtaHandleUpgradeHostAbortCfm(void);
 
 static GSoundStatus gaa_OtaTranslateUpgradeHostErrorCode(UpgradeHostErrorCode error_code);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+static void gaa_OtaHandleOtaDisconnect(void);
+#endif
 
 /* Outgoing message handling functions */
 static void gaa_OtaSendShortMessage(UpgradeMsgHost id);
@@ -179,7 +211,11 @@ static void gaa_OtaCancelPendingRewind(void)
 {
     if (gaa_ota->rewind_outstanding)
     {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+        MessageCancelAll(&gaa_ota->task_data, GAA_OTA_INTERNAL_REWIND);
+#else    	
         MessageCancelAll(&gaa_ota->task_data, GAA_OTA_INTERNAL_TIMEOUT);
+#endif        
         gaa_ota->rewind_outstanding = FALSE;
     }
 }
@@ -228,6 +264,27 @@ static void gaa_OtaRewind(uint32_t resume_offset)
 static void gaa_OtaSendError(GSoundStatus status)
 { 
     DEBUG_LOG("gaa_OtaSendError %u", status);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+    if (gaa_ota->state != GAA_OTA_STATE_APPLY)
+    {
+        gaa_ota->gsound_target_on_ota_error(status);
+        
+        /* If the error is due to a disconnection, then the control channel 
+         * may be lost before GSound has time to send its Abort message in response 
+         * to the error. Clean-up here in case this happens */
+        gaa_OtaCancelPendingRewind();
+        gaa_OtaFreeDataBuffer();
+        gaa_OtaSetState(GAA_OTA_STATE_READY);
+        appUpgradeSetContext(APP_UPGRADE_CONTEXT_UNUSED);
+        UpgradeTransportDisconnectRequest();
+    }
+    else
+    {
+        /* We have disconnected, or we are in the process of disconnecting, so reboot on error */
+        DEBUG_LOG("gaa_OtaSendError: rebooting to reconnect");
+        VoiceUi_RebootLater();
+    }
+#else    
     gaa_ota->gsound_target_on_ota_error(status);
     
     /* If the error is due to a disconnection, then the control channel 
@@ -235,6 +292,7 @@ static void gaa_OtaSendError(GSoundStatus status)
      * to the error. Clean-up here in case this happens */
     gaa_OtaCancelPendingRewind();
     gaa_OtaFreeDataBuffer();
+#endif
 }
 
 static void gaa_OtaSendUpgradeHostSyncReq(uint32 in_progress_id)
@@ -319,7 +377,12 @@ static void gaa_OtaSendUpgradeHostData(void)
                         else
                         {
                             DEBUG_LOG("gaa_OtaSendUpgradeHostData: Last packet");
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+ 							gaa_OtaFreeDataBuffer();
+                            MessageSend(&gaa_ota->task_data, GAA_OTA_INTERNAL_DONE, NULL);                        
+#else
                             MessageSend(&gaa_ota->task_data, GAA_OTA_INTERNAL_OTA_DONE, NULL);
+#endif                            
                         }
                         UpgradeProcessDataRequest(byte_index, payload);
                         free(payload);
@@ -397,7 +460,11 @@ static void gaa_OtaHandleRewind(void)
              * Start the timeout to check that get rewound within the expected time.
              * If timeout then will request the rewind again.
              */
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+			MessageSendLater(&gaa_ota->task_data, GAA_OTA_INTERNAL_REWIND, NULL, GAA_OTA_REWIND_TIMEOUT);
+#else             
             MessageSendLater(&gaa_ota->task_data, GAA_OTA_INTERNAL_TIMEOUT, NULL, GAA_OTA_TIMEOUT_DELAY);
+#endif            
             DEBUG_LOG("gaa_OtaHandleRewind async rewind to %lu", gaa_ota->resume_offset);
         }
         else
@@ -412,7 +479,19 @@ static void gaa_OtaHandleOtaDone(void)
     DEBUG_LOG("gaa_OtaHandleOtaDone");
     gaa_ota->gsound_target_on_ota_done();
 }
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+static void gaa_OtaHandleOtaDisconnect(void)
+{
+    DEBUG_LOG("gaa_OtaHandleOtaDisconnect");
+    bdaddr handset_addr;
+    GSoundTargetBtChannelClose(GSOUND_CHANNEL_CONTROL);
+    GSoundTargetBtChannelClose(GSOUND_CHANNEL_AUDIO);
+    appDeviceGetHandsetBdAddr(&handset_addr);
+    HandsetService_SetBleConnectable(FALSE);
+    HandsetService_DisconnectRequest(&gaa_ota->task_data, &handset_addr);
+    GattGaaCommDisconnect();
+}
+#endif
 static void gaa_OtaHandleUpgradeHostSyncCfm(uint16 size_data, uint8 *data)
 {
     UNUSED(size_data);
@@ -565,6 +644,26 @@ static void gaa_OtaHandleUpgradeHostErrorWarnInd(uint16 size_data, uint8 *data)
         byte_index += gaa_Get2Bytes(data, byte_index, &length);
         byte_index += gaa_Get2Bytes(data, byte_index, &msg->errorCode);
         DEBUG_LOG("gaa_OtaHandleUpgradeHostErrorWarnInd 0x%04x", msg->errorCode);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+        switch(gaa_ota->state)
+        {
+            case GAA_OTA_STATE_REBOOT_CONNECT:
+            case GAA_OTA_STATE_REBOOT_SYNC:
+            case GAA_OTA_STATE_REBOOT_START:
+            case GAA_OTA_STATE_REBOOT_COMMIT:
+                gaa_OtaSetState(GAA_OTA_STATE_READY);
+                break;
+
+            default:
+                break;
+        }
+        /*
+         * Send an indication to the GSound library according to the
+         * error_code and expect it to call GSoundTargetOtaAbort if it
+         * needs to.
+         */
+        gaa_OtaSendError(gaa_OtaTranslateUpgradeHostErrorCode((UpgradeHostErrorCode) msg->errorCode));        
+#else
         if (msg->errorCode >= UPGRADE_HOST_ERROR_INTERNAL_ERROR_DEPRECATED)
         {
             /*
@@ -592,6 +691,7 @@ static void gaa_OtaHandleUpgradeHostErrorWarnInd(uint16 size_data, uint8 *data)
              */
             gaa_OtaSendError(gaa_OtaTranslateUpgradeHostErrorCode((UpgradeHostErrorCode) msg->errorCode));
         }
+#endif
         gaa_OtaSendUpgradeHostErrorWarnRsp(msg->errorCode);
         free(msg);
     }
@@ -695,11 +795,15 @@ static void gaa_OtaHandleUpgradeHostAbortCfm(void)
     if (gaa_ota->state == GAA_OTA_STATE_ABORT)
     {
         gaa_OtaSetState(GAA_OTA_STATE_READY);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+        gaa_OtaFreeDataBuffer();
+#else        
         if (gaa_ota->data)
         {
             free(gaa_ota->data);
             gaa_ota->data = NULL;
         }
+#endif        
         UpgradeTransportDisconnectRequest();
     }
     else if (gaa_ota->state == GAA_OTA_STATE_BEGINNING_CONNECT)
@@ -732,11 +836,18 @@ static void gaa_OtaHandleUpgradeTransportConnectCfm(UPGRADE_TRANSPORT_CONNECT_CF
                 UpgradeTransportDisconnectRequest();
                 gaa_OtaSendError(GSOUND_STATUS_ERROR);
             }
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+			/* The reconnection to the upgrade library after OTA reboot has completed */
+            gaa_ota_reboot_occurred = FALSE;
+#endif
             break;
 
         case GAA_OTA_STATE_BEGINNING_CONNECT:
             if (msg->status == upgrade_status_success)
             {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+                UpgradePeerSetDeviceRolePrimary(TRUE);
+#endif
                 UpgradePermit(upgrade_perm_assume_yes);
                 gaa_OtaSetState(GAA_OTA_STATE_BEGINNING_SYNC);
                 gaa_OtaSendUpgradeHostSyncReq(GAA_OTA_IN_PROGRESS_ID);
@@ -858,7 +969,26 @@ static void gaa_OtaMessageHandler(Task task, MessageId id, Message message)
         case DEVICE_UPGRADE_PEER_DISCONNECT:
             /* Ignore */
             break;
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+        /* Handle an external message from the handset service. */
+        case HANDSET_SERVICE_DISCONNECT_CFM:
+            /* Ignore */
+            break;
 
+        /* Handle an internal message. */
+        case GAA_OTA_INTERNAL_REWIND:
+            gaa_OtaHandleRewind();
+            break;
+
+        case GAA_OTA_INTERNAL_DONE:
+            gaa_OtaHandleOtaDone();
+            break;
+
+        case GAA_OTA_INTERNAL_DISCONNECT:
+            gaa_OtaHandleOtaDisconnect();
+            break;
+
+#else
         /* Handle an internal message. */
         case GAA_OTA_INTERNAL_TIMEOUT:
             gaa_OtaHandleRewind();
@@ -868,6 +998,7 @@ static void gaa_OtaMessageHandler(Task task, MessageId id, Message message)
             gaa_OtaHandleOtaDone();
             break;
 
+#endif
         default:
             DEBUG_LOG("gaa_OtaMessageHandler unexpected msg 0x%04x", id);
             /* Ignore the unexpected message. */
@@ -1137,7 +1268,11 @@ GSoundStatus GSoundTargetOtaData(const uint8_t *data, uint32_t length,
                  * We are rewinding and have now got the correct byte_offset, so
                  * record the fact that we are no longer rewinding and continue.
                  */
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+                MessageCancelAll(&gaa_ota->task_data, GAA_OTA_INTERNAL_REWIND);
+#else                 
                 MessageCancelAll(&gaa_ota->task_data, GAA_OTA_INTERNAL_TIMEOUT);
+#endif                
                 gaa_ota->rewind_outstanding = FALSE;
                 DEBUG_LOG("GSoundTargetOtaData rewound to %lu", gaa_ota->resume_offset);
             }
@@ -1164,7 +1299,11 @@ GSoundStatus GSoundTargetOtaData(const uint8_t *data, uint32_t length,
             /* We are still (or again) waiting for a rewind */
             ota_status->rewind_offset = gaa_ota->resume_offset;
             DEBUG_LOG("GSoundTargetOtaData synchronous rewind to %lu", gaa_ota->resume_offset);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+			MessageSendLater(&gaa_ota->task_data, GAA_OTA_INTERNAL_REWIND, NULL, GAA_OTA_REWIND_TIMEOUT);            
+#else
             MessageSendLater(&gaa_ota->task_data, GAA_OTA_INTERNAL_TIMEOUT, NULL, GAA_OTA_TIMEOUT_DELAY);
+#endif            
         }
     }
     return status;
@@ -1194,6 +1333,15 @@ GSoundStatus GSoundTargetOtaApply(uint32_t device_index)
     }
     else
     {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+ 		gaa_OtaFreeDataBuffer();
+        gaa_OtaSetState(GAA_OTA_STATE_APPLY);
+        gaa_OtaSendShortMessage(UPGRADE_HOST_IS_CSR_VALID_DONE_REQ);
+        MessageSendLater(&gaa_ota->task_data,
+            GAA_OTA_INTERNAL_DISCONNECT,
+            NULL,
+            GAA_OTA_DISCONNECT_TIMEOUT);
+#else    	
         if (gaa_ota->data)
         {
             free(gaa_ota->data);
@@ -1201,6 +1349,7 @@ GSoundStatus GSoundTargetOtaApply(uint32_t device_index)
         }
         gaa_OtaSetState(GAA_OTA_STATE_APPLY);
         gaa_OtaSendShortMessage(UPGRADE_HOST_IS_CSR_VALID_DONE_REQ);
+#endif
     }
     return status;
 }
@@ -1299,7 +1448,9 @@ GSoundStatus GSoundTargetInfoGetAppVersion(uint8_t *version, uint32_t max_len)
     }
     return status;
 }
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+/*remove GaaRebootDueToOtaUpgrade function */
+#else
 bool GaaRebootDueToOtaUpgrade(void)
 {
     /*
@@ -1309,6 +1460,7 @@ bool GaaRebootDueToOtaUpgrade(void)
     PanicNull(gaa_ota);
     return gaa_ota_reboot_occurred;
 }
+#endif
 
 void GSoundTargetOtaGetResumeInfo(GSoundOtaResumeInfo *target_resume_info, uint32_t device_index)
 {

@@ -40,7 +40,9 @@
 
 #include <gatt_root_key_server_uuids.h>
 #include <uuid.h>
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+#include "local_addr.h"
+#endif
 #define NUMBER_OF_ADVERT_DATA_ITEMS     1
 #define SIZE_PEER_PAIR_LE_ADVERT        18
 

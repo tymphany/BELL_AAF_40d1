@@ -15,7 +15,11 @@
  *  causing verification of a DFU file (received by any transport from any host application) to fail.
  */
 #define GAA_OTA_VERIFICATION_BUFFER_SIZE       288
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+#define GAA_OTA_NUMBER_OF_VERIFICATION_BUFFERS   1
+#else
 #define GAA_OTA_NUMBER_OF_VERIFICATION_BUFFERS   0
+#endif
 
 _Pragma ("unitsuppress Unused")
 _Pragma("datasection apppool") static const pmalloc_pool_config app_pools[] =
