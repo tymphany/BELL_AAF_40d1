@@ -23,6 +23,9 @@
 #ifdef DEBUG_HDMA_UT
 #include "types.h"
 #endif
+#ifdef ENABLE_TYM_PLATFORM
+#include "peer_find_role.h"
+#endif
 
 /*! \todo remove unused after development */
 #pragma unitsuppress Unused
@@ -241,9 +244,17 @@ static void hdma_StateUpdate(hdma_timestamp timestamp)
 
     /*  Main logic for HDMA decision making */
 #ifdef ENABLE_TYM_PLATFORM
-    if((!hdma_core_data->local_bud.poweron) && (hdma_core_data->remote_bud.poweron))
+    if(PeerFindRole_GetFixedRole() != peer_find_role_fixed_role_not_set)
     {
-        result = hdma_MergeResult(result, hdma_NewResult(HDMA_CORE_HANDOVER_REASON_IN_CASE, HDMA_CORE_HANDOVER_URGENCY_CRITICAL));
+        HDMA_DEBUG_LOG("hdma - fixed role don't check handover");
+        hdma_SetHandoverEvent(result);
+    }
+    else
+    {        
+        if((!hdma_core_data->local_bud.poweron) && (hdma_core_data->remote_bud.poweron))
+        {
+            result = hdma_MergeResult(result, hdma_NewResult(HDMA_CORE_HANDOVER_REASON_IN_CASE, HDMA_CORE_HANDOVER_URGENCY_CRITICAL));
+        }
     }
 #else
     /*  Case (1) bud is in case */
