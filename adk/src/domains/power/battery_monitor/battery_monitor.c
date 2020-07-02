@@ -432,6 +432,7 @@ void appBatterySetPeriod(uint16 period)
 void updatePredictVoltToPSKEY(void)
 {
     uint16 batt_pskey[2];
+    DEBUG_LOG("updatePredictVoltToPSKEY");
     batteryTaskData *battery = GetBattery();
     if(battery->predict_volt != 0)
     {
@@ -458,7 +459,8 @@ void appBatteryGetPredictVoltage(void)
     bool charging = appChargerIsCharging();
     bool connected = (appChargerIsConnected() == CHARGER_CONNECTED_NO_ERROR);
     bool skip = 0;
-
+    uint8 percent = appBatteryGetPercent();
+    uint8 update_percent;
     if(battery->predict_volt == 0)
     {
         if(PsRetrieve(PSID_BATT, 0, 0) != 0)
@@ -506,10 +508,13 @@ void appBatteryGetPredictVoltage(void)
             else
                 battery->predict_volt -= 2;
         }
-        /*battery lower 5% save key*/
-        if(battery->predict_volt < disch_table[1])
-            updatePredictVoltToPSKEY();
     }
+    /*percent different save voltage to PSKEY*/
+    update_percent = appBatteryGetPercent();
+    if(update_percent != percent)
+    {
+        updatePredictVoltToPSKEY();  
+    }    
     DEBUG_LOG("Qual %d,predict %d,charging %d,connected %d",voltage,battery->predict_volt,charging,connected);
 }
 
