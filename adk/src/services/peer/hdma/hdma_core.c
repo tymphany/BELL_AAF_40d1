@@ -244,7 +244,7 @@ static void hdma_StateUpdate(hdma_timestamp timestamp)
 
     /*  Main logic for HDMA decision making */
 #ifdef ENABLE_TYM_PLATFORM
-    if(PeerFindRole_GetFixedRole() != peer_find_role_fixed_role_not_set)
+    if(PeerFindRole_HasFixedRole() == TRUE)
     {
         HDMA_DEBUG_LOG("hdma - fixed role don't check handover");
         hdma_SetHandoverEvent(result);
