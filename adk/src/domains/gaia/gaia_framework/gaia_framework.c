@@ -15,6 +15,7 @@
 #include "gaia_framework_feature.h"
 #include "gaia_core_plugin.h"
 #ifdef ENABLE_TYM_PLATFORM
+#include <stdio.h>
 #include "ui.h"
 #include "kymera_aec.h"
 #include "kymera_private.h"
@@ -116,6 +117,7 @@ void gaia_send_application_version(uint16 vendor_id,uint16 command_id)
     GAIA_TRANSPORT *transport = GaiaGetTransport();
     uint16 major,minor,config;
     /*  Read Device ID from config, irrespective of DEVICE_ID_PSKEY  */
+    #if 0
     uint8 payload[8];
     uint16 payload_length;
     UpgradeGetVersion(&major, &minor, &config);
@@ -131,6 +133,30 @@ void gaia_send_application_version(uint16 vendor_id,uint16 command_id)
     payload[3] = (minor & 0xff);
     DEBUG_LOG("payload 0x%x 0x%x 0x%x 0x%x\n",payload[0],payload[1],payload[2],payload[3]);
     payload_length = 4;
+    #else
+    uint8 *payload;
+    uint16 payload_length;
+    payload = malloc(16); //MaxString: 999.999.999.999
+    UpgradeGetVersion(&major, &minor, &config);
+
+    #ifdef ENABLE_UART
+    payload[0] = (major |(1 << 8));
+    #else
+    payload[0] = (major >> 8);
+    #endif
+
+    if(payload != NULL){
+        memset(payload, 0 ,16);
+        #ifdef ENABLE_UART
+        sprintf((char*)payload,"%d.%d.%d.%d",(major |(1 << 8)),(major & 0xff),(minor >> 8),(minor & 0xff));
+        #else
+        sprintf(payload,"%d.%d.%d.%d",(major >> 8),(major & 0xff),(minor >> 8),(minor & 0xff));
+        #endif
+        payload_length = strlen((char*)payload);
+    }else{
+        payload_length = 0;
+    }
+    #endif
 
     GaiaBuildAndSendSynch(transport, vendor_id, command_id | GAIA_ACK_MASK, GAIA_STATUS_SUCCESS, payload_length, payload);
 }
