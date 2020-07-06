@@ -827,10 +827,8 @@ void appUserPowerOn(void)
     appPhyStatePowerOnEvent();
     appPhyStateLeaveDormant();
     getPSPresetEQ();
-    if(appSmIsPrimary())
-    {
-        Ui_InjectUiInput(ui_input_prompt_poweron);
-    }
+    UiPrompts_GenerateUiEvents(TRUE);
+    Ui_InjectUiInput(ui_input_prompt_poweron);
 }
 
 void appPowerRebootWaitSec(int sec)

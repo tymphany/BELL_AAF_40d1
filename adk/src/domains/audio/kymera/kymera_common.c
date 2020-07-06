@@ -248,6 +248,20 @@ void appKymeraConfigureDspPowerMode(bool tone_playing)
                     }
                     break;
 
+#ifdef ENABLE_ANC /*add Qualcomm patch*/
+                    case AV_SEID_AAC_SNK:
+                    case AV_SEID_AAC_STEREO_TWS_SNK:
+                    case AV_SEID_SBC_SNK:
+                    case AV_SEID_SBC_MONO_TWS_SNK:
+                    {
+                        DEBUG_LOG("RP: ANC enabled so using Base Clock with AAC");
+                        cconfig.active_mode = AUDIO_DSP_BASE_CLOCK;
+                        mode = AUDIO_POWER_SAVE_MODE_1;
+
+                    }
+                    break;
+#else
+
                     case AV_SEID_SBC_SNK:
                     {
                         if (isAecUsedInOutputChain() || appConfigSbcNoPcmLatencyBuffer())
@@ -257,6 +271,7 @@ void appKymeraConfigureDspPowerMode(bool tone_playing)
                         }
                     }
                     break;
+#endif                    
 
                     case AV_SEID_APTX_MONO_TWS_SNK:
                     {
