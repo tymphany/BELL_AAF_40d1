@@ -27,6 +27,10 @@
 #include "state_proxy.h"
 #include "earbud_tym_sync.h"
 #include "tym_anc.h"
+#include "audio_sources.h"
+#include "kymera_adaptation.h"
+#include "multidevice.h"
+int a2dp_volume_backup;
 #endif
 #include "system_clock.h"
 
@@ -129,6 +133,23 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
             MessageSendLater(&the_prompts.task, UI_INTERNAL_CLEAR_LAST_PROMPT, NULL,
                              the_prompts.no_repeat_period_in_ms);
             the_prompts.last_prompt_played_index = prompt_index;
+
+            #ifdef ENABLE_TYM_PLATFORM
+            if(!Multidevice_IsLeft()){
+                volume_t a2dp_volume;
+                a2dp_volume = AudioSources_GetVolume(audio_source_a2dp_1);
+                a2dp_volume.value = a2dp_volume_backup;
+                DEBUG_LOG("[TYM] Recovery A2DP Volume %d %d",a2dp_volume.value);
+                AudioSources_SetVolume(audio_source_a2dp_1, a2dp_volume);
+                AudioSources_OnVolumeChange(audio_source_a2dp_1, event_origin_local, a2dp_volume);
+
+                if(audio_source_a2dp_1 == AudioSources_GetRoutedSource())
+                {
+                    volume_parameters_t volume_params = { .source_type = source_type_audio, .volume = a2dp_volume };
+                    KymeraAdaptation_SetVolume(&volume_params);
+                }
+            }
+            #endif
         }
     }      
 }
@@ -136,6 +157,10 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
 static void uiPrompts_SchedulePromptPlay(uint16 prompt_index)
 {
     const ui_prompt_data_t *config = uiPrompts_GetDataForPrompt(prompt_index);
+    #ifdef ENABLE_TYM_PLATFORM
+    volume_t a2dp_volume;
+    #endif
+
 
     if (uiPrompt_isNotARepeatPlay(prompt_index) &&
         (config->queueable || (!appKymeraIsTonePlaying() && (the_prompts.prompt_playback_ongoing_mask == 0))))
@@ -143,6 +168,33 @@ static void uiPrompts_SchedulePromptPlay(uint16 prompt_index)
         /* Factor in the propagation latency through the various buffers for the aux channel and the time to start the file source */
         rtime_t time_now = SystemClockGetTimerTime();
         rtime_t time_to_play = rtime_add(time_now, UI_INDICATOR_DELAY_FOR_SYNCHRONISED_TTP_IN_MICROSECONDS);
+
+        #ifdef ENABLE_TYM_PLATFORM
+        if(!Multidevice_IsLeft()){
+            a2dp_volume = AudioSources_GetVolume(audio_source_a2dp_1);
+            a2dp_volume_backup = a2dp_volume.value;
+            DEBUG_LOG("[TYM] uiPrompts_PlayPrompt right %d",a2dp_volume_backup);
+            if(a2dp_volume.value >=0)
+            {
+                /*
+                if(a2dp_volume.value >= 56)
+                    a2dp_volume.value = a2dp_volume.value - 49; //decrease ~20db
+                else
+                    a2dp_volume.value = 7; //~-43db
+                */
+                a2dp_volume.value = 7; //~-43db
+            }
+
+            AudioSources_SetVolume(audio_source_a2dp_1, a2dp_volume);
+            AudioSources_OnVolumeChange(audio_source_a2dp_1, event_origin_local, a2dp_volume);
+
+            if(audio_source_a2dp_1 == AudioSources_GetRoutedSource())
+            {
+                volume_parameters_t volume_params = { .source_type = source_type_audio, .volume = a2dp_volume };
+                KymeraAdaptation_SetVolume(&volume_params);
+            }
+        }
+        #endif
 
         time_to_play = Ui_RaiseUiEvent(ui_indication_type_audio_prompt, prompt_index, time_to_play);
 
