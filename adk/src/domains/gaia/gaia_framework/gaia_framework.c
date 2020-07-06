@@ -139,16 +139,10 @@ void gaia_send_application_version(uint16 vendor_id,uint16 command_id)
     payload = malloc(16); //MaxString: 999.999.999.999
     UpgradeGetVersion(&major, &minor, &config);
 
-    #ifdef ENABLE_UART
-    payload[0] = (major |(1 << 8));
-    #else
-    payload[0] = (major >> 8);
-    #endif
-
     if(payload != NULL){
         memset(payload, 0 ,16);
         #ifdef ENABLE_UART
-        sprintf((char*)payload,"%d.%d.%d.%d",(major |(1 << 8)),(major & 0xff),(minor >> 8),(minor & 0xff));
+        sprintf((char*)payload,"%d.%d.%d.%d",(major >> 8)| 0x01,(major & 0xff),(minor >> 8),(minor & 0xff));
         #else
         sprintf(payload,"%d.%d.%d.%d",(major >> 8),(major & 0xff),(minor >> 8),(minor & 0xff));
         #endif
