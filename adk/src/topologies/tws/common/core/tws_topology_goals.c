@@ -358,6 +358,29 @@ bool TwsTopology_IsAnyGoalPending(void)
     return (GoalsEngine_IsAnyGoalPending(td->goal_set));
 }
 
+#ifdef ENABLE_TYM_PLATFORM
+static void TwsTopology_ErrorReboot(void)
+{
+    twsTopologyTaskData* td = TwsTopologyGetTaskData(); 
+    if(GoalsEngine_IsAnyGoalPending(td->goal_set) == TRUE)
+    {
+        DEBUG_LOG("GoalPending retry %d", td->retry);
+        if(td->retry < 4)
+        {
+            td->retry++; 
+        }   
+        else
+        {    
+            td->retry = 0; 
+            appPowerReboot();
+        }
+    }
+    else
+    {
+        td->retry = 0; 
+    }              
+}
+#endif
 /*! \brief Given a new goal decision from a rules engine, find the goal and attempt to start it. */
 void TwsTopology_HandleGoalDecision(Task task, MessageId id, Message message)
 {
@@ -402,6 +425,9 @@ void TwsTopology_HandleGoalDecision(Task task, MessageId id, Message message)
 
         case TWSTOP_SECONDARY_GOAL_NO_ROLE_IDLE:
         case TWSTOP_DFU_GOAL_NO_ROLE_IDLE:
+#ifdef ENABLE_TYM_PLATFORM
+            TwsTopology_ErrorReboot();
+#endif            
             GoalsEngine_ActivateGoal(td->goal_set, tws_topology_goal_no_role_idle, task, id, NULL, 0);
             break;
 
@@ -415,6 +441,9 @@ void TwsTopology_HandleGoalDecision(Task task, MessageId id, Message message)
             break;
 
         case TWSTOP_PRIMARY_GOAL_NO_ROLE_IDLE:
+#ifdef ENABLE_TYM_PLATFORM
+            TwsTopology_ErrorReboot();
+#endif           
             GoalsEngine_ActivateGoal(td->goal_set, tws_topology_goal_no_role_idle, task, id, NULL, 0);
             break;
 
