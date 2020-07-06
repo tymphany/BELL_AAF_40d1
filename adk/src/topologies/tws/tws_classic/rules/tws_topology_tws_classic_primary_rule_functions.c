@@ -129,7 +129,7 @@ rule_action_t ruleTwsTopClassicPriPeerLostFindRole(void)
 #ifdef ENABLE_TYM_PLATFORM
     if(appPhyStateGetPowerState() == FALSE)
     {
-        DEBUG_LOG("ruleTwsTopClassicPriNoRoleIdle, ignore as power off");
+        DEBUG_LOG("ruleTwsTopClassicPriPeerLostFindRole, ignore as power off");
         return rule_action_ignore;
     }
 #else

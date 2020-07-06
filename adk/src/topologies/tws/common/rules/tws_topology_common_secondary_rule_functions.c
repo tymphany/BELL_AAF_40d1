@@ -26,7 +26,7 @@ rule_action_t ruleTwsTopSecPeerLostFindRole(void)
 #ifdef ENABLE_TYM_PLATFORM
     if(appPhyStateGetPowerState() == FALSE)
     {
-        TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecStaticHandoverCommand, ignore as power off");
+        TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecPeerLostFindRole, ignore as power off");
         return rule_action_ignore;
     }
 #else
@@ -59,7 +59,7 @@ rule_action_t ruleTwsTopSecRoleSwitchPeerConnect(void)
 #ifdef ENABLE_TYM_PLATFORM
     if(appPhyStateGetPowerState() == FALSE)
     {
-        TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecStaticHandoverFailedOutCase, ignore as power off");
+        TWSTOP_SECONDARY_RULE_LOG("ruleTwsTopSecRoleSwitchPeerConnect, ignore as power off");
         return rule_action_ignore;
     }
 #else

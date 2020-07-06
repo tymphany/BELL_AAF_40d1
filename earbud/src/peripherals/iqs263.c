@@ -447,7 +447,7 @@ void _processTAPEvent(void)
     uint8 touchPadMode = tymGetTouchPadMode();
     uint8 tapCnt = tconfig->tapCnt;
     tconfig->tapCnt = 0;
-    DEBUG_LOG("===Tab_%d Event===",tapCnt);
+    DEBUG_LOG("===Tap_%d Event===",tapCnt);
     if(touchPadMode != normalPad)
     {
         if((touchPadMode >= sleepPad) && (tapCnt > 1))
