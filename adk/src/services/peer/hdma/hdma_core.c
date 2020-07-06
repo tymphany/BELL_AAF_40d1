@@ -248,6 +248,7 @@ static void hdma_StateUpdate(hdma_timestamp timestamp)
     {
         HDMA_DEBUG_LOG("hdma - fixed role don't check handover");
         hdma_SetHandoverEvent(result);
+        return;
     }
     else
     {        
