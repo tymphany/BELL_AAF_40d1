@@ -173,6 +173,7 @@ void stanc3_init(ancConfig *config)
         }
     }
     stanc3_audiomute(FALSE);  
+    stanc3_ancoff();//default enable ambient, STANC off 
     //stanc3_ancon();/*for default enable ambient:internal ANC,STANC off*/ 
     config->init = TRUE;
 }
