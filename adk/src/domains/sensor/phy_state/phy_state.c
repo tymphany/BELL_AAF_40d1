@@ -117,6 +117,8 @@ static void appPhyStateEnterInCase(void)
         DEBUG_LOG("report standby mode");
         reportSleepStandbyStatus(FALSE);
     }    
+    /*In case mute stanc3*/
+    stanc3_audiomute(TRUE); 
 #endif
     appPhyStateMsgSendStateChangedInd(PHY_STATE_IN_CASE, phy_state_event_in_case);
 }
@@ -151,6 +153,9 @@ static void appPhyStateExitInCase(void)
 {
     DEBUG_LOG("appPhyStateExitInCase");
     appPhyStateMsgSendStateChangedInd(PHY_STATE_OUT_OF_EAR, phy_state_event_out_of_case);
+#ifdef ENABLE_TYM_PLATFORM /*for exit in case unmute stanc3*/
+    stanc3_audiomute(FALSE); 
+#endif    
 }
 
 /*! \brief Perform actions on exiting PHY_STATE_OUT_OF_EAR state. */
