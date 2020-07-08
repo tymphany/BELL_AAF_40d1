@@ -321,7 +321,7 @@ void UART_RX_ISR(char Input) {
                       //case 0x4142429F: UR_NG_CMD = 0;  uart_data_stream_tx_data((const uint8*)"ABB", 3);  break;  /* ABB           xerx_APP_BUTTON_BACKWARD        = 31 */
 
                       //case 0x465455A0: UR_NG_CMD = 0;  uart_data_stream_tx_data((const uint8*)"FTU", 3);  break;  /* FTU           xetx_FCT_TEST_UART_FUNCTION     = 32 */
-                        case 0x41434BCF: UR_NG_CMD = 0;  reportACKReport();                         break;  /* ACK           xerx_APP_ACK_COMMAND            = 33 */
+                        case 0x41434BCF: UR_NG_CMD = 0;  sendCmdToChargingCase(statusACKReport);                         break;  /* ACK           xerx_APP_ACK_COMMAND            = 33 */
                         case 0x534850EB: UR_NG_CMD = 0;  MessageSendLater(SmGetTask(), ui_input_shipping, NULL, D_SEC(1));  break;  /* SHP     QUALCOMM SLEEP MODE   */
                     }
                 }

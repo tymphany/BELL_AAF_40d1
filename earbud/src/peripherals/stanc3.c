@@ -20,6 +20,8 @@
 #include "earbud_tym_util.h"
 #include "earbud_tym_psid.h"
 #include "../../audio/kymera/kymera_private.h"
+#include "hfp_profile.h"
+#include "scofwd_profile.h"
 
 /* ------------------------ Defines ------------------------ */
 
@@ -327,7 +329,14 @@ void stanc3_ancoff(void)
     }
 
     //Swtich to SPK-EQ1 for ANC OFF
-    appKymeraSpeakerEqOnOff(TRUE,FALSE);
+    if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE) || (appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE) )
+    {
+        DEBUG_LOG("HFP incoming/streaming");
+    }    
+    else
+    {        
+        appKymeraSpeakerEqOnOff(TRUE,FALSE);
+    }
 }
 
 static void stanc3_micbias_set(void)
@@ -395,7 +404,14 @@ static void stanc3_switchbank(void)
     }
 
     //Swtich to SPK-EQ2 for ANC ON
-    appKymeraSpeakerEqOnOff(FALSE,TRUE);   
+    if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE) || (appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE) )
+    {
+        DEBUG_LOG("HFP incoming/streaming");
+    }    
+    else
+    {    
+        appKymeraSpeakerEqOnOff(FALSE,TRUE);
+    }
 }
 
 /*! \brief  stanc3 anc on*/

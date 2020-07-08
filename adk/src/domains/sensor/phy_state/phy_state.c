@@ -490,8 +490,23 @@ static void appPhyStateHandleMessage(Task task, MessageId id, Message message)
             }
             break;
         case TOUCH_MESSAGE_HOLD2S:
-            DEBUG_LOG("TOUCH_MESSAGE_HOLD2S");
-            LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_presshold);
+            DEBUG_LOG("TOUCH_MESSAGE_HOLD2S,appHfpIsCallIncoming %d,ScoFwdIsCallIncoming %d",appHfpIsCallIncoming(),ScoFwdIsCallIncoming());
+            DEBUG_LOG("TOUCH_MESSAGE_HOLD2S,appHfpIsCallActive %d,ScoFwdIsStreaming %d,appHfpIsCallOutgoing %d",appHfpIsCallActive(),ScoFwdIsStreaming(),appHfpIsCallOutgoing());
+            if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE))
+            {
+                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_voice_call_reject);
+                DEBUG_LOG("call ui_input_voice_call_reject");
+            }
+            else if((appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE))
+            {
+                //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
+                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_voice_call_hang_up);
+                DEBUG_LOG("call ui_input_voice_call_hang_up");
+            }
+            else
+            {    
+                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_presshold);
+            }
             break;
         case TOUCH_MESSAGE_HOLD5S:
             DEBUG_LOG("TOUCH_MESSAGE_HOLD5S");
@@ -1025,6 +1040,18 @@ void appPhyStateAncCalibration(void)
     }
 }
 
+static void appPhyTapANCEvent(void)
+{
+    if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE) || (appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE))
+    {
+        DEBUG_LOG("HFP working,don't switch ANC");
+    }
+    else
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
+    }        
+}
+
 /*! \brief based on action (left/right) tapx1,tapx2,tapx3,swipeL,swipeR get custom ui functin id*/
 uint8 appPhyStateGetCustomUiId(uint8 act)
 {
@@ -1065,6 +1092,7 @@ void appPhyStateCustomIdTapx1(uint8 act)
 void appPhyStateTapx1(void)
 {
     //Incomming
+    DEBUG_LOG("appHfpGetState() %d",appHfpGetState());
     if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE))
     {
         DEBUG_LOG("Have Call InComing");
@@ -1092,7 +1120,8 @@ void appPhyStateCustomIdTapx2(uint8 act)
     uint8 id = appPhyStateGetCustomUiId(act);
     if(id == uifunc_anc_amb) /* switch between ambient and ANC */
     {
-        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
+        //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
+        appPhyTapANCEvent();
     }
     else if(id == uifunc_google_notification) /* google bisto notification */
     {
@@ -1121,14 +1150,14 @@ void appPhyStateTapx2(void)
         return;
     }
     /* HFP on Incomming */
-    if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE))
+    /*if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE))
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
     }
     else if((appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE))
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
-    }
+    }*/
     else if(Multidevice_IsLeft())
     {
         appPhyStateCustomIdTapx2(uiseq_left_tapx2);
@@ -1184,7 +1213,8 @@ void appPhyStateSwipeL(uint8 act)
     }
     else if(id == uifunc_anc_amb) /*anc, anc ambient */
     {
-        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
+        //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
+        appPhyTapANCEvent();
     }
 }
 
@@ -1210,7 +1240,8 @@ void appPhyStateSwipeR(uint8 act)
     }
     else if(id == uifunc_anc_amb) /*anc, anc ambient */
     {
-        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
+        //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
+        appPhyTapANCEvent();
     }
 }
 
