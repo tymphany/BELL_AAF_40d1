@@ -135,7 +135,8 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
             the_prompts.last_prompt_played_index = prompt_index;
 
             #ifdef ENABLE_TYM_PLATFORM
-            if(!Multidevice_IsLeft()){
+            //disconnect prompt don't reduce a2dp volume.because it can't recovery a2dp volume to phone
+            if(!Multidevice_IsLeft() && (prompt_index != 6)){
                 volume_t a2dp_volume;
                 a2dp_volume = AudioSources_GetVolume(audio_source_a2dp_1);
                 a2dp_volume.value = a2dp_volume_backup;
@@ -170,7 +171,8 @@ static void uiPrompts_SchedulePromptPlay(uint16 prompt_index)
         rtime_t time_to_play = rtime_add(time_now, UI_INDICATOR_DELAY_FOR_SYNCHRONISED_TTP_IN_MICROSECONDS);
 
         #ifdef ENABLE_TYM_PLATFORM
-        if(!Multidevice_IsLeft()){
+        //disconnect prompt don't reduce a2dp volume.because it can't recovery a2dp volume to phone
+        if(!Multidevice_IsLeft() &&(prompt_index != 6)){
             a2dp_volume = AudioSources_GetVolume(audio_source_a2dp_1);
             a2dp_volume_backup = a2dp_volume.value;
             DEBUG_LOG("[TYM] uiPrompts_PlayPrompt right %d",a2dp_volume_backup);
