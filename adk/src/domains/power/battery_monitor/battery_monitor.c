@@ -459,6 +459,7 @@ void appBatteryGetPredictVoltage(void)
     bool charging = appChargerIsCharging();
     bool connected = (appChargerIsConnected() == CHARGER_CONNECTED_NO_ERROR);
     bool skip = 0;
+    charger_status ch_status = ChargerStatus();
     uint8 percent = appBatteryGetPercent();
     uint8 update_percent;
     if(battery->predict_volt == 0)
@@ -470,7 +471,12 @@ void appBatteryGetPredictVoltage(void)
             battery->lock = batt_pskey[1] & 0x01;
             DEBUG_LOG("get batt pksey lock %d",battery->lock);
         }
-        battery->predict_volt = voltage;
+        /*avoid initial voltage is too low*/
+        if(voltage > disch_table[0])
+            battery->predict_volt = voltage;
+        else
+            battery->predict_volt = disch_table[0];
+               
         skip = 1;
     }
 
@@ -497,6 +503,11 @@ void appBatteryGetPredictVoltage(void)
             else
                 battery->predict_volt += 3;
         }
+        if(ch_status == STANDBY)
+        {
+            if(voltage > battery->predict_volt)
+                battery->predict_volt = voltage; 
+        } 
     }
     else
     {
@@ -508,7 +519,7 @@ void appBatteryGetPredictVoltage(void)
             else
                 battery->predict_volt -= 2;
         }
-    }
+    }   
     /*percent different save voltage to PSKEY*/
     update_percent = appBatteryGetPercent();
     if(update_percent != percent)

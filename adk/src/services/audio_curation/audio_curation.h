@@ -32,9 +32,9 @@ enum audio_curation_messages
 typedef enum
 {
     context_ambient_enabled,
-    context_ambient_disabled,
-    context_anc_disabled,
+    context_speech_enabled,
     context_anc_enabled,
+    context_anc_disabled,
     context_anc_tuning_mode_active,
     context_leakthrough_disabled,
     context_leakthrough_enabled,

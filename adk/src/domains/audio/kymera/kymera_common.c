@@ -598,7 +598,7 @@ void appKymeraConfigureOutputChainOperators(kymera_chain_handle_t chain,
 }
 
 #ifdef ENABLE_TYM_PLATFORM
-kymera_chain_handle_t speaker_chain;
+kymera_chain_handle_t speaker_chain = NULL;
 void appKymeraSpeakerEqOnOff(bool spk_eq1_enable, bool spk_eq2_enable)
 {
 
@@ -609,7 +609,8 @@ void appKymeraSpeakerEqOnOff(bool spk_eq1_enable, bool spk_eq2_enable)
     //Prevent panic cause by chain is NULL
     if(chain == NULL)
         return;
-
+    if(speaker_chain == NULL)
+        return;
     peq_op1 = ChainGetOperatorByRole(speaker_chain, OPR_SPEAKER_EQ1);
     peq_op2 = ChainGetOperatorByRole(speaker_chain, OPR_SPEAKER_EQ2);
 
@@ -727,10 +728,11 @@ void appKymeraDestroyOutputChain(void)
 
     if (chain)
     {
-
         ChainStop(chain);
         disconnectOutputChainFromAudioSink(ChainGetOutput(chain, appkymera_GetOuputRole(output_left_channel)));
-
+#ifdef ENABLE_TYM_PLATFORM        
+        speaker_chain = NULL;
+#endif        
         if(isStereo())
         {
             Source right_source = ChainGetOutput(chain, appkymera_GetOuputRole(output_right_channel));
@@ -740,7 +742,6 @@ void appKymeraDestroyOutputChain(void)
 
         ChainDestroy(chain);
         theKymera->chainu.output_vol_handle = NULL;
-
     }
 }
 

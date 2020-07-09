@@ -156,8 +156,10 @@ const ui_config_table_content_t earbud_ui_config_table[] =
     {APP_BUTTON_TAPX1,                 ui_provider_media_player,            context_av_is_streaming,                ui_input_toggle_play_pause                    },
     {APP_BUTTON_TAPX1,                 ui_provider_media_player,            context_av_connected,                   ui_input_toggle_play_pause                    },
     {APP_BUTTON_TAP_BISTO,             ui_provider_voice_ui,                context_voice_ui_default,               ui_input_va_notify                            },
-    {APP_BUTTON_TAP_ANC,               ui_provider_audio_curation,          context_ambient_enabled,                ui_input_bell_ui_anc_on                       }, /*ambient enable change to anc*/
-    {APP_BUTTON_TAP_ANC,               ui_provider_audio_curation,          context_ambient_disabled,               ui_input_bell_ui_ambient_on                   }, /*ambient disable change to ambient*/
+    {APP_BUTTON_TAP_ANC,               ui_provider_audio_curation,          context_ambient_enabled,                ui_input_bell_ui_anc_on                       }, /*ambient enable change to anc on*/
+    {APP_BUTTON_TAP_ANC,               ui_provider_audio_curation,          context_anc_enabled,                    ui_input_bell_ui_anc_off                      }, /*anc on change to anc off*/
+    {APP_BUTTON_TAP_ANC,               ui_provider_audio_curation,          context_anc_disabled,                   ui_input_bell_ui_ambient_on                   }, /*anc off change to ambient */    
+    {APP_BUTTON_TAP_ANC,               ui_provider_audio_curation,          context_speech_enabled,                 ui_input_bell_ui_ambient_on                   }, /*speech change to ambient */      
     {APP_BUTTON_VOLUME_UP,             ui_provider_hfp,                     context_hfp_voice_call_incoming,        ui_input_hfp_volume_up_start                  },
     {APP_BUTTON_VOLUME_UP,             ui_provider_hfp,                     context_hfp_voice_call_sco_active,      ui_input_hfp_volume_up_start                  },
     {APP_BUTTON_VOLUME_UP,             ui_provider_media_player,            context_av_is_streaming,                ui_input_av_volume_up_start                   },

@@ -164,10 +164,18 @@ static unsigned getAncCurrentContext(void)
     {
         context = context_ambient_enabled;
     }
+    else if(tymAnc->curAncMode == speech)
+    {
+        context = context_speech_enabled;
+    }    
+    else if(tymAnc->curAncMode == ancon)
+    {
+        context = context_anc_enabled;
+    }
     else
     {
-        context = context_ambient_disabled;
-    }
+        context = context_anc_disabled;
+    }    
 #else
     else if(AncStateManager_IsEnabled())
     {
