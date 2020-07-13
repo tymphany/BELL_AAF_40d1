@@ -497,7 +497,7 @@ static void appPhyStateHandleMessage(Task task, MessageId id, Message message)
                 LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_voice_call_reject);
                 DEBUG_LOG("call ui_input_voice_call_reject");
             }
-            else if((appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE))
+            else if((appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE) || appHfpIsCallOutgoing() == TRUE)
             {
                 //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
                 LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_voice_call_hang_up);
@@ -1042,14 +1042,8 @@ void appPhyStateAncCalibration(void)
 
 static void appPhyTapANCEvent(void)
 {
-    if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE) || (appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE))
-    {
-        DEBUG_LOG("HFP working,don't switch ANC");
-    }
-    else
-    {
-        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
-    }        
+    //check hfp from audio_curation
+    MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);       
 }
 
 /*! \brief based on action (left/right) tapx1,tapx2,tapx3,swipeL,swipeR get custom ui functin id*/

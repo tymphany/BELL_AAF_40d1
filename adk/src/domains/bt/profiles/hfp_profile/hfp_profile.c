@@ -558,6 +558,9 @@ static void appHfpEnterConnectedIdle(void)
     /* Resume AV streaming */
     appAvStreamingResume(AV_SUSPEND_REASON_HFP);
 #endif
+#ifdef ENABLE_TYM_PLATFORM
+    Ui_InjectUiInput(ui_input_bell_ui_hfp_deactive_recovery);
+#endif
 }
 
 /*! \brief Exit 'connected idle' state
@@ -567,6 +570,9 @@ static void appHfpEnterConnectedIdle(void)
 static void appHfpExitConnectedIdle(void)
 {
     DEBUG_LOG("appHfpExitConnectedIdle");
+#ifdef ENABLE_TYM_PLATFORM
+    Ui_InjectUiInput(ui_input_bell_ui_hfp_act_anc_on);
+#endif    
 }
 
 /*! \brief Enter 'connected outgoing' state

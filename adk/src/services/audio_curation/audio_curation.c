@@ -35,6 +35,9 @@ static void BellUiAncOn(void);
 static void BellUiAmbientOn(void);
 static void BellUiSpeechOn(void);
 static void BellUiPPAmbient(void);
+static void BellUiHfpAviceSwitchAnc(void);
+static void BellUiHfpDeActiveRecovery(void);
+static void BellUiANCRecovery(void);
 #endif
 
 
@@ -236,6 +239,18 @@ static void handlePowerClientEvents(MessageId id)
     }
 }
 
+#ifdef ENABLE_TYM_PLATFORM
+static bool checkHfpIsActvie(void)
+{
+    bool active = FALSE;
+    if((appHfpIsCallIncoming() == TRUE) || (appHfpIsCallActive() == TRUE) || (appHfpIsCallOutgoing() == TRUE))
+        active = TRUE;
+        
+    return active;        
+            
+}
+#endif
+
 static void handleUiDomainInput(MessageId ui_input)
 {
     anc_mode = AncStateManager_GetMode();
@@ -344,8 +359,15 @@ static void handleUiDomainInput(MessageId ui_input)
             break;
         case ui_input_bell_ui_anc_on:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_anc_on");
-            Ui_InjectUiInput(ui_input_prompt_anc_on);
-            BellUiAncControl(ui_input);
+            if(checkHfpIsActvie() == TRUE)
+            {
+                DEBUG_LOG("handleUiDomainInput, hfp active bypass switch");
+            }
+            else
+            {        
+                Ui_InjectUiInput(ui_input_prompt_anc_on);
+                BellUiAncControl(ui_input);
+            }
             break;
         case ui_input_bell_ui_anc_on_noprompt:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_anc_on_noprompt");        
@@ -353,28 +375,63 @@ static void handleUiDomainInput(MessageId ui_input)
             break;    
         case ui_input_bell_ui_anc_off:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_anc_off");
-            Ui_InjectUiInput(ui_input_prompt_anc_off);
-            BellUiAncControl(ui_input);
+            if(checkHfpIsActvie() == TRUE)
+            {
+                DEBUG_LOG("handleUiDomainInput, hfp active bypass switch");
+            }
+            else
+            {                
+                Ui_InjectUiInput(ui_input_prompt_anc_off);
+                BellUiAncControl(ui_input);
+            }
             break;
         case ui_input_bell_ui_ambient_on:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_ambient_on");
-            Ui_InjectUiInput(ui_input_prompt_ambient_on);
-            BellUiAncControl(ui_input);
+            if(checkHfpIsActvie() == TRUE)
+            {
+                DEBUG_LOG("handleUiDomainInput, hfp active bypass switch");
+            }
+            else
+            {    
+                Ui_InjectUiInput(ui_input_prompt_ambient_on);
+                BellUiAncControl(ui_input);
+            }
             break;
         case ui_input_bell_ui_ambient_off:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_ambient_off");
-            Ui_InjectUiInput(ui_input_prompt_ambient_off);
-            BellUiAncControl(ui_input);
+            if(checkHfpIsActvie() == TRUE)
+            {
+                DEBUG_LOG("handleUiDomainInput, hfp active bypass switch");
+            }
+            else
+            {    
+                Ui_InjectUiInput(ui_input_prompt_ambient_off);
+                BellUiAncControl(ui_input);
+            }
             break;
         case ui_input_bell_ui_speech_on:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_speech_on");
-            Ui_InjectUiInput(ui_input_prompt_speech_on);
-            BellUiAncControl(ui_input);
+            if(checkHfpIsActvie() == TRUE)
+            {
+                DEBUG_LOG("handleUiDomainInput, hfp active bypass switch");
+            }
+            else
+            {                
+                Ui_InjectUiInput(ui_input_prompt_speech_on);
+                BellUiAncControl(ui_input);
+            }
             break;
         case ui_input_bell_ui_speech_off:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_speech_off");
-            Ui_InjectUiInput(ui_input_prompt_speech_off);
-            BellUiAncControl(ui_input);
+            if(checkHfpIsActvie() == TRUE)
+            {
+                DEBUG_LOG("handleUiDomainInput, hfp active bypass switch");
+            }
+            else
+            {    
+                Ui_InjectUiInput(ui_input_prompt_speech_off);
+                BellUiAncControl(ui_input);
+            }
             break;
         case ui_input_bell_ui_pp_ambient:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_pp_ambient");
@@ -389,6 +446,14 @@ static void handleUiDomainInput(MessageId ui_input)
         case ui_input_bell_ui_switch_preset_bank6:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_switch_preset_bank %x",(ui_input - ui_input_bell_ui_switch_preset_bank0));
             appKymeraSelectUsrEQPreset(ui_input - ui_input_bell_ui_switch_preset_bank0);
+            break;
+         case ui_input_bell_ui_hfp_act_anc_on:
+            DEBUG_LOG("handleUiDomainInput,ui_input_bell_ui_hfp_act_anc_on");
+            BellUiHfpAviceSwitchAnc();
+            break;
+         case ui_input_bell_ui_hfp_deactive_recovery:
+            DEBUG_LOG("handleUiDomainInput,ui_input_bell_ui_hfp_deactive_recovery");
+            BellUiHfpDeActiveRecovery();
             break;
 #endif
         default:
@@ -559,6 +624,32 @@ static void BellUiSpeechOn(void)
     }
 }
 
+/*\brief Bell ANC control,ANC recovery it*/
+static void BellUiANCRecovery(void)
+{  
+    tymAncTaskData *tymAnc = TymAncGetTaskData();    
+    if(tymAnc->curAncMode == ancoff)
+    {
+        BellUiAncOff();
+        bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 0);
+    }
+    else if(tymAnc->curAncMode == ancon)
+    {
+        BellUiAncOn();
+        bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 1);
+    }
+    else if(tymAnc->curAncMode == ambient)
+    {
+        BellUiAmbientOn();
+        bell_gaia_anc_notify_event(BELL_GAIA_AMBIENT_NOTIFY, 1);
+    }
+    else if(tymAnc->curAncMode == speech)
+    {
+        BellUiSpeechOn();
+        bell_gaia_anc_notify_event(BELL_GAIA_SPEECH_NOTIFY, 1);
+    }    
+}
+/*\brief Bell ANC control,play/pause ambient control*/
 static void BellUiPPAmbient(void)
 {
     bool playing = (appAvPlayStatus() == avrcp_play_status_playing);
@@ -581,28 +672,43 @@ static void BellUiPPAmbient(void)
         {
             tymAnc->curAncMode = tymAnc->prevAncMode;
             tymAnc->prevAncMode = ambient;
-            if(tymAnc->curAncMode == ancoff)
-            {
-                BellUiAncOff();
-                bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 0);
-            }
-            else if(tymAnc->curAncMode == ancon)
-            {
-                BellUiAncOn();
-                bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 1);
-            }
-            else if(tymAnc->curAncMode == ambient)
-            {
-                BellUiAmbientOn();
-                bell_gaia_anc_notify_event(BELL_GAIA_AMBIENT_NOTIFY, 1);
-            }
-            else if(tymAnc->curAncMode == speech)
-            {
-                BellUiSpeechOn();
-                bell_gaia_anc_notify_event(BELL_GAIA_SPEECH_NOTIFY, 1);
-            }
+            BellUiANCRecovery();
         }
     }
+}
+
+/*\brief Bell ANC control,BellUiHfpAviceSwitch Anc on*/
+static void BellUiHfpAviceSwitchAnc(void)
+{
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
+    if(tymAnc->curAncMode == ancon)
+    {
+        DEBUG_LOG("ANC on don't change ANC");
+    }    
+    else
+    {
+        tymAnc->hfpSwitchAnc = TRUE;
+        tymAnc->prevAncMode = tymAnc->curAncMode;
+        tymAnc->curAncMode = ancon;
+        BellUiAncOn();
+        bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 1);         
+    }    
+}
+
+/*\brief Bell ANC control deactive recovery */
+static void BellUiHfpDeActiveRecovery(void)
+{
+    tymAncTaskData *tymAnc = TymAncGetTaskData();    
+    if(tymAnc->hfpSwitchAnc == TRUE)
+    {
+        tymAnc->hfpSwitchAnc = FALSE;
+        if(tymAnc->prevAncMode != amcinvalid)
+        {    
+            tymAnc->curAncMode = tymAnc->prevAncMode;
+            tymAnc->prevAncMode = ancon;
+            BellUiANCRecovery();
+        }
+    }    
 }
 
 /*\brief Bell ANC control,check external/internal ANC on/off , internal mode*/
