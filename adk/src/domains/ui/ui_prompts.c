@@ -93,11 +93,14 @@ bool uiPrompt_NoPromptPlay(void)
     \param config The prompt configuration data for the prompt to play.
 */
 static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, const ui_prompt_data_t *config)
-{
+{		
     DEBUG_LOG("uiPrompts_PlayPrompt index=%d ttp=%d enabled=%d",
               prompt_index, time_to_play, the_prompts.prompt_playback_enabled );
-
+#ifdef ENABLE_TYM_PLATFORM
+    if (the_prompts.prompt_playback_enabled || (prompt_index == 0))//power-on force play
+#else
     if (the_prompts.prompt_playback_enabled)
+#endif    	
     {
         uint16 *client_lock = NULL;
         uint16 client_lock_mask = 0;

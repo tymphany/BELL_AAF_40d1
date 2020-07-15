@@ -105,7 +105,8 @@ static void appPhyStateEnterInCase(void)
     DEBUG_LOG("appPhyStateEnterInCase");
 #ifdef ENABLE_TYM_PLATFORM
     //two earbud in case,report bt pairing to charging case
-    if(StateProxy_IsPeerInCase() == TRUE)
+    //if one earbud in case show btpairing
+    /*if(StateProxy_IsPeerInCase() == TRUE)*/
     {
         if(tymGetBTStatus() == btPairing)
         {
