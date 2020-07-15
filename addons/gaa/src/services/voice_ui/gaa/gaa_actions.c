@@ -127,7 +127,10 @@ static void gaa_SendUiInputEvent(ui_input_t ui_event,uint32 delay)
     if(ui_event == ui_input_toggle_play_pause)
     {
         if(VoiceUi_GetAmbientTrigger() == TRUE)
+        {
+			DEBUG_LOG("ui_input_toggle_play_pause ui_input_bell_ui_pp_ambient");	
             LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_pp_ambient);
+        }
     }
 #endif
     if(inject_unhandled_ui_events)
@@ -196,7 +199,25 @@ bool Gaa_HandleVaEvent(ui_input_t voice_assistant_user_event)
             action_event = va_translation_table.event_translations[index].action_event;
             DEBUG_LOG("Gaa_HandleVaEvent sending action %d", action_event);
             handled = (action_handlers->gsound_action_on_event(action_event, NULL) == GSOUND_STATUS_OK);
-            
+#ifdef ENABLE_TYM_PLATFORM
+            if(action_event == (GSOUND_TARGET_ACTION_TOGGLE_PLAY_PAUSE | GSOUND_TARGET_ACTION_GA_STOP_ASSISTANT))
+            {
+                if(VoiceUi_IsVoiceAssistantA2dpStreamActive())
+                {
+                    DEBUG_LOG("IT IS GSOUND_TARGET_ACTION_GA_STOP_ASSISTANT");
+                }
+                else
+                {
+                    DEBUG_LOG("IT IS GSOUND_TARGET_ACTION_TOGGLE_PAUSE/PLAY ");
+                    if(VoiceUi_GetAmbientTrigger() == TRUE)
+                    {
+                        DEBUG_LOG("GSOUND_TARGET_ACTION_TOGGLE_PAUSE ui_input_bell_ui_pp_ambient");
+                        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_pp_ambient);
+                    }
+                }
+            }
+#endif
+
             if(handled)
                 gaa_SendActionIndicationToAudioTask(action_event);
         }
