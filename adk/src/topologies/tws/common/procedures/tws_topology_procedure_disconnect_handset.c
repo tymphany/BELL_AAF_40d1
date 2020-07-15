@@ -20,6 +20,9 @@
 #include <logging.h>
 
 #include <message.h>
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+#include <gaia_framework.h>
+#endif
 
 static void twsTopology_ProcDisconnectHandsetHandleMessage(Task task, MessageId id, Message message);
 void TwsTopology_ProcedureDisconnectHandsetStart(Task result_task,
@@ -65,7 +68,9 @@ void TwsTopology_ProcedureDisconnectHandsetStart(Task result_task,
     DEBUG_LOG("TwsTopology_ProcedureDisconnectHandsetStart");
 
     appDeviceGetHandsetBdAddr(&handset_addr);
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+	gaiaFrameworkInternal_GaiaDisconnect();
+#endif
     /* Request to Handset Services to disonnect Handset even it is disonnected,
     Handset Services sends HANDSET_SERVICE_DISCONNECT_CFM if nothing to do, this
     message is used by topology to send TWS_TOPOLOGY_HANDSET_DISCONNECTED_IND to
