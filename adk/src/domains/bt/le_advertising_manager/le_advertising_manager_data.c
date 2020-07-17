@@ -231,7 +231,7 @@ static void leAdvertisingManager_BuildClientData(le_adv_mgr_register_handle clie
     
     if(num_items)
     {
-        DEBUG_LOG_V_VERBOSE("leAdvertisingManager_ProcessClientData num_items %d", num_items);
+        DEBUG_LOG_V_VERBOSE("leAdvertisingManager_BuildClientData num_items %d", num_items);
         
         for(unsigned i = 0; i < num_items; i++)
         {

@@ -38,8 +38,8 @@ static unsigned int manufacturedata_AdvGetNumberOfItems(const le_adv_data_params
        1. TxPower is Mandatory and completeness_full.
        2. TxPower is Optional and completeness_skip 
      */
-    DEBUG_LOG("manufacturedata: Completeness=%d", params->completeness);
-    if((params->completeness == le_adv_data_completeness_full) &&
+    DEBUG_LOG("manufacturedata: Completeness=%d,data %d,place %d", params->completeness,params->data_set,params->placement);
+    if((params->completeness == le_adv_data_completeness_can_be_skipped)&&
         (params->data_set != le_adv_data_set_peer) && (le_adv_data_placement_advert == params->placement))
     {
         return MANUFACTURER_DATA_NUM_ITEMS;
@@ -56,13 +56,12 @@ static le_adv_data_item_t manufacturedata_AdvertData(const le_adv_data_params_t 
     uint32 encrypt_data;
     DEBUG_LOG("manufacturedata_AdvertData: Completeness=%d, number=%d", params->completeness, number);
 
-    if(((params->completeness == le_adv_data_completeness_full) ||
-       (params->completeness == le_adv_data_completeness_can_be_skipped && (params->data_set != le_adv_data_set_peer))
-        ) && (le_adv_data_placement_advert == params->placement))
+    if((params->completeness == le_adv_data_completeness_can_be_skipped)&&
+        (params->data_set != le_adv_data_set_peer) && (le_adv_data_placement_advert == params->placement))
     {
         adv_data_item.size = MANUFACTURE_DATA_ADV_SIZE;
         encrypt_data = encrypt_data_calucate();
-        /* Set the data field in the format of advertising packet format. Adhering to le_advertising_mgr */
+        // Set the data field in the format of advertising packet format. Adhering to le_advertising_mgr 
         manufacture_adv_data[0] = MANUFACTURE_DATA_ADV_SIZE - 1 ; //model number 64 06 42 47 + hash 4 bytes
         manufacture_adv_data[1] = (uint8)ble_ad_type_manufacturer_specific_data;
         manufacture_adv_data[2] = 0x64;
@@ -71,7 +70,7 @@ static le_adv_data_item_t manufacturedata_AdvertData(const le_adv_data_params_t 
         manufacture_adv_data[5] = (encrypt_data >> 8) & 0xff;//(encrypt_data >> 16) & 0xff; 
         manufacture_adv_data[6] = (encrypt_data >> 16) & 0xff; //(encrypt_data >> 8) & 0xff; 
         manufacture_adv_data[7] = (encrypt_data >> 24) & 0xff;  //(encrypt_data) & 0xff; 
-        manufacture_adv_data[8] = 0xC1; /*G: 0x47 - 0x41: b 00110, B:0x42 - 0x41: b00001,big endian b00000000 00000000 00000000 0011000001 */
+        manufacture_adv_data[8] = 0xC1; //G: 0x47 - 0x41: b 00110, B:0x42 - 0x41: b00001,big endian b00000000 00000000 00000000 0011000001 
         manufacture_adv_data[9] = 0x00; 
         manufacture_adv_data[10] = 0x00; 
         manufacture_adv_data[11] = 0x00;         

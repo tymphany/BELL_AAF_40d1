@@ -62,11 +62,17 @@ static bool gattServerGap_IsNameReturned(const le_adv_data_params_t * params)
     {
         return FALSE;
     }
-
+#ifdef ENABLE_TYM_PLATFORM /*Name put to scan resp*/
+    if(params->placement != le_adv_data_placement_scan_response)
+    {
+        return FALSE;
+    }
+#else
     if(params->placement != le_adv_data_placement_dont_care)
     {
         return FALSE;
     }
+#endif    
 
     if(GetGattServerGapCompleteName())
     {

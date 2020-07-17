@@ -43,12 +43,18 @@
 
 /*!< Fast Pair task */
 fastPairTaskData fast_pair_task_data;
-
+#ifdef ENABLE_TYM_PLATFORM
 const message_group_t fp_ui_inputs[] =
 {
-    UI_INPUTS_DEVICE_STATE_MESSAGE_GROUP
+    UI_INPUTS_DEVICE_STATE_MESSAGE_GROUP,
+    UI_INPUTS_HANDSET_MESSAGE_GROUP /*support UI_input_delete_handset*/
 };
-
+#else
+const message_group_t fp_ui_inputs[] =
+{
+    UI_INPUTS_DEVICE_STATE_MESSAGE_GROUP,
+};
+#endif
 /*! @brief Clear FP Session Information.
  */
 static void fastPair_FreeSessionDataMemory(void)
@@ -240,7 +246,13 @@ void FastPair_HandleMessage(Task task, MessageId id, Message message)
             /*! Account Key Sharing  on deletion*/
             fastPair_AccountKeySync_Sync();
         break;
-
+#ifdef ENABLE_TYM_PLATFORM        
+        case ui_input_sm_delete_handsets:
+						fastPair_DeleteAllAccountKeys();
+            /*! Account Key Sharing  on deletion*/
+            fastPair_AccountKeySync_Sync();     
+		break;
+#endif				
         case PHY_STATE_CHANGED_IND:
         {
             PHY_STATE_CHANGED_IND_T* msg = (PHY_STATE_CHANGED_IND_T *)message;
