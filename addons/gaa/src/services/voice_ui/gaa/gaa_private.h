@@ -22,6 +22,9 @@ enum gaa_internal_messages
     GAA_INTERNAL_END_RESPONSE_IND,
     GAA_INTERNAL_TWS_DISCONNECTION_IND,
     GAA_INTERNAL_TWS_DISCONNECTION_TIMEOUT,
+#ifdef ENABLE_TYM_PLATFORM    /*added Qualcomm patch,for stop bisto*/
+    GAA_INTERNAL_STOP_ASSISTANT
+#endif    
 };
 
 /*! \brief Initialise the service to enabled/disabled dependent on configuration

@@ -310,7 +310,11 @@ static void gaa_AudioInternalMessageHandler(Task task, MessageId id, Message mes
         case GAA_INTERNAL_END_RESPONSE_IND:
             Gaa_GetVoiceUiProtectedInterface()->SetVoiceAssistantA2dpStreamState(voice_ui_a2dp_state_suspended);
             break;
-
+#ifdef ENABLE_TYM_PLATFORM          /*added Qualcomm patch,for cancel bisto */
+        case GAA_INTERNAL_STOP_ASSISTANT:
+            Gaa_GetVoiceUiProtectedInterface()->SetVoiceAssistantA2dpStreamState(voice_ui_a2dp_state_suspended);
+            break;
+#endif
         default:
             DEBUG_LOG("gaa_AudioInternalMessageHandler unhandled 0x%04X", id);
             break;

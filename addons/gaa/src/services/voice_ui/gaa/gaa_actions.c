@@ -105,9 +105,9 @@ static void gaa_SendActionIndicationToAudioTask(GSoundActionEvents action)
     if(action == GSOUND_TARGET_ACTION_GA_VOICE_DONE)
         MessageSend(gaa_audio_task, GAA_INTERNAL_END_QUERY_IND, NULL);
 #ifdef ENABLE_TYM_PLATFORM        
-    if(action == (GSOUND_TARGET_ACTION_TOGGLE_PLAY_PAUSE | GSOUND_TARGET_ACTION_GA_STOP_ASSISTANT))
+    if(action & GSOUND_TARGET_ACTION_GA_STOP_ASSISTANT)
     {
-        MessageSend(gaa_audio_task, GAA_INTERNAL_END_RESPONSE_IND, NULL);
+        MessageSend(gaa_audio_task, GAA_INTERNAL_STOP_ASSISTANT, NULL);
     }    
 #endif          
 }
