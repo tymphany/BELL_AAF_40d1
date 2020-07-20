@@ -122,17 +122,6 @@ static void gaa_SetVaActionsTranslationTable(uint8 translation_id)
 
 static void gaa_SendUiInputEvent(ui_input_t ui_event,uint32 delay)
 {
-#ifdef ENABLE_TYM_PLATFORM
-    /*ambient enable*/
-    if(ui_event == ui_input_toggle_play_pause)
-    {
-        if(VoiceUi_GetAmbientTrigger() == TRUE)
-        {
-			DEBUG_LOG("ui_input_toggle_play_pause ui_input_bell_ui_pp_ambient");	
-            LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_pp_ambient);
-        }
-    }
-#endif
     if(inject_unhandled_ui_events)
         inject_unhandled_ui_events(ui_event,delay);
 }

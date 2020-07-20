@@ -76,6 +76,7 @@ void appPhyStateCustomIdTapx2(uint8 act);
 void appPhyStateTapx3(void);
 void appPhyStateSwipeL(uint8 act);
 void appPhyStateSwipeR(uint8 act);
+void appPhyStateHold2s(void);
 /*! \brief Handle connected prompt check in ear. */
 void appPhyStateInEarPromptCheck(void);
 #endif
@@ -491,28 +492,14 @@ static void appPhyStateHandleMessage(Task task, MessageId id, Message message)
             }
             break;
         case TOUCH_MESSAGE_HOLD2S:
-            DEBUG_LOG("TOUCH_MESSAGE_HOLD2S,appHfpIsCallIncoming %d,ScoFwdIsCallIncoming %d",appHfpIsCallIncoming(),ScoFwdIsCallIncoming());
-            DEBUG_LOG("TOUCH_MESSAGE_HOLD2S,appHfpIsCallActive %d,ScoFwdIsStreaming %d,appHfpIsCallOutgoing %d",appHfpIsCallActive(),ScoFwdIsStreaming(),appHfpIsCallOutgoing());
-            if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE))
-            {
-                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_voice_call_reject);
-                DEBUG_LOG("call ui_input_voice_call_reject");
-            }
-            else if((appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE) || appHfpIsCallOutgoing() == TRUE)
-            {
-                //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
-                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_voice_call_hang_up);
-                DEBUG_LOG("call ui_input_voice_call_hang_up");
-            }
-            else
-            {    
-                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_presshold);
-            }
+            appPhyStateHold2s();            
             break;
         case TOUCH_MESSAGE_HOLD5S:
             DEBUG_LOG("TOUCH_MESSAGE_HOLD5S");
             if(StateProxy_IsInCase() == TRUE)
             {
+                DEBUG_LOG("display pairing led");
+                tymSyncdata(btStatusCmd,btPairing);//for show pairing led time isn't constant
                 MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_HANDSET_PAIRING, NULL);
             }
             else
@@ -1131,19 +1118,6 @@ void appPhyStateCustomIdTapx2(uint8 act)
 /*! \brief tapx2 ui*/
 void appPhyStateTapx2(void)
 {
-    uint8 touchPadMode = tymGetTouchPadMode();
-    if(touchPadMode == standbyPad)
-    {
-        appUserPowerOn();
-        return;
-    }
-    else if(touchPadMode == sleepPad)
-    {
-        appPhyStateCancelTriggerSleepMode();
-        appPhyStateCancelTriggerStandbyMode();
-        tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode);
-        return;
-    }
     /* HFP on Incomming */
     /*if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE))
     {
@@ -1153,7 +1127,7 @@ void appPhyStateTapx2(void)
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
     }*/
-    else if(Multidevice_IsLeft())
+    if(Multidevice_IsLeft())
     {
         appPhyStateCustomIdTapx2(uiseq_left_tapx2);
         //ANC on/off
@@ -1184,6 +1158,34 @@ void appPhyStateTapx3(void)
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_BACKWARD, NULL);
     }
+}
+/*! \brief hold2s ui*/
+void appPhyStateHold2s(void)
+{
+    uint8 touchPadMode = tymGetTouchPadMode();    
+    
+    DEBUG_LOG("TOUCH_MESSAGE_HOLD2S,appHfpIsCallIncoming %d,ScoFwdIsCallIncoming %d",appHfpIsCallIncoming(),ScoFwdIsCallIncoming());
+    DEBUG_LOG("TOUCH_MESSAGE_HOLD2S,appHfpIsCallActive %d,ScoFwdIsStreaming %d,appHfpIsCallOutgoing %d",appHfpIsCallActive(),ScoFwdIsStreaming(),appHfpIsCallOutgoing());
+    if(touchPadMode == standbyPad)
+    {
+        appUserPowerOn();
+        return;
+    }   
+    else if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE))
+    {
+        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_voice_call_reject);
+        DEBUG_LOG("call ui_input_voice_call_reject");
+    }
+    else if((appHfpIsCallActive() == TRUE) || (ScoFwdIsStreaming() == TRUE) || appHfpIsCallOutgoing() == TRUE)
+    {
+        //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
+        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_voice_call_hang_up);
+        DEBUG_LOG("call ui_input_voice_call_hang_up");
+    }
+    else
+    {    
+        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_presshold);
+    }    
 }
 
 /*! \brief swipe left ui */

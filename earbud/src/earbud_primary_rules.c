@@ -372,7 +372,7 @@ static rule_action_t ruleOutOfEarA2dpActive(void)
 {
 #ifdef ENABLE_TYM_PLATFORM
     // out ear, set ui anc
-    Ui_InjectUiInput(ui_input_bell_ui_anc_on_noprompt);
+    Ui_InjectUiInput(ui_input_bell_ui_anc_off_noprompt);
 #endif
     if (appAvIsStreaming() && (VoiceUi_IsVoiceAssistantA2dpStreamActive() == FALSE))
     {

@@ -449,13 +449,7 @@ void _processTAPEvent(void)
     tconfig->tapCnt = 0;
     DEBUG_LOG("===Tap_%d Event===",tapCnt);
     if(touchPadMode != normalPad)
-    {
-        if((touchPadMode >= sleepPad) && (tapCnt > 1))
-        {
-            DEBUG_LOG("tap > 1, standbyPad");
-            //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx2);
-            MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_TAPx2, NULL);            
-        }    
+    {  
         DEBUG_LOG("tap != normalPad, bye");
         return;    
     }        
@@ -493,13 +487,20 @@ static void _iqsProcessMessageHandler ( Task pTask, MessageId pId, Message pMess
     }
     else if(pId == iqs263_hold2s)
     {
-        if(touchPadMode == normalPad)
+        if(touchPadMode >= sleepPad)
+        {
+            DEBUG_LOG("standbyPad, hold2s");
+            //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_TAPx2);
+            MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_HOLD2S, NULL);            
+        }  
+        else if(touchPadMode == normalPad)
         {    
             DEBUG_LOG("hold 2s event");
             tconfig->hold2sTrigger = TRUE;
             //TaskList_MessageSendId(tymtouch->clients, TOUCH_MESSAGE_HOLD2S);
             MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_HOLD2S, NULL); 
-        }    
+        }
+            
     }
     else if(pId == iqs263_hold5s)
     {
