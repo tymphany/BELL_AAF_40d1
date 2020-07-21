@@ -571,7 +571,10 @@ static void appHfpExitConnectedIdle(void)
 {
     DEBUG_LOG("appHfpExitConnectedIdle");
 #ifdef ENABLE_TYM_PLATFORM
-    Ui_InjectUiInput(ui_input_bell_ui_hfp_act_anc_on);
+    if (appPhyStateGetPowerState() == TRUE) /*power-on status start hfp*/
+    {
+        Ui_InjectUiInput(ui_input_bell_ui_hfp_act_anc_on);
+    }    
 #endif    
 }
 
