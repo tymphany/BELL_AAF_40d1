@@ -70,6 +70,7 @@
 #include "phy_state.h"
 #include "earbud_tym_sync.h"
 #include "earbud_tym_cc_communication.h"
+#include "upgrade_gaia_plugin.h"
 #endif
 
 
@@ -2382,6 +2383,13 @@ static void appSmHandleDfuEnded(bool error)
             gaiaFrameworkInternal_GaiaDisconnect();
         }
     }
+#ifdef ENABLE_TYM_PLATFORM
+    if(error == FALSE)
+    {
+        DEBUG_LOG("$$$ TYM Upgrade Done DfuEnded");
+        tymSyncdata(btStatusCmd,OTAFinish);
+    }    
+#endif    
 }
 
 
@@ -3683,7 +3691,10 @@ static void appSmNotifyUpgradeStarted(void)
             UpgradeSetIsOutCaseDFU(TRUE);
             /*! Also, set the DFU mode for Secondary device to be in sync.  */
             earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_dfu_active_when_out_case_t));
-        }                 
+        }
+        /*for support not in case, report error */     
+        //UpgradeGaiaPlugin_OutCase();
+        //return;                 
     }       
 #else
  /* Set the topology role, device role and DFU mode when upgrade starts

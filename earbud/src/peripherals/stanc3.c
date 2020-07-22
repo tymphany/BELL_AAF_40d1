@@ -60,8 +60,8 @@ static void _stanc3ProcessMessageHandler ( Task pTask, MessageId pId, Message pM
 static const TaskData stanc3ProcessTask = { _stanc3ProcessMessageHandler };
 /* --------------- Static Global Variables ----------------- */
 tymAncTaskData app_tymanc = {
-    .ambientLevel = 4,
-    .speechLevel = 4,
+    .ambientLevel = 3,
+    .speechLevel = 3,
 };
 
  const ANC_CONFIG_S ANCData[] = {
@@ -175,8 +175,8 @@ void stanc3_init(ancConfig *config)
         }
     }
     stanc3_audiomute(FALSE);  
-    stanc3_ancoff();//default enable ambient, STANC off 
-    //stanc3_ancon();/*for default enable ambient:internal ANC,STANC off*/ 
+    //stanc3_ancoff();//default enable ambient, STANC off
+    stanc3_ancon();/*for default enable ambient:internal ANC,STANC on*/
     config->init = TRUE;
 }
 

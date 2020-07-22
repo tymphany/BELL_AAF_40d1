@@ -22,6 +22,7 @@
 #include "tym_power_control.h"
 #include "earbud_tym_factory.h"
 #include "state_proxy.h"
+#include "gaia.h"
 /* ------------------------ Defines ------------------------ */
 
 #define xprint(x)            DEBUG_LOG(x)
@@ -182,7 +183,7 @@ void statusCommunicationMessage(MessageId pId,statusSendCmd_T *cmdId)
             procCmd.battpercent = appBatteryGetPercent();            
         }
         if(procCmd.otamode)
-        {
+        {            
             if(procCmd.askBattery == 0)
             {
                 DEBUG_LOG("startOTA");    
@@ -381,9 +382,12 @@ void reportBtStatus(uint8 status)
     }
     else if(status == OTAFinish)                                
     {
-        procCmd.otamode = FALSE;
-        DEBUG_LOG("tym send OTAFinish"); 
-        _sendStatusCmd(statusOTADone);
+        if(procCmd.otamode)
+        {    
+            procCmd.otamode = FALSE;
+            DEBUG_LOG("tym send OTAFinish"); 
+            _sendStatusCmd(statusOTADone);
+        }
     }
     else if(status == happenErr)
     {
@@ -462,4 +466,10 @@ void earbudCC_ChangeUSBPort(void)
         setPSDebugModeBit(PORTBIT,1);
         procCmd.debugmode = getPSDebugMode();
     }
+}
+
+/*! \brief Handle gaia disconnect */
+void tymUpgradeGaiaDisconnect(void)
+{
+    procCmd.otamode = FALSE;
 }

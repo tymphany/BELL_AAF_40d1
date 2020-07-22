@@ -55,6 +55,8 @@ typedef enum
 /*! \brief Gaia core plugin init function
 */
 void UpgradeGaiaPlugin_Init(void);
-
+#ifdef ENABLE_TYM_PLATFORM
+void UpgradeGaiaPlugin_OutCase(void);
+#endif
 
 #endif /* UPGRADE_GAIA_PLUGIN_H_ */

@@ -11,7 +11,9 @@
 #include <gaia.h>
 #include <logging.h>
 #include <panic.h>
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "earbud_tym_cc_communication.h"
+#endif
 
 /*! \brief Function pointer definition for the command handler
 
@@ -43,6 +45,13 @@ void UpgradeGaiaPlugin_Init(void)
 
     GaiaFramework_RegisterFeature(GAIA_DFU_FEATURE_ID, UPGRADE_GAIA_PLUGIN_VERSION, upgradeGaiaPlugin_MainHandler, upgradeGaiaPlugin_SendAllNotifications);
 }
+#ifdef ENABLE_TYM_PLATFORM
+void UpgradeGaiaPlugin_OutCase(void)
+{
+    DEBUG_LOG("UpgradeGaiaPlugin_OutCase");
+    GaiaFramework_SendError(GAIA_DFU_FEATURE_ID, upgrade_control, GAIA_STATUS_INCORRECT_STATE);   
+}
+#endif
 
 static void upgradeGaiaPlugin_MainHandler(uint8 pdu_id, uint8 payload_length, const uint8 *payload)
 {
@@ -113,6 +122,10 @@ static void upgradeGaiaPlugin_UpgradeDisonnect(void)
         DEBUG_LOG("upgradeGaiaPlugin_UpgradeConnect, INCORRECT STATE");
         GaiaFramework_SendError(GAIA_DFU_FEATURE_ID, upgrade_disconnect, GAIA_STATUS_INCORRECT_STATE);
     }
+#ifdef ENABLE_TYM_PLATFORM    
+    /*! \brief Handle gaia disconnect */
+    tymUpgradeGaiaDisconnect();
+#endif    
 }
 
 static void upgradeGaiaPlugin_UpgradeControl(uint8 payload_length, const uint8 *payload)
