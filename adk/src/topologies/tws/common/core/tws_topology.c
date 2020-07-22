@@ -46,7 +46,6 @@
 #include <bdaddr.h>
 #ifdef ENABLE_TYM_PLATFORM
 #include "ui.h"
-#include "earbud_sm.h"
 #endif
 
 /*! Instance of the TWS Topology. */
@@ -524,11 +523,7 @@ static void twsTopology_HandlePhyStateChangedInd(PHY_STATE_CHANGED_IND_T* ind)
             break;
         case phy_state_event_user_poweroff:
             if(appDeviceGetPeerBdAddr(&peer_addr))
-            {    
-                if(twsTopology_IsRunning() == FALSE)
-                {
-                    TwsTopology_Start(SmGetTask());
-                }    
+            {                      
                 if(TwsTopologyGetTaskData()->role != tws_topology_role_dfu)
                 {                              
                     twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);

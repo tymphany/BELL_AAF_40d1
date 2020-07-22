@@ -48,6 +48,8 @@
 #include "byte_utils.h" /* for MAKELONG */
 #include "state_proxy.h"
 #include "multidevice.h"
+#include "earbud_sm.h"
+#include "tws_topology_private.h"
 #endif
 
 peerFindRoleTaskData peer_find_role = {0};
@@ -436,6 +438,16 @@ static void peer_find_role_handle_phy_state(const PHY_STATE_CHANGED_IND_T *phy)
     DEBUG_LOG("peer_find_role_handle_phy_state. New physical state:%d", phy->new_state);
 
     pfr->scoring_info.phy_state = phy->new_state;
+#ifdef ENABLE_TYM_PLATFORM
+    if(phy->event == phy_state_event_user_poweroff)
+    {
+        /*re-init tws task*/
+        if(twsTopology_IsRunning() == FALSE)
+        {
+            TwsTopology_Start(SmGetTask());
+        }  
+    }    
+#endif    
 }
 
 
