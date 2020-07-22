@@ -388,6 +388,11 @@ void reportBtStatus(uint8 status)
             DEBUG_LOG("tym send OTAFinish"); 
             _sendStatusCmd(statusOTADone);
         }
+        else
+        {
+        	DEBUG_LOG("No OTA status");
+        	return;
+        }
     }
     else if(status == happenErr)
     {
