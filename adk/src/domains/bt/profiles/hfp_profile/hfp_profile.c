@@ -72,7 +72,9 @@
 
 /*! \brief Application HFP component main data structure. */
 hfpTaskData appHfp;
-
+#ifdef ENABLE_TYM_PLATFORM
+uint8 tymHfpBusy = FALSE;
+#endif
 /*! \brief Get application HFP component task */
 /*#define appGetHfpTask()     (&(appGetHfp()->task))*/
 
@@ -559,7 +561,11 @@ static void appHfpEnterConnectedIdle(void)
     appAvStreamingResume(AV_SUSPEND_REASON_HFP);
 #endif
 #ifdef ENABLE_TYM_PLATFORM
-    Ui_InjectUiInput(ui_input_bell_ui_hfp_deactive_recovery);
+    if ((appPhyStateGetPowerState() == TRUE) && (tymHfpBusy == TRUE)) /*power-on status start hfp*/
+    {
+        tymHfpBusy = FALSE;
+        Ui_InjectUiInput(ui_input_bell_ui_hfp_deactive_recovery);
+    }
 #endif
 }
 
@@ -573,6 +579,7 @@ static void appHfpExitConnectedIdle(void)
 #ifdef ENABLE_TYM_PLATFORM
     if (appPhyStateGetPowerState() == TRUE) /*power-on status start hfp*/
     {
+        tymHfpBusy = TRUE;
         Ui_InjectUiInput(ui_input_bell_ui_hfp_act_anc_on);
     }    
 #endif    
