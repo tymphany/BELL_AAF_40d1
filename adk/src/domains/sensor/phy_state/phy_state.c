@@ -670,6 +670,7 @@ void appPhyStatePrepareToEnterDormant(void)
     appTouchPowerOff(); /*touch power is i2c power so last power off*/
     //appTouchClientUnregister(&phy_state->task);
     setPSPresetEQ();
+    tymCleanOTAFLAG();
     if((getFactoryModeEnable() == TRUE) || (getFactoryModeTopEnable() == TRUE))
         setFactoryModeStatus(factory_disable);
 

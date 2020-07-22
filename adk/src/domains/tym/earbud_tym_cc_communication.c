@@ -23,6 +23,7 @@
 #include "earbud_tym_factory.h"
 #include "state_proxy.h"
 #include "gaia.h"
+#include "device_upgrade.h"
 /* ------------------------ Defines ------------------------ */
 
 #define xprint(x)            DEBUG_LOG(x)
@@ -382,10 +383,10 @@ void reportBtStatus(uint8 status)
     }
     else if(status == OTAFinish)                                
     {
-        if(procCmd.otamode)
+        if(procCmd.otamode || appUpgradeIsDfuRebootDone() == TRUE)
         {    
+            DEBUG_LOG("tym send OTAFinish,otamode %d,Upgrade %d",procCmd.otamode,appUpgradeIsDfuRebootDone()); 
             procCmd.otamode = FALSE;
-            DEBUG_LOG("tym send OTAFinish"); 
             _sendStatusCmd(statusOTADone);
         }
         else
@@ -474,7 +475,7 @@ void earbudCC_ChangeUSBPort(void)
 }
 
 /*! \brief Handle gaia disconnect */
-void tymUpgradeGaiaDisconnect(void)
+void tymCleanOTAFLAG(void)
 {
     procCmd.otamode = FALSE;
 }

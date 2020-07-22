@@ -40,7 +40,7 @@ void earbudCC_ChangeUSBPort(void);
 void reportPowerOnStatus(void);
 void reportSleepStandbyStatus(bool sleep);
 /*! \brief Handle gaia disconnect */
-void tymUpgradeGaiaDisconnect(void);
+void tymCleanOTAFLAG(void);
 #endif
 
 

@@ -124,7 +124,7 @@ static void upgradeGaiaPlugin_UpgradeDisonnect(void)
     }
 #ifdef ENABLE_TYM_PLATFORM    
     /*! \brief Handle gaia disconnect */
-    tymUpgradeGaiaDisconnect();
+    tymCleanOTAFLAG();
 #endif    
 }
 
