@@ -725,8 +725,8 @@ static void appEnterInCaseDfu(void)
         * Refer: appSmHandleUpgradeConnected() for an elaborated reason.
         */
         UpgradePeerSetDeviceRolePrimary(BtDevice_IsMyAddressPrimary());
-
-        UpgradePeerSetDFUMode(TRUE);
+        if(secondary)
+            UpgradePeerSetDFUMode(TRUE);
 
         SmGetTaskData()->dfu_in_progress = TRUE;
         appSmCancelDfuTimers();      
@@ -3719,8 +3719,8 @@ static void appSmNotifyUpgradeStarted(void)
      * Refer: appSmHandleUpgradeConnected() for an elaborated reason.
      */
     UpgradePeerSetDeviceRolePrimary(BtDevice_IsMyAddressPrimary());
-
-    UpgradePeerSetDFUMode(TRUE);
+    if(!BtDevice_IsMyAddressPrimary())
+        UpgradePeerSetDFUMode(TRUE);
 
     SmGetTaskData()->dfu_in_progress = TRUE;
     appSmCancelDfuTimers();        
