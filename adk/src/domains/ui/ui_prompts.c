@@ -136,8 +136,8 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
             MessageSendLater(&the_prompts.task, UI_INTERNAL_CLEAR_LAST_PROMPT, NULL,
                              the_prompts.no_repeat_period_in_ms);
             the_prompts.last_prompt_played_index = prompt_index;
-
-            #ifdef ENABLE_TYM_PLATFORM
+            //temp remove reduce ad2p volume when play prompt. Wait find sync solution
+            /*#ifdef ENABLE_TYM_PLATFORM
             //disconnect prompt don't reduce a2dp volume.because it can't recovery a2dp volume to phone
             if(!Multidevice_IsLeft() && (prompt_index != 6)){
                 volume_t a2dp_volume;
@@ -153,7 +153,7 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
                     KymeraAdaptation_SetVolume(&volume_params);
                 }
             }
-            #endif
+            #endif*/
         }
     }      
 }
@@ -161,9 +161,9 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
 static void uiPrompts_SchedulePromptPlay(uint16 prompt_index)
 {
     const ui_prompt_data_t *config = uiPrompts_GetDataForPrompt(prompt_index);
-    #ifdef ENABLE_TYM_PLATFORM
-    volume_t a2dp_volume;
-    #endif
+    //#ifdef ENABLE_TYM_PLATFORM
+    //volume_t a2dp_volume;
+    //#endif
 
 
     if (uiPrompt_isNotARepeatPlay(prompt_index) &&
@@ -172,8 +172,9 @@ static void uiPrompts_SchedulePromptPlay(uint16 prompt_index)
         /* Factor in the propagation latency through the various buffers for the aux channel and the time to start the file source */
         rtime_t time_now = SystemClockGetTimerTime();
         rtime_t time_to_play = rtime_add(time_now, UI_INDICATOR_DELAY_FOR_SYNCHRONISED_TTP_IN_MICROSECONDS);
-
-        #ifdef ENABLE_TYM_PLATFORM
+        
+        //temp remove reduce ad2p volume when play prompt. Wait find sync solution
+        /*#ifdef ENABLE_TYM_PLATFORM
         //disconnect prompt don't reduce a2dp volume.because it can't recovery a2dp volume to phone
         if(!Multidevice_IsLeft() &&(prompt_index != 6)){
             a2dp_volume = AudioSources_GetVolume(audio_source_a2dp_1);
@@ -181,12 +182,12 @@ static void uiPrompts_SchedulePromptPlay(uint16 prompt_index)
             DEBUG_LOG("[TYM] uiPrompts_PlayPrompt right %d",a2dp_volume_backup);
             if(a2dp_volume.value >=0)
             {
-                /*
-                if(a2dp_volume.value >= 56)
-                    a2dp_volume.value = a2dp_volume.value - 49; //decrease ~20db
-                else
-                    a2dp_volume.value = 7; //~-43db
-                */
+                
+                //if(a2dp_volume.value >= 56)
+                //    a2dp_volume.value = a2dp_volume.value - 49; //decrease ~20db
+                //else
+                //     a2dp_volume.value = 7; //~-43db
+                
                 a2dp_volume.value = 7; //~-43db
             }
 
@@ -199,7 +200,7 @@ static void uiPrompts_SchedulePromptPlay(uint16 prompt_index)
                 KymeraAdaptation_SetVolume(&volume_params);
             }
         }
-        #endif
+        #endif*/
 
         time_to_play = Ui_RaiseUiEvent(ui_indication_type_audio_prompt, prompt_index, time_to_play);
 
