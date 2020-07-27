@@ -72,8 +72,7 @@ static le_adv_data_item_t manufacturedata_AdvertData(const le_adv_data_params_t 
         manufacture_adv_data[7] = (encrypt_data >> 24) & 0xff;  //(encrypt_data) & 0xff; 
         manufacture_adv_data[8] = 0xC1; //G: 0x47 - 0x41: b 00110, B:0x42 - 0x41: b00001,big endian b00000000 00000000 00000000 0011000001 
         manufacture_adv_data[9] = 0x00; 
-        manufacture_adv_data[10] = 0x00; 
-        manufacture_adv_data[11] = 0x00;         
+        manufacture_adv_data[10] = 0x00;        
         
         adv_data_item.data = manufacture_adv_data;
     }

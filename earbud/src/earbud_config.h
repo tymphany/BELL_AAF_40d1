@@ -66,6 +66,9 @@ role selection. */
                     state_proxy_event_type_handset_linkloss)
 
 /*! User will need to change this as per the hardware used. 0xEC (for CF376+ QCC5126) */
-#define BOARD_TX_POWER_PATH_LOSS        (0xEC)
-
+#ifdef ENABLE_TYM_PLATFORM
+#define BOARD_TX_POWER_PATH_LOSS        (0xE6) /* -26,for fast pairing set TX power -16*/
+#else
+#define BOARD_TX_POWER_PATH_LOSS        (0xEC) /* default -20 */
+#endif
 #endif /* EARBUD_CONFIG_H_ */

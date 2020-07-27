@@ -3,7 +3,8 @@
 /*20200519 modify ambient/speech filter*/
 /*20200612 modify ambient/speech filter */
 /*20200617 modify ambient/speech filter */
-#define EQ_VER   "0.0.0.4"
+/*20200724 modify user eq*/
+#define EQ_VER   "0.0.0.5"
 
 
 #endif

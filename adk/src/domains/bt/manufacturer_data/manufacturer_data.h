@@ -16,7 +16,7 @@ Support for BR/EDR Tx power is yet to be implemented.
 
 #include "le_advertising_manager.h"
 
-#define MANUFACTURE_DATA_ADV_SIZE    (12)
+#define MANUFACTURE_DATA_ADV_SIZE    (11)//(12) reduce one byte, for google fast pairing add flags for furture use
 
 bool ManufacturerData_Init(Task init_task);
 
