@@ -13,6 +13,7 @@
 #include "voice_ui_container.h"
 #ifdef ENABLE_TYM_PLATFORM
 #include "logical_input_switch.h"
+#include "ui_prompts.h"
 #endif
 
 typedef struct
@@ -198,6 +199,7 @@ bool Gaa_HandleVaEvent(ui_input_t voice_assistant_user_event)
                 else
                 {
                     DEBUG_LOG("IT IS GSOUND_TARGET_ACTION_TOGGLE_PAUSE/PLAY ");
+                    MessageCancelFirst(UiPrompts_GetUiPromptsTask(),VOICE_UI_MIC_OPEN);
                     if(VoiceUi_GetAmbientTrigger() == TRUE)
                     {
                         DEBUG_LOG("GSOUND_TARGET_ACTION_TOGGLE_PAUSE ui_input_bell_ui_pp_ambient");
