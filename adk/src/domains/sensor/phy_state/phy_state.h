@@ -117,6 +117,7 @@ typedef struct
     bool trigger_standbymodeincase;    
     bool record_incase;
     bool record_peerincase;
+    bool va_holdenable;
 #endif
     /*! Lock used to conditionalise sending of PHY_STATE_INIT_CFM. */
     uint16 lock;

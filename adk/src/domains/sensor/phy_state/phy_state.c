@@ -77,6 +77,7 @@ void appPhyStateTapx3(void);
 void appPhyStateSwipeL(uint8 act);
 void appPhyStateSwipeR(uint8 act);
 void appPhyStateHold2s(void);
+void appPhyStateHold2sEnd(void);
 /*! \brief Handle connected prompt check in ear. */
 void appPhyStateInEarPromptCheck(void);
 #endif
@@ -524,8 +525,7 @@ static void appPhyStateHandleMessage(Task task, MessageId id, Message message)
             break;
         case TOUCH_MESSAGE_HOLD2SEND:
             DEBUG_LOG("TOUCH_MESSAGE_HOLD2SEND");
-            /*va release*/
-            LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_6);
+            appPhyStateHold2sEnd(); 
             break;
         case TOUCH_MESSAGE_HOLD5SEND:
             DEBUG_LOG("TOUCH_MESSAGE_HOLD5SEND");
@@ -1172,7 +1172,7 @@ void appPhyStateTapx3(void)
 void appPhyStateHold2s(void)
 {
     uint8 touchPadMode = tymGetTouchPadMode();    
-    
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
     DEBUG_LOG("TOUCH_MESSAGE_HOLD2S,appHfpIsCallIncoming %d,ScoFwdIsCallIncoming %d",appHfpIsCallIncoming(),ScoFwdIsCallIncoming());
     DEBUG_LOG("TOUCH_MESSAGE_HOLD2S,appHfpIsCallActive %d,ScoFwdIsStreaming %d,appHfpIsCallOutgoing %d",appHfpIsCallActive(),ScoFwdIsStreaming(),appHfpIsCallOutgoing());
     if(touchPadMode == standbyPad)
@@ -1193,8 +1193,21 @@ void appPhyStateHold2s(void)
     }
     else
     {    
+        phy_state->va_holdenable = TRUE;
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_presshold);
     }    
+}
+
+/*! \brief hold2s end ui */
+void appPhyStateHold2sEnd(void)
+{
+     phyStateTaskData* phy_state = PhyStateGetTaskData();
+      /*va release*/
+     if(phy_state->va_holdenable == TRUE)
+     {   
+        phy_state->va_holdenable = FALSE;
+        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_6);
+    }
 }
 
 /*! \brief swipe left ui */
