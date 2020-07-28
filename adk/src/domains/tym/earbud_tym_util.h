@@ -14,7 +14,7 @@
 #define PORTBIT           (1 << 1)
 #define RESTOREBIT        (1 << 2)
 #define PSDEBUG_MAX       3
-#define ENABLE_UPDATE_AUDIO_PS_KEY  FALSE
+#define ENABLE_UPDATE_AUDIO_PS_KEY  TRUE
 
 typedef struct _tymDebugConfigData_s {
     unsigned config:3; // DEBUGBIT  (1 <<0), PORTBIT (1 << 1), RESTOREBIT (1<<2)
