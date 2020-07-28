@@ -292,6 +292,7 @@ static void handleUiDomainInput(MessageId ui_input)
         case ui_input_anc_set_mode_10:
             DEBUG_LOG("handleUiDomainInput, anc set mode input");
             AncStateManager_SetMode(getAncModeFromUiInput(ui_input));
+            break;
         case ui_input_anc_set_next_mode:
             DEBUG_LOG("handleUiDomainInput, anc next mode input");
             AncStateManager_SetNextMode();
