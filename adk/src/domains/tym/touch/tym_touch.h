@@ -35,7 +35,9 @@ enum touch_messages
     /*! The sensor has detected an object hold end for end voice trigger */     
     TOUCH_MESSAGE_HOLD2SEND,       
     /*! The sensor has detected an object hold end for end pairing trigger */     
-    TOUCH_MESSAGE_HOLD5SEND,       
+    TOUCH_MESSAGE_HOLD5SEND,
+    /*! The sensor has detected an object hold 25s */
+    TOUCH_MESSAGE_HOLD25S,
 };
 
 /*! Forward declaration of a config structure (type dependent) */

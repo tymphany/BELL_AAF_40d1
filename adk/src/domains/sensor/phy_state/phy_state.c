@@ -523,6 +523,13 @@ static void appPhyStateHandleMessage(Task task, MessageId id, Message message)
             DEBUG_LOG("TOUCH_MESSAGE_HOLD10S");
             MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_DELETE_HANDSET, NULL);
             break;
+        case TOUCH_MESSAGE_HOLD25S:
+            DEBUG_LOG("TOUCH_MESSAGE_HOLD25S");
+            if((StateProxy_IsInCase() == TRUE) && (StateProxy_IsPowerOn()))
+            {
+                 appPowerReboot();
+            }
+            break;
         case TOUCH_MESSAGE_HOLD2SEND:
             DEBUG_LOG("TOUCH_MESSAGE_HOLD2SEND");
             appPhyStateHold2sEnd(); 

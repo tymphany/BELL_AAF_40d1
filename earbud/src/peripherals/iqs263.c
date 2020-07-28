@@ -526,6 +526,10 @@ static void _iqsProcessMessageHandler ( Task pTask, MessageId pId, Message pMess
             MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_HOLD10S, NULL); 
         }
     }
+    else if( pId == iqs263_hold25s)
+    {
+        MessageSend(PhyStateGetTask(), TOUCH_MESSAGE_HOLD25S, NULL);
+    }
     else if( pId == iqs263_hold_count)
     {
         tconfig->holdDuration++;
@@ -544,6 +548,11 @@ static void _iqsProcessMessageHandler ( Task pTask, MessageId pId, Message pMess
             DEBUG_LOG("===HOLD_10s===");       
             if(tconfig->touchpad == restoreDefaultPad)     
                 MessageSend((TaskData *)&iqsProcessTask, iqs263_hold10s,0);
+        }
+        else if(tconfig->holdDuration == 25)
+        {
+            DEBUG_LOG("===HOLD_25s===");
+            MessageSend((TaskData *)&iqsProcessTask, iqs263_hold25s, 0);
         }
         MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_hold_count, 0, 900);
     }
@@ -599,7 +608,7 @@ void cancelTouchPadTimer(void)
     MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_hold2s);
     MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_hold5s);
     MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_hold10s);
-
+    MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_hold25s);
     MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_tap_timeout);
     MessageCancelAll ((TaskData *) &iqsProcessTask, iqs263_hold_count);
 }

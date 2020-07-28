@@ -14,6 +14,7 @@ typedef enum iqs263CtrlMsg
     iqs263_hold2s,
     iqs263_hold5s,
     iqs263_hold10s,
+    iqs263_hold25s,
     iqs263_tap_timeout, //2020-06-12
     iqs263_hold_count, //2020-06-12
 } iqs263CtrlMsg_t;
