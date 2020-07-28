@@ -125,6 +125,7 @@ void UiPrompts_SendTymPrompt(MessageId id);
 void UiPrompts_SendTymPromptLater(MessageId id,uint32 delay);
 void UiPrompt_ConnectedPrompt(void);
 bool uiPrompt_NoPromptPlay(void);
+void UiPrompts_SetA2DPVolume_InTone(int volume);
 #endif/*ENABLE_TYM_PLATFORM*/
 
 #endif // UI_PROMPTS_H

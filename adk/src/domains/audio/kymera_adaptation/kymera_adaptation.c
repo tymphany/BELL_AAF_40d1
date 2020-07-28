@@ -15,6 +15,11 @@
 
 #include <logging.h>
 
+#ifdef ENABLE_TYM_PLATFORM
+#include <stdio.h>
+#include "ui_prompts.h"
+#endif
+
 static volume_config_t kymeraAdaptation_GetOutputVolumeConfig(void)
 {
     volume_config_t config = { .range = { .min = appConfigMinVolumedB(), .max = appConfigMaxVolumedB() },
@@ -175,6 +180,10 @@ void KymeraAdaptation_SetVolume(volume_parameters_t * params)
             break;
         case source_type_audio:
             appKymeraA2dpSetVolume(kymeraAdaptation_ConvertVolumeToDb(params->volume));
+            #ifdef ENABLE_TYM_PLATFORM
+            UiPrompts_SetA2DPVolume_InTone(params->volume.value);
+            DEBUG_LOG("KymeraAdaptation_SetVolume %d\n", params->volume.value);
+            #endif
             break;
         default:
             Panic();
@@ -182,4 +191,21 @@ void KymeraAdaptation_SetVolume(volume_parameters_t * params)
     }
 }
 
-
+#ifdef ENABLE_TYM_PLATFORM
+void KymeraAdaption_TYM_SetVolume(volume_parameters_t * params)
+{
+    switch(params->source_type)
+    {
+        case source_type_voice:
+            appKymeraScoSetVolume(kymeraAdaptation_ConvertVolumeToDb(params->volume));
+            break;
+        case source_type_audio:
+            appKymeraA2dpSetVolume(kymeraAdaptation_ConvertVolumeToDb(params->volume));
+            DEBUG_LOG("KymeraAdaption_TYM_SetVolume %d\n", params->volume.value);
+            break;
+        default:
+            Panic();
+            break;
+    }
+}
+#endif

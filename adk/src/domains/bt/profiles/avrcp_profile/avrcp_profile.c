@@ -1835,6 +1835,10 @@ static void appAvrcpHandleEventVolumeChangedInd(avInstanceTaskData *theInst, AVR
     assert(theInst->avrcp.avrcp == ind->avrcp);
     DEBUG_LOG("appAvrcpHandleEventVolumeChangedInd(%p), volume %u", (void *)theInst, ind->volume);
 
+    #ifdef ENABLE_TYM_PLATFORM
+    UiPrompts_SetA2DPVolume_InTone(ind->volume);
+    #endif
+
     /* Clear any notification request lock for this event */
     appAvrcpClearNotificationLock(theInst, avrcp_event_volume_changed);
 

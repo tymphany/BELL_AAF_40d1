@@ -56,6 +56,10 @@ void KymeraAdaptation_Disconnect(disconnect_parameters_t * params);
  */
 void KymeraAdaptation_SetVolume(volume_parameters_t * params);
 
+#ifdef ENABLE_TYM_PLATFORM
+void KymeraAdaption_TYM_SetVolume(volume_parameters_t * params);
+#endif
+
 /*\}*/
 
 #endif /* KYMERA_ADAPTATION_H_ */
