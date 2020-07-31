@@ -41,6 +41,8 @@ COMPILE_TIME_ASSERT(sizeof(hfp_wbs_codec_mask) == sizeof(uint16), hfp_wbs_codec_
         <member marshal="true" doc="Flag indicating the disconnect reason">unsigned disconnect_reason:4</member>
         <member marshal="true" doc="HF indicator assigned number">unsigned hf_indicator_assigned_num:2</member>
         <member marshal="true" doc="eSCO is connecting">unsigned esco_connecting:1</member>
+<!--  ENABLE_TYM_PLATFORM -->        
+        <member marshal="true" doc="va is enable">unsigned va_enable:1</member>        
     </typedef_struct>
 
 <typedef_enum name="hfpState" basic="true" doc="Application HFP state machine states">

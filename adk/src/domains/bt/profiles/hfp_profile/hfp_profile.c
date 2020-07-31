@@ -45,6 +45,7 @@
 
 #ifdef ENABLE_TYM_PLATFORM
 #include "earbud_tym_factory.h"
+#include "earbud_tym_sync.h"
 #endif
 /*! \todo layer violation.
     This domain component should not be referencing a service
@@ -762,7 +763,9 @@ static void appHfpEnterDisconnected(void)
     appGetHfp()->bitfields.mute_active = FALSE;
     appGetHfp()->bitfields.in_band_ring = FALSE;
     appGetHfp()->bitfields.call_accepted = FALSE;
-
+#ifdef ENABLE_TYM_PLATFORM
+    appGetHfp()->bitfields.va_enable = FALSE;
+#endif
     /* Clear call state indication */
     appGetHfp()->bitfields.call_state = 0;
 }
@@ -1536,6 +1539,9 @@ static void appHfpHandleHfpVoiceRecognitionIndication(const HFP_VOICE_RECOGNITIO
         case HFP_STATE_DISCONNECTING:
         {
             appGetHfp()->bitfields.voice_recognition_active = ind->enable;
+#ifdef ENABLE_TYM_PLATFORM
+            tymSyncdata(vaStatusCmd,appGetHfp()->bitfields.voice_recognition_active);
+#endif            
 
 #if defined(INCLUDE_AV) && defined(SUSPEND_ON_VOICE_RECOGNITION)
             if (appHfpIsVoiceRecognitionActive())
@@ -1570,7 +1576,9 @@ static void appHfpHandleHfpVoiceRecognitionEnableConfirmation(const HFP_VOICE_RE
                 appGetHfp()->bitfields.voice_recognition_active = appGetHfp()->bitfields.voice_recognition_request;
             else
                 appGetHfp()->bitfields.voice_recognition_request = appGetHfp()->bitfields.voice_recognition_active;
-
+#ifdef ENABLE_TYM_PLATFORM
+            tymSyncdata(vaStatusCmd, appGetHfp()->bitfields.voice_recognition_active);
+#endif 
 #if defined(INCLUDE_AV) && defined(SUSPEND_ON_VOICE_RECOGNITION)
             if (appHfpIsVoiceRecognitionActive())
                 appAvStreamingSuspend(AV_SUSPEND_REASON_HFP);
@@ -3207,6 +3215,13 @@ bool HfpProfile_IsScoConnecting(void)
 {
     return (appGetHfp()->bitfields.esco_connecting != FALSE);
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+void appHfpSetVA(uint8 enable)
+{
+    appGetHfp()->bitfields.va_enable = (enable & 0x1);
+}
+#endif
 
 MESSAGE_BROKER_GROUP_REGISTRATION_MAKE(APP_HFP, hfpProfile_RegisterHfpMessageGroup, NULL);
 MESSAGE_BROKER_GROUP_REGISTRATION_MAKE(SYSTEM, hfpProfile_RegisterSystemMessageGroup, NULL);

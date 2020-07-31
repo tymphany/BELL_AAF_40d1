@@ -31,7 +31,7 @@ const marshal_member_descriptor_t tym_sync_app_configuration_member_descriptors[
     MAKE_MARSHAL_MEMBER(tym_sync_app_configuration_t, uint8, enable_auto_wear),
     MAKE_MARSHAL_MEMBER(tym_sync_app_configuration_t, uint8, enable_auto_play),
     MAKE_MARSHAL_MEMBER(tym_sync_app_configuration_t, uint8, ambient_ext_anc), 
-    MAKE_MARSHAL_MEMBER(tym_sync_app_configuration_t, uint8, reserve),         
+    MAKE_MARSHAL_MEMBER(tym_sync_app_configuration_t, uint8, smartassistant),
     MAKE_MARSHAL_MEMBER_ARRAY(tym_sync_app_configuration_t, uint8, custom_ui, 8),
 };
 

@@ -109,7 +109,11 @@ static void telephonyService_HandleUiInput(Task task, MessageId ui_input, Messag
         case ui_input_hfp_voice_dial:
             VoiceSources_InitiateVoiceDial(source);
             break;
-
+#ifdef ENABLE_TYM_PLATFORM
+        case ui_input_hfp_voice_dial_cancel:
+            VoiceSources_CancelVoiceDial(source);
+            break;
+#endif
         default:
             break;
     }

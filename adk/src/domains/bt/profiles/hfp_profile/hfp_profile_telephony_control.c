@@ -27,7 +27,9 @@ static void hfpProfile_OngoingCallTransferAudioToAg(voice_source_t source);
 static void hfpProfile_OngoingCallTransferAudioToSelf(voice_source_t source);
 static void hfpProfile_InitiateCallUsingNumber(voice_source_t source, phone_number_t number);
 static void hfpProfile_InitiateVoiceDial(voice_source_t source);
-
+#ifdef ENABLE_TYM_PLATFORM 
+static void hfpProfile_CancelVoiceDial(voice_source_t source);
+#endif
 static const voice_source_telephony_control_interface_t hfp_telephony_interface =
 {
     .IncomingCallAccept = hfpProfile_IncomingCallAccept,
@@ -36,7 +38,12 @@ static const voice_source_telephony_control_interface_t hfp_telephony_interface 
     .OngoingCallTransferAudioToAg = hfpProfile_OngoingCallTransferAudioToAg,
     .OngoingCallTransferAudioToSelf = hfpProfile_OngoingCallTransferAudioToSelf,
     .InitiateCallUsingNumber = hfpProfile_InitiateCallUsingNumber,
+#ifdef ENABLE_TYM_PLATFORM    
+    .InitiateVoiceDial = hfpProfile_InitiateVoiceDial,
+    .CancelVoiceDial = hfpProfile_CancelVoiceDial,
+#else
     .InitiateVoiceDial = hfpProfile_InitiateVoiceDial
+#endif    
 };
 
 static void hfpProfile_IncomingCallAccept(voice_source_t source)
@@ -238,6 +245,47 @@ static void hfpProfile_InitiateVoiceDial(voice_source_t source)
     }
 
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+static void hfpProfile_CancelVoiceDial(voice_source_t source)
+{
+    UNUSED(source);
+    switch (appGetHfp()->state)
+    {
+        case HFP_STATE_DISCONNECTED:
+        {
+            /* if we don't have a HFP connection but SCO FWD is connected, it means that we are the slave */
+            if(ScoFwdIsConnected())
+            {
+                /* we send the command across the SCO FWD OTA channel asking the master to
+                    trigger the CALL VOICE */
+                ScoFwdCallVoice();
+                break;
+            }
+            /* if SCO FWD is not connected we can try to enstablish SLC and proceed */
+            else if(!appHfpConnectHandset())
+            {
+                Telephony_NotifyError(HfpProfile_VoiceSourceDeviceMappingGetSourceForIndex(hfp_primary_link));
+                break;
+            }
+        }
+
+        case HFP_STATE_CONNECTING_LOCAL:
+        case HFP_STATE_CONNECTING_REMOTE:
+        case HFP_STATE_CONNECTED_IDLE:
+        {
+            /* Send message into HFP state machine */
+            MessageSendConditionally(appGetHfpTask(), HFP_INTERNAL_HFP_VOICE_DIAL_DISABLE_REQ,
+                                     NULL, &appHfpGetLock());
+        }
+        break;
+
+        default:
+            break;
+    }
+
+}
+#endif
 
 const voice_source_telephony_control_interface_t * HfpProfile_GetTelephonyControlInterface(void)
 {

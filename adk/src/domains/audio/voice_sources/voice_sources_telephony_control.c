@@ -99,3 +99,15 @@ void VoiceSources_InitiateVoiceDial(voice_source_t source)
         telephony_control_interface[source]->InitiateVoiceDial(source);
     }
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+
+void VoiceSources_CancelVoiceDial(voice_source_t source)
+{
+    voiceSources_ValidateSource(source);
+    if(voiceSources_IsSourceRegistered(source) && (telephony_control_interface[source]->CancelVoiceDial))
+    {
+        telephony_control_interface[source]->CancelVoiceDial(source);
+    }
+}
+#endif

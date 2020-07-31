@@ -50,6 +50,7 @@
     UI_INPUT(ui_input_hfp_transfer_to_headset)  \
     UI_INPUT(ui_input_voice_call_reject)  \
     UI_INPUT(ui_input_hfp_voice_dial) \
+    UI_INPUT(ui_input_hfp_voice_dial_cancel) \
     UI_INPUT(ui_input_toggle_play_pause = UI_INPUTS_MEDIA_PLAYER_MESSAGE_BASE)  \
     UI_INPUT(ui_input_play)  \
     UI_INPUT(ui_input_pause)  \

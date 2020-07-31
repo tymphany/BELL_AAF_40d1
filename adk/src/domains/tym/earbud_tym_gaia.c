@@ -470,14 +470,18 @@ void bell_gaia_get_earbudcustom(GAIA_UNHANDLED_COMMAND_IND_T *command)
 
 void bell_gaia_set_smartassistant(GAIA_UNHANDLED_COMMAND_IND_T *command)
 {
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
     if(command->size_payload == 1)
     {
-        if((command->payload[0] == 0x0) || (command->payload[0] == 0x02))
+        if(command->payload[0] == 0x02)
         {
             tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_NOT_SUPPORTED);
         }
-        else if(command->payload[0] == 0x1)
+        else if((command->payload[0] == 0x0) ||(command->payload[0] == 0x1))
         {
+            app_set->smartassistant = command->payload[0];
+            PsStore(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
+            tymSyncAppConfiguration(app_set);
             /* send response */
             tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
         }
@@ -495,11 +499,12 @@ void bell_gaia_set_smartassistant(GAIA_UNHANDLED_COMMAND_IND_T *command)
 
 void bell_gaia_get_smartassistant(GAIA_UNHANDLED_COMMAND_IND_T *command)
 {
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();    
     uint16 payload_len = 1;
     uint8 payload[payload_len];
     if(command->size_payload == 0)
     {
-        payload[0] = 0x1;
+        payload[0] = app_set->smartassistant;
         /* send response */
         tym_gaia_send_response(command->command_id, GAIA_STATUS_SUCCESS, payload_len, payload);
     }

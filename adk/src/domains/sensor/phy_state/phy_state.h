@@ -91,6 +91,14 @@ typedef enum
     phy_state_event_leave_standbymode,
 #endif
 } phy_state_event;
+
+
+typedef enum
+{
+   smartasst_disable = 0,
+   smartasst_bisto,
+} smartassistant_e;
+
 /*! Define phy_state_event as a uint8 for marshalling use. */
 #define MARSHAL_TYPE_phy_state_event   MARSHAL_TYPE_uint8
 

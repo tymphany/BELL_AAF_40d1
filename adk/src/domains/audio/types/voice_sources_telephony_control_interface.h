@@ -27,6 +27,9 @@ typedef struct
     void (*OngoingCallTransferAudioToSelf)(voice_source_t source);
     void (*InitiateCallUsingNumber)(voice_source_t source, phone_number_t number);
     void (*InitiateVoiceDial)(voice_source_t source);
+#ifdef ENABLE_TYM_PLATFORM
+    void (*CancelVoiceDial)(voice_source_t source);
+#endif    
 } voice_source_telephony_control_interface_t;
 
 #endif /* VOICE_SOURCES_TELEPHONY_CONTROL_INTERFACE_H_ */

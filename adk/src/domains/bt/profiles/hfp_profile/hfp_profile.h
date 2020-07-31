@@ -306,6 +306,13 @@ typedef struct
 #define appHfpIsVoiceRecognitionActive() \
     (appGetHfp()->bitfields.voice_recognition_active)
 
+#ifdef ENABLE_TYM_PLATFORM
+void appHfpSetVA(uint8 enable);
+
+#define appHfpIsVAEnable() \
+    (appGetHfp()->bitfields.va_enable)
+#endif
+
 /*! \brief Is current profile HSP */
 #define appHfpIsHsp() \
     (appGetHfp()->profile == hfp_headset_profile)

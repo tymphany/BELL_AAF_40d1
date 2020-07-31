@@ -254,6 +254,9 @@ void VoiceSources_InitiateCallUsingNumber(voice_source_t source, phone_number_t 
  */
 void VoiceSources_InitiateVoiceDial(voice_source_t source);
 
+#ifdef ENABLE_TYM_PLATFORM
+void VoiceSources_CancelVoiceDial(voice_source_t source);
+#endif
 /*\}*/
 
 /* Misc Functions */

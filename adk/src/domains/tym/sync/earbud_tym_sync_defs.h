@@ -14,7 +14,7 @@ typedef struct tym_sync_app_configuration
     uint8 enable_auto_wear;
     uint8 enable_auto_play;
     uint8 ambient_ext_anc;
-    uint8 reserve;
+    uint8 smartassistant;
     uint8 custom_ui[8];
 }tym_sync_app_configuration_t;
 

@@ -23,6 +23,7 @@
 #include "tym_anc.h"
 #include "earbud_tym_psid.h"
 #include "ui_prompts.h"
+#include "hfp_profile.h"
 
 /* ------------------------ Defines ------------------------ */
 
@@ -181,6 +182,9 @@ static void handleSync_Command(tym_sync_data_t* tym_data)
             break;  
         case connectPromptCmd:
             UiPrompt_ConnectedPrompt();
+            break;    
+        case vaStatusCmd:
+            appHfpSetVA(tym_data->data);
             break;      
         default:
             xprint("can't find command");        

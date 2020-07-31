@@ -922,6 +922,7 @@ void appPhySateAppConfiguration(void)
         app_set->enable_auto_wear = 1; //default no wear pause
         app_set->enable_auto_play = 0; //add default value auto play is zero
         app_set->ambient_ext_anc = 1;//default ambient set stanc3 on
+        app_set->smartassistant = smartasst_bisto;//smartasst_bisto;//default bisto
         app_set->custom_ui[uiseq_left_swipe] = uifunc_track;
         app_set->custom_ui[uiseq_right_swipe] = uifunc_vol;
         app_set->custom_ui[uiseq_left_tapx1] = uifunc_play_pause_with_amb;
@@ -1066,11 +1067,28 @@ uint8 appPhyStateGetCustomUiId(uint8 act)
 /*! \brief tapx1 action based on custom ui id*/
 void appPhyStateCustomIdTapx1(uint8 act)
 {
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
     uint8 id = appPhyStateGetCustomUiId(act);
     if(id == uifunc_play_pause_with_amb)
     {
 #ifdef INCLUDE_GAA        
-        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel_ambient);
+        if(app_set->smartassistant == smartasst_bisto)
+        {    
+            LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel_ambient);
+        }
+        else
+        {
+            if (appHfpIsVAEnable())
+            {
+                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_hfp_voice_dial_cancel);
+            }
+            else
+            {        
+                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_pp_ambient);//first ambient check,play ->ambient
+                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);  
+            }
+        }    
+                
 #else
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_pp_ambient);//first ambient check,play ->ambient
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);
@@ -1078,8 +1096,22 @@ void appPhyStateCustomIdTapx1(uint8 act)
     }
     else if(id == uifunc_play_pause)
     {
-#ifdef INCLUDE_GAA          
-        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel);
+#ifdef INCLUDE_GAA    
+        if(app_set->smartassistant == smartasst_bisto)
+        {    
+            LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel);
+        }
+        else
+        {
+            if (appHfpIsVAEnable())
+            {
+                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_hfp_voice_dial_cancel);
+            }
+            else      
+            {
+                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);
+            }
+        }
 #else
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);
 #endif        
@@ -1115,6 +1147,7 @@ void appPhyStateTapx1(void)
 /*! \brief tapx2 for cutom UI id */
 void appPhyStateCustomIdTapx2(uint8 act)
 {
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();    
     uint8 id = appPhyStateGetCustomUiId(act);
     if(id == uifunc_anc_amb) /* switch between ambient and ANC */
     {
@@ -1123,7 +1156,10 @@ void appPhyStateCustomIdTapx2(uint8 act)
     }
     else if(id == uifunc_google_notification) /* google bisto notification */
     {
-        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_BISTO, NULL);
+        if(app_set->smartassistant == smartasst_bisto)
+        {    
+            MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_BISTO, NULL);
+        }
     }
     else if(id == uifunc_track) /*track , next track */
     {
@@ -1178,6 +1214,7 @@ void appPhyStateTapx3(void)
 /*! \brief hold2s ui*/
 void appPhyStateHold2s(void)
 {
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();     
     uint8 touchPadMode = tymGetTouchPadMode();    
     phyStateTaskData* phy_state = PhyStateGetTaskData();
     DEBUG_LOG("TOUCH_MESSAGE_HOLD2S,appHfpIsCallIncoming %d,ScoFwdIsCallIncoming %d",appHfpIsCallIncoming(),ScoFwdIsCallIncoming());
@@ -1198,11 +1235,16 @@ void appPhyStateHold2s(void)
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_voice_call_hang_up);
         DEBUG_LOG("call ui_input_voice_call_hang_up");
     }
-    else
-    {    
+    else if(app_set->smartassistant == smartasst_bisto)
+    {            
         phy_state->va_holdenable = TRUE;
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_presshold);
-    }    
+    }
+    else
+    {
+        /*trigger handset build-in va*/
+        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_hfp_voice_dial);
+    }        
 }
 
 /*! \brief hold2s end ui */
