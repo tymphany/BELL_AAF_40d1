@@ -257,7 +257,7 @@ static void receviedPowerOn(void)
 {
     /*set ready and report battery for battery report to slow*/
     reportPowerOnStatus();
-    MessageSend(LogicalInputSwitch_GetTask(), APP_POWER_ON, NULL);   
+    MessageSendLater(LogicalInputSwitch_GetTask(), APP_POWER_ON, NULL, 400);   
 }
 
 /*----------------------------------------------------------------------------*/

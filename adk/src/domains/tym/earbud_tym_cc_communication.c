@@ -418,7 +418,8 @@ void reportPowerOnStatus(void)
 {
     setSystemReady(TRUE);
     procCmd.battpercent = appBatteryGetPercent(); 
-    reportBattStatus();            
+    reportBattStatus(); 
+    sendCmdToChargingCase(statusACKReport);           
 }
 
 /*! \brief report standby battery to CC */
