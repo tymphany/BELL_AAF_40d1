@@ -27,7 +27,9 @@ DigMic2PioConfig = [ff ff]
 #Codec0UseClassABAmplifier = false
 Codec0UseClassABAmplifier = true
 
-CodecOutputDisableTimeout = 28000000
+#Maximum Time is 4294967295 ms
+CodecOutputDisableTimeout = 3600000000
+#CodecOutputDisableTimeout = 28000000
 
 #Uncomment the following line if using ANC
 #IsAncIirFilter16k = true
