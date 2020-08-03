@@ -126,6 +126,7 @@ typedef struct
     bool record_incase;
     bool record_peerincase;
     bool va_holdenable;
+    bool quickattention_enable;
 #endif
     /*! Lock used to conditionalise sending of PHY_STATE_INIT_CFM. */
     uint16 lock;

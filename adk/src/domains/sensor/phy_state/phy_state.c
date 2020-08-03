@@ -925,8 +925,8 @@ void appPhySateAppConfiguration(void)
         app_set->smartassistant = smartasst_bisto;//smartasst_bisto;//default bisto
         app_set->custom_ui[uiseq_left_swipe] = uifunc_track;
         app_set->custom_ui[uiseq_right_swipe] = uifunc_vol;
-        app_set->custom_ui[uiseq_left_tapx1] = uifunc_play_pause_with_amb;
-        app_set->custom_ui[uiseq_right_tapx1] = uifunc_play_pause_with_amb;
+        app_set->custom_ui[uiseq_left_tapx1] = uifunc_play_pause;
+        app_set->custom_ui[uiseq_right_tapx1] = uifunc_play_pause;
         app_set->custom_ui[uiseq_left_tapx2] = uifunc_anc_amb;
 #ifdef INCLUDE_GAA        
         app_set->custom_ui[uiseq_right_tapx2] = uifunc_google_notification;
@@ -1165,6 +1165,10 @@ void appPhyStateCustomIdTapx2(uint8 act)
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_FORWARD, NULL);
     }
+    else if(id == uifunc_vol)
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_UP, NULL);
+    }    
 }
 
 /*! \brief tapx2 ui*/
@@ -1210,6 +1214,10 @@ void appPhyStateTapx3(void)
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_BACKWARD, NULL);
     }
+    else if(id == uifunc_vol)
+    {
+        MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_DOWN, NULL);
+    }    
 }
 /*! \brief hold2s ui*/
 void appPhyStateHold2s(void)
@@ -1217,6 +1225,7 @@ void appPhyStateHold2s(void)
     tym_sync_app_configuration_t *app_set = TymGet_AppSetting();     
     uint8 touchPadMode = tymGetTouchPadMode();    
     phyStateTaskData* phy_state = PhyStateGetTaskData();
+    bool playing = (appAvPlayStatus() == avrcp_play_status_playing);
     DEBUG_LOG("TOUCH_MESSAGE_HOLD2S,appHfpIsCallIncoming %d,ScoFwdIsCallIncoming %d",appHfpIsCallIncoming(),ScoFwdIsCallIncoming());
     DEBUG_LOG("TOUCH_MESSAGE_HOLD2S,appHfpIsCallActive %d,ScoFwdIsStreaming %d,appHfpIsCallOutgoing %d",appHfpIsCallActive(),ScoFwdIsStreaming(),appHfpIsCallOutgoing());
     if(touchPadMode == standbyPad)
@@ -1234,13 +1243,22 @@ void appPhyStateHold2s(void)
         //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_voice_call_hang_up);
         DEBUG_LOG("call ui_input_voice_call_hang_up");
+    }    
+    else if(Multidevice_IsLeft() == TRUE)
+    {
+        phy_state->quickattention_enable = TRUE;
+        if(playing == TRUE)
+        {
+            Ui_InjectUiInput(ui_input_pause);
+        }            
+        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_quick_attention_on);
     }
     else if(app_set->smartassistant == smartasst_bisto)
     {            
         phy_state->va_holdenable = TRUE;
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_presshold);
-    }
-    else
+    }    
+    else    
     {
         /*trigger handset build-in va*/
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_hfp_voice_dial);
@@ -1257,6 +1275,11 @@ void appPhyStateHold2sEnd(void)
         phy_state->va_holdenable = FALSE;
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_6);
     }
+	else if(phy_state->quickattention_enable == TRUE)
+    {
+        phy_state->quickattention_enable = FALSE;
+        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_quick_attention_off);
+    }    
 }
 
 /*! \brief swipe left ui */

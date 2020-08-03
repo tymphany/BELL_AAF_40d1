@@ -434,10 +434,34 @@ static void handleUiDomainInput(MessageId ui_input)
                 BellUiAncControl(ui_input);
             }
             break;
+        case ui_input_bell_ui_quick_attention_on:
+            DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_quick_attention_on");
+            if(checkHfpIsActvie() == TRUE)
+            {
+                DEBUG_LOG("handleUiDomainInput, hfp active bypass switch");
+            }
+            else
+            {    
+                Ui_InjectUiInput(ui_input_prompt_quick_attention_on);
+                BellUiAncControl(ui_input);
+            }
+            break;    
+        case ui_input_bell_ui_quick_attention_off:
+            DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_quick_attention_off");
+            if(checkHfpIsActvie() == TRUE)
+            {
+                DEBUG_LOG("handleUiDomainInput, hfp active bypass switch");
+            }
+            else
+            {    
+                Ui_InjectUiInput(ui_input_prompt_quick_attention_off);
+                BellUiAncControl(ui_input);
+            }
+            break;                       
         case ui_input_bell_ui_pp_ambient:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_pp_ambient");
             BellUiAncControl(ui_input);
-            break;
+            break;            
         case ui_input_bell_ui_switch_preset_bank0:
         case ui_input_bell_ui_switch_preset_bank1:
         case ui_input_bell_ui_switch_preset_bank2:
@@ -716,7 +740,7 @@ static void BellUiHfpDeActiveRecovery(void)
 void BellUiAncControl(MessageId ui_input)
 {
     tymAncTaskData *tymAnc = TymAncGetTaskData();
-    if(ui_input != ui_input_bell_ui_pp_ambient)
+    if((ui_input != ui_input_bell_ui_pp_ambient) && (ui_input != ui_input_bell_ui_quick_attention_off))
     {
         tymAnc->prevAncMode = amcinvalid;
     }
@@ -748,6 +772,24 @@ void BellUiAncControl(MessageId ui_input)
         case ui_input_bell_ui_pp_ambient:
             BellUiPPAmbient();
             break;
+        case ui_input_bell_ui_quick_attention_on:
+            if(tymAnc->curAncMode != ambient)
+            {
+                tymAnc->prevAncMode = tymAnc->curAncMode;
+                tymAnc->curAncMode = ambient;
+                tymAnc->onceAnc = 1;
+                BellUiAmbientOn();
+                bell_gaia_anc_notify_event(BELL_GAIA_AMBIENT_NOTIFY, 1);
+            }
+            break;
+        case ui_input_bell_ui_quick_attention_off:
+            if(tymAnc->prevAncMode != amcinvalid)
+            {
+                tymAnc->curAncMode = tymAnc->prevAncMode;
+                tymAnc->prevAncMode = ambient;
+                BellUiANCRecovery();
+            }
+            break;    
         case ui_input_bell_ui_anc_off:
         case ui_input_bell_ui_ambient_off:
         case ui_input_bell_ui_speech_off:

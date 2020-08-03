@@ -431,11 +431,15 @@ void bell_gaia_set_earbudcustom(GAIA_UNHANDLED_COMMAND_IND_T *command)
         }
         if(app_set->custom_ui[uiseq_left_tapx2] == uifunc_track)
             app_set->custom_ui[uiseq_left_tapx3] = uifunc_track;
-        else
+        else if(app_set->custom_ui[uiseq_left_tapx2] == uifunc_vol)
+            app_set->custom_ui[uiseq_left_tapx3] = uifunc_vol;
+        else    
             app_set->custom_ui[uiseq_left_tapx3] = uifunc_disable;
 
         if(app_set->custom_ui[uiseq_right_tapx2] == uifunc_track)
             app_set->custom_ui[uiseq_right_tapx3] = uifunc_track;
+        else if(app_set->custom_ui[uiseq_right_tapx3] == uifunc_vol)
+            app_set->custom_ui[uiseq_right_tapx3] = uifunc_vol;        
         else
             app_set->custom_ui[uiseq_right_tapx3] = uifunc_disable;
         PsStore(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
