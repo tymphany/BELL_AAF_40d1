@@ -166,9 +166,15 @@ void tym_send_switch_eq_preset(uint16 command_id, uint8 size_payload, uint8* pay
     //memset(package,0x0,sizeof(package));
 
     if(size_payload == 1){
-        if(*payload <= MAX_EQ_PRESET && *payload >= MIN_EQ_PRESET)
+        if(*payload == 0xff)
         {
-            Ui_InjectUiInput(ui_input_bell_ui_switch_preset_bank0 + *(payload));
+             Ui_InjectUiInput(ui_input_bell_ui_switch_preset_bank0);
+            //package[0] = *(payload);
+            tym_gaia_send_simple_response(command_id,GAIA_STATUS_SUCCESS);
+        }    
+        else if(*payload <= MAX_EQ_PRESET && *payload >= MIN_EQ_PRESET)
+        {
+            Ui_InjectUiInput(ui_input_bell_ui_switch_preset_bank1 + *(payload));
             //package[0] = *(payload);
             tym_gaia_send_simple_response(command_id,GAIA_STATUS_SUCCESS);
         }else{

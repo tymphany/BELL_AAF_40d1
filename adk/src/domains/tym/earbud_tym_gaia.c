@@ -589,13 +589,15 @@ void bell_gaia_get_twsstatus(GAIA_UNHANDLED_COMMAND_IND_T *command)
 }
 
 void bell_gaia_set_autowear(GAIA_UNHANDLED_COMMAND_IND_T *command)
-{
+{    
     tym_sync_app_configuration_t *app_set = TymGet_AppSetting();    
+    uint8 gaia_data = command->payload[0];
     if(command->size_payload == 1)
     {
-        if((command->payload[0] == 0x0) || (command->payload[0] == 0x01))
+        if((gaia_data >= 0) && (gaia_data <= 3))
         {
-            app_set->enable_auto_wear = command->payload[0];
+            app_set->enable_auto_wear = (gaia_data & 0x01);
+            app_set->enable_auto_play = ((gaia_data >> 1)& 0x01);
             PsStore(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
             tymSyncAppConfiguration(app_set);
             /* send response */
@@ -618,8 +620,8 @@ void bell_gaia_get_autowear(GAIA_UNHANDLED_COMMAND_IND_T *command)
     uint8 payload[payload_len];
     tym_sync_app_configuration_t *app_set = TymGet_AppSetting();     
     if(command->size_payload == 0)
-    {
-        payload[0] = app_set->enable_auto_wear;
+    { 
+        payload[0] = (app_set->enable_auto_wear | (app_set->enable_auto_play << 1));
         tym_gaia_send_response(command->command_id, GAIA_STATUS_SUCCESS, payload_len, payload);
     }
     else
@@ -714,11 +716,16 @@ void bell_gaia_set_eq_control(GAIA_UNHANDLED_COMMAND_IND_T *command)
 void bell_gaia_get_eq_contorl(GAIA_UNHANDLED_COMMAND_IND_T *command)
 {
     uint16 payload_len = 1;
+    uint8 eq_bank;
     uint8 payload[payload_len];
 
     if(command->size_payload == 0)
     {
-        payload[0] = get_cur_preset_eq();
+        eq_bank = get_cur_preset_eq();
+        if(eq_bank == 0)
+            payload[0] = 0xff;
+        else
+            payload[0] = eq_bank - 1;
         tym_gaia_send_response(command->command_id, GAIA_STATUS_SUCCESS, payload_len, payload);
     }
     else
