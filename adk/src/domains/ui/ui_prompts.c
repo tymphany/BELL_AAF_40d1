@@ -28,6 +28,7 @@
 #include "earbud_tym_sync.h"
 #include "tym_anc.h"
 #include "audio_sources.h"
+#include "audio_curation.h"
 #include "kymera_adaptation.h"
 int a2dp_volume_backup;
 #endif
@@ -217,6 +218,9 @@ static void uiPrompts_HandleMessage(Task task, MessageId id, Message message)
     else if (id == UI_INTERNAL_CLEAR_LAST_PROMPT)
     {
         DEBUG_LOG("UI_INTERNAL_CLEAR_LAST_PROMPT");
+#ifdef ENABLE_TYM_PLATFORM          
+        audioCurationClearLockBit();  
+#endif        
         the_prompts.last_prompt_played_index = PROMPT_NONE;
     }
     else if (id == UI_INTERNAL_PROMPT_PLAYBACK_COMPLETED)
@@ -231,7 +235,8 @@ static void uiPrompts_HandleMessage(Task task, MessageId id, Message message)
         if (the_prompts.indicate_when_user_poweroff_prepared)
         {
             uiPrompts_RunUiPowerOff();       
-        }    
+        } 
+ 
 #endif        
     }
     else if (id == APP_POWER_SHUTDOWN_PREPARE_IND)

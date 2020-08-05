@@ -39,6 +39,8 @@ typedef struct
     uint8      speechLevel;  
     uint8      onceAnc;
     uint8      hfpSwitchAnc;
+    uint16     lock;
+    MessageId  ui_input;
 } tymAncTaskData;
 
 /*!< Task information for proximity sensor */

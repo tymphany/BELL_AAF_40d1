@@ -135,6 +135,7 @@
     UI_INPUT(ui_input_bell_ui_hfp_deactive_recovery) \
     UI_INPUT(ui_input_bell_ui_quick_attention_on) \
     UI_INPUT(ui_input_bell_ui_quick_attention_off) \
+    UI_INPUT(ui_input_bell_ui_prompt_finish_anc) \
     UI_INPUT(ui_input_prompt_pairing = UI_INPUTS_PROMPT_MESSAGE_BASE) \
     UI_INPUT(ui_input_prompt_pairing_successful) \
     UI_INPUT(ui_input_prompt_pairing_failed) \
