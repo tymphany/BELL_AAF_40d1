@@ -832,6 +832,7 @@ void BellUiAncControl(MessageId ui_input)
         case ui_input_bell_ui_speech_off:
         default:
             tymAnc->curAncMode = ancoff;
+            tymAnc->onceAnc = 1;
             BellUiAncOff();
             break;
 
