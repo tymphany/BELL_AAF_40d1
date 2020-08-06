@@ -2231,9 +2231,16 @@ static void appSmHandleInternalDeleteHandsets(void)
         case APP_STATE_FACTORY_RESET:
 #ifdef ENABLE_TYM_PLATFORM
         /*master enter pairing delete all handset*/
+        case APP_STATE_IN_CASE_DFU:
         case APP_STATE_HANDSET_PAIRING:
 #endif
         {
+#ifdef ENABLE_TYM_PLATFORM
+            /*clean OTA flag*/
+            UpgradeSetIsOutCaseDFU(FALSE);
+            UpgradePeerSetDFUMode(FALSE);
+            appUpgradeAbortDuringDeviceDisconnect();
+#endif            
             appSmInitiateLinkDisconnection(SM_DISCONNECT_HANDSET, appConfigLinkDisconnectionTimeoutTerminatingMs(),
                                                 POST_DISCONNECT_ACTION_DELETE_HANDSET_PAIRING);
             break;
@@ -3719,8 +3726,12 @@ static void appSmNotifyUpgradeStarted(void)
      * Refer: appSmHandleUpgradeConnected() for an elaborated reason.
      */
     UpgradePeerSetDeviceRolePrimary(BtDevice_IsMyAddressPrimary());
+#ifdef ENABLE_TYM_PLATFORM    
     if(!BtDevice_IsMyAddressPrimary())
         UpgradePeerSetDFUMode(TRUE);
+#else
+    UpgradePeerSetDFUMode(TRUE);
+#endif
 
     SmGetTaskData()->dfu_in_progress = TRUE;
     appSmCancelDfuTimers();        

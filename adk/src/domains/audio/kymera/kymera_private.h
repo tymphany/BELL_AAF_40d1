@@ -116,8 +116,11 @@
 #define KYMERA_TONE_GEN_RATE (8000)
 
 /*! Default DAC disconnection delay in milliseconds */
-#define appKymeraDacDisconnectionDelayMs() (30000)
-
+#ifdef ENABLE_TYM_PLATFORM
+#define appKymeraDacDisconnectionDelayMs() (1800000) /*dac 30min*/
+#else
+#define appKymeraDacDisconnectionDelayMs() (30000) 
+#endif
 /*! Default Adaptive ANC Microphone Sample Rate */ 
 #define ADAPTIVE_ANC_MIC_SAMPLE_RATE    (16000)
 
