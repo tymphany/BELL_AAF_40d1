@@ -204,10 +204,10 @@ static void handsetServiceSm_EnterDisconnected(handset_service_state_machine_t *
         HS_LOG("handsetServiceSm_EnterDisconnected destroying sm for dev 0x%x", sm->handset_device);
 #ifdef ENABLE_TYM_PLATFORM
         Prompts_SetConnectedStatus(0); //disconnect
-        HS_LOG("sm pairing %d",sm->disconnect_pairing);
+        HS_LOG("sm pairing %d",sm->disconnect_pairing);    
         if(sm->disconnect_pairing == FALSE)
         {    
-            if (sm->disconnect_reason != hci_error_conn_timeout)
+            if ((sm->disconnect_reason != hci_error_conn_timeout) && (!BdaddrIsZero(&sm->handset_addr)))
                 Ui_InjectUiInput(ui_input_prompt_disconnected);
         }
 #endif        
