@@ -207,7 +207,8 @@ static void handsetServiceSm_EnterDisconnected(handset_service_state_machine_t *
         HS_LOG("sm pairing %d",sm->disconnect_pairing);
         if(sm->disconnect_pairing == FALSE)
         {    
-            Ui_InjectUiInput(ui_input_prompt_disconnected);
+            if (sm->disconnect_reason != hci_error_conn_timeout)
+                Ui_InjectUiInput(ui_input_prompt_disconnected);
         }
 #endif        
         HandsetServiceSm_DeInit(sm);
