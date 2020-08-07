@@ -29,7 +29,9 @@
 #include <uuid.h>
 
 #include <ui.h>
-
+#ifdef ENABLE_TYM_PLATFORM
+#include "peer_find_role.h"
+#endif
 
 static bool peer_pair_le_is_discovery_state(PEER_PAIR_LE_STATE state)
 {
@@ -249,7 +251,26 @@ static void peer_pair_le_enter_selecting(void)
     local_addr = ppl->local_addr;
     /* If we can pair, then devices will see each other well within the long timeout
        Use double the delay on one of them */
+#ifdef ENABLE_TYM_PLATFORM
+    if(PeerFindRole_HasFixedRole() == TRUE)
+    {
+        if(PeerFindRole_GetFixedRole() == peer_find_role_fixed_role_secondary)
+        {
+            delay += appConfigPeerPairLeTimeoutPeerSelect();
+        }    
+    }
+    else
+    {        
+        if( ( (found_addr.type == TYPED_BDADDR_RANDOM)&& (peer_pair_le_is_own_address_odd(&local_addr)) )||
+             ( (found_addr.type == TYPED_BDADDR_PUBLIC)&& peer_pair_le_bdaddr_greater(&found_addr, &local_addr)) )
+            {
+            /*! \todo Need an approach if RRA is the same as ours. 
+                Best not detected here */
+                delay += appConfigPeerPairLeTimeoutPeerSelect();
+            }
+    }
 
+#else
      /* If the found address is random, since we do not know our own random address we need to take the decision 
         based on the local public address. Hence if we find our address is odd add 2 secs of extra time.
         Else if the found address is Public, the one with greater address gets the extra time. */
@@ -260,7 +281,7 @@ static void peer_pair_le_enter_selecting(void)
             Best not detected here */
         delay += appConfigPeerPairLeTimeoutPeerSelect();
     }
-
+#endif
     DEBUG_LOG("peer_pair_le_enter_selecting. Delay %d ms", delay);
 
     /*! \todo Want to randomise settings somewhat. Otherwise crossovers will be VERY likely.
