@@ -471,11 +471,6 @@ void appBatteryGetPredictVoltage(void)
             battery->lock = batt_pskey[1] & 0x01;
             DEBUG_LOG("get batt pksey lock %d",battery->lock);
         }
-        /*avoid initial voltage is too low*/
-        if(voltage > disch_table[0])
-            battery->predict_volt = voltage;
-        else
-            battery->predict_volt = disch_table[0];
                
         skip = 1;
     }
@@ -518,6 +513,10 @@ void appBatteryGetPredictVoltage(void)
                 battery->predict_volt -= 1;
             else
                 battery->predict_volt -= 2;
+
+            /* voltage < 10%, assume voltage < 10% battery->predict */
+            if(voltage < disch_table[3])
+                battery->predict_volt = voltage;
         }
     }   
     /*percent different save voltage to PSKEY*/
