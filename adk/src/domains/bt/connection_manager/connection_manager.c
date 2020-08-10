@@ -27,7 +27,9 @@
 
 /*!< Connection manager task data */
 conManagerTaskData  con_manager;
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch, for link-loss re-connect timer */
+bool acl_linkloss = FALSE;
+#endif
 /******************************************************************************/
 bool ConManagerAnyLinkConnected(void)
 {
@@ -378,11 +380,21 @@ static void ConManagerHandleClDmAclClosedIndication(const CL_DM_ACL_CLOSED_IND_T
 
     DEBUG_LOG_FN_ENTRY("ConManagerHandleClDmAclClosedIndication, status %d", ind->status);
     ConManagerDebugAddress(&tpaddr);
-
+    
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch, for link-loss re-connect timer */
+    /* Update the handset linkloss status */
+    ConManagerSetHandsetLinkLossStatus(FALSE);
+#endif
+    
     /* Check if this BDADDR is for handset */
     if((ind->taddr.type == TYPED_BDADDR_PUBLIC) && appDeviceIsHandset(&ind->taddr.addr))
     {
         DEBUG_LOG("ConManagerHandleClDmAclClosedIndication, handset");
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch, for link-loss re-connect timer */
+        /* Update the handset linkloss status*/
+        ConManagerSetHandsetLinkLossStatus(TRUE);
+#endif
+        
     }
 
     /* If connection timeout/link-loss move to special disconnected state, so that re-opening ACL
@@ -426,6 +438,20 @@ static void ConManagerHandleClDmAclClosedIndication(const CL_DM_ACL_CLOSED_IND_T
     /* Indicate to client the connection to this connection has gone */
     conManagerNotifyObservers(&tpaddr, cm_notify_message_disconnected, ind->status);
 }
+
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch, for link-loss re-connect timer */
+/* Set the handset linkloss status */
+void ConManagerSetHandsetLinkLossStatus( bool bacl_linkloss )
+{
+    acl_linkloss = bacl_linkloss;
+}
+
+/* Get the handset linkloss status */
+bool ConManagerGetHandsetLinkLossStatus(void)
+{
+    return acl_linkloss;
+}
+#endif
 
 /*! \brief Handle confirmation that a DM_ACL_CLOSE_REQ has completed.
  

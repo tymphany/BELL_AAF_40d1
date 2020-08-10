@@ -27,5 +27,11 @@
 */
 #define handsetService_BredrAclConnectRetryDelayMs() (500)
 
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch, for link-loss re-connect timer */
+/* To configue the link loss timeout */
+#define handsetService_LinkLossBrEdrAclConnectAttemptLimit() (50)
+
+#define handsetService_LinkLossBrEdrAclConnectRetryDelayMs() (500)
+#endif
 
 #endif /* HANDSET_SERVICE_CONFIG_H_ */

@@ -575,4 +575,9 @@ void ConManagerSetQhsSupportStatus(const bdaddr *addr, bool qhs_supported);
 */  
 void ConManagerSetQhsConnectStatus(const bdaddr *addr, bool qhs_connected);
 
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch, for link-loss re-connect timer */
+void ConManagerSetHandsetLinkLossStatus( bool bacl_linkloss);
+bool ConManagerGetHandsetLinkLossStatus(void);
+#endif
+
 #endif

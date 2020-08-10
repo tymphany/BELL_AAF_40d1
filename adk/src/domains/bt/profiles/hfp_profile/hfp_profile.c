@@ -577,15 +577,21 @@ static void appHfpEnterConnectedIdle(void)
 static void appHfpExitConnectedIdle(void)
 {
     DEBUG_LOG("appHfpExitConnectedIdle");
+      
+}
+
 #ifdef ENABLE_TYM_PLATFORM
-    if (appPhyStateGetPowerState() == TRUE) /*power-on status start hfp*/
+static void appHfpEnterAncOnMode(hfpState state)
+{
+    bool hfpDisconnect = ((state == HFP_STATE_DISCONNECTING) || (state == HFP_STATE_DISCONNECTED));
+     
+    if ((appPhyStateGetPowerState() == TRUE) &&(hfpDisconnect == FALSE)) /*power-on status start hfp*/
     {
         tymHfpBusy = TRUE;
         Ui_InjectUiInput(ui_input_bell_ui_hfp_act_anc_on);
-    }    
-#endif    
+    }         
 }
-
+#endif
 /*! \brief Enter 'connected outgoing' state
 
     The HFP state machine has entered 'connected outgoing' state, this means
@@ -799,6 +805,9 @@ static void appHfpSetState(hfpState state)
             break;
         case HFP_STATE_CONNECTED_IDLE:
             appHfpExitConnectedIdle();
+#ifdef ENABLE_TYM_PLATFORM
+            appHfpEnterAncOnMode(state);
+#endif            
             if (state < HFP_STATE_CONNECTED_IDLE || state > HFP_STATE_CONNECTED_ACTIVE)
                 appHfpExitConnected();
             break;

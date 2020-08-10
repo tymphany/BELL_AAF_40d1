@@ -636,6 +636,10 @@ static void handsetServiceSm_HandleInternalDisconnectReq(handset_service_state_m
 static void handsetServiceSm_HandleInternalConnectAclComplete(handset_service_state_machine_t *sm)
 {
     HS_LOG("handsetServiceSm_HandleInternalConnectAclComplete state 0x%x", sm->state);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch, for link-loss re-connect timer */
+    uint8 Handset_AclConnectAttemptLimit;
+    uint32 Handset_AclConnectRetryDelayMs;
+#endif
 
     switch (sm->state)
     {
@@ -648,7 +652,9 @@ static void handsetServiceSm_HandleInternalConnectAclComplete(handset_service_st
                     if (ConManagerIsConnected(&sm->handset_addr))
                     {
                         HS_LOG("handsetServiceSm_HandleInternalConnectAclComplete, ACL connected");
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch, for link-loss re-connect timer */
+                        ConManagerSetHandsetLinkLossStatus(FALSE);
+#endif
                         TimestampEvent(TIMESTAMP_EVENT_HANDSET_CONNECTED_ACL);
 
                         if (sm->profiles_requested)
@@ -663,19 +669,45 @@ static void handsetServiceSm_HandleInternalConnectAclComplete(handset_service_st
                     }
                     else
                     {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch, for link-loss re-connect timer */
+                          /* To identify whether it is in the linkloss status*/
+
+                        if(ConManagerGetHandsetLinkLossStatus())
+                        {
+                            Handset_AclConnectAttemptLimit = handsetService_LinkLossBrEdrAclConnectAttemptLimit();
+                            Handset_AclConnectRetryDelayMs = handsetService_LinkLossBrEdrAclConnectRetryDelayMs();
+                        }
+                        else
+                        {
+                            Handset_AclConnectAttemptLimit = handsetService_BredrAclConnectAttemptLimit();
+                            Handset_AclConnectRetryDelayMs = handsetService_BredrAclConnectRetryDelayMs();
+                        }
+                        
+                        if (sm->acl_attempts < Handset_AclConnectAttemptLimit)
+#else                        
                         if (sm->acl_attempts < handsetService_BredrAclConnectAttemptLimit())
+#endif                            
                         {
                             HS_LOG("handsetServiceSm_HandleInternalConnectAclComplete, ACL not connected, retrying");
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch, for link-loss re-connect timer */
+                            /* Send a delayed message to re-try the ACL connection */
+                            MessageSendLater(&sm->task_data,
+                                     HANDSET_SERVICE_INTERNAL_CONNECT_ACL_RETRY_REQ,
+                                     NULL, Handset_AclConnectRetryDelayMs);
+#else
                             /* Send a delayed message to re-try the ACL connection */
                             MessageSendLater(&sm->task_data,
                                      HANDSET_SERVICE_INTERNAL_CONNECT_ACL_RETRY_REQ,
                                      NULL, handsetService_BredrAclConnectRetryDelayMs());
+#endif                                     
                         }
                         else
                         {
                             HS_LOG("handsetServiceSm_HandleInternalConnectAclComplete, ACL failed to connect");
                         	handsetServiceSm_SetBdedrDisconnectedState(sm);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch, for link-loss re-connect timer */
+                            ConManagerSetHandsetLinkLossStatus(FALSE);
+#endif                        	
                         }
                     }
                 }
