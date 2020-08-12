@@ -428,7 +428,7 @@ static void uiPrompts_UiInputProcess(MessageId id)
         if(tymAnc->onceAnc != 0) /*have set ANC don't play pairing prompt*/
             return;
         MessageCancelFirst(&the_prompts.task, ui_input_prompt_pairing_continue);
-        MessageSendLater(&the_prompts.task, ui_input_prompt_pairing_continue, NULL, D_SEC(5));//interval 3 second + 2 second pairing play time
+        MessageSendLater(&the_prompts.task, ui_input_prompt_pairing_continue, NULL, 4500);//interval 2.5 second + 2 second pairing play time
         if((StateProxy_IsInEar() == TRUE)||(StateProxy_IsPeerInEar() == TRUE))
             Ui_InjectUiInput(ui_input_prompt_pairing);
     }
@@ -439,7 +439,7 @@ static void uiPrompts_UiInputProcess(MessageId id)
     else if(id == ui_input_prompt_repeat_findme)
     {
         MessageCancelFirst(&the_prompts.task, ui_input_prompt_repeat_findme);
-        MessageSendLater(&the_prompts.task, ui_input_prompt_repeat_findme, NULL, D_SEC(5));//interval 3 second + 2 second pairing play time
+        MessageSendLater(&the_prompts.task, ui_input_prompt_repeat_findme, NULL, 4500);//interval 2.5 second + 2 second pairing play time
         Ui_InjectUiInput(ui_input_prompt_findme);
     }
     else if((StateProxy_IsInCase() == TRUE) && (StateProxy_IsPeerInEar() == FALSE) )
