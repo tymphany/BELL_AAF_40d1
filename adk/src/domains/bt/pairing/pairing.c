@@ -350,9 +350,6 @@ static void pairing_Complete(pairingTaskData *thePairing, pairingStatus status, 
     }
     if (pairingSuccess == status)
     {
-#ifdef ENABLE_TYM_PLATFORM
-        tymSyncdata(btStatusCmd,btPairingSuccessful);
-#endif
         TaskList_MessageSendId(TaskList_GetFlexibleBaseTaskList(PairingGetClientList()), PAIRING_COMPLETE);
         /* notify clients that pairing succeeded */
         pairing_MsgActivity(pairingSuccess, (bdaddr*)bd_addr);
@@ -546,6 +543,10 @@ static void pairing_HandleClSmAuthenticateConfirm(const CL_SM_AUTHENTICATE_CFM_T
 
                     if(!expected_ble) /* Don't consider ble complete until CL_SM_BLE_SIMPLE_PAIRING_COMPLETE_IND */
                     {
+#ifdef ENABLE_TYM_PLATFORM
+                        /*bt successful only for BT,not BLE*/
+                        tymSyncdata(btStatusCmd,btPairingSuccessful);
+#endif                        
                         /* Send confirmation to main task */
                         pairing_Complete(thePairing, pairingSuccess, &cfm->bd_addr);
                     }
