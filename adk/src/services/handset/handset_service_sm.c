@@ -175,7 +175,7 @@ static void handsetServiceSm_GetBdAddr(handset_service_state_machine_t *sm, bdad
 static void handsetServiceSm_EnterDisconnected(handset_service_state_machine_t *sm)
 {
     bdaddr addr;
-    
+    bool linkloss_disconnect = FALSE;
     HS_LOG("handsetServiceSm_EnterDisconnected");
 
     /* Complete any outstanding connect stop request */
@@ -192,10 +192,20 @@ static void handsetServiceSm_EnterDisconnected(handset_service_state_machine_t *
     if (sm->disconnect_reason == hci_error_conn_timeout)
     {
         HandsetService_SendDisconnectedIndNotification(&addr, handset_service_status_link_loss);
+#ifdef ENABLE_TYM_PLATFORM        
+        sm->linkloss_state = TRUE;//linkloss->disconnected => customer want heard disconnect prompt(when linkloss)
+#endif        
     }
     else
     {
         HandsetService_SendDisconnectedIndNotification(&addr, handset_service_status_disconnected);
+#ifdef ENABLE_TYM_PLATFORM          
+        if(sm->linkloss_state == TRUE)
+        {
+            linkloss_disconnect = TRUE;
+            sm->linkloss_state = FALSE;
+        }    
+#endif        
     }
 
     /* If there are no open connections to this handset, destroy this state machine. */
@@ -203,11 +213,11 @@ static void handsetServiceSm_EnterDisconnected(handset_service_state_machine_t *
     {
         HS_LOG("handsetServiceSm_EnterDisconnected destroying sm for dev 0x%x", sm->handset_device);
 #ifdef ENABLE_TYM_PLATFORM
-        Prompts_SetConnectedStatus(0); //disconnect
+        Prompts_SetConnectedStatus(0); //prompt know disconnect status.
         HS_LOG("sm pairing %d",sm->disconnect_pairing);    
-        if(sm->disconnect_pairing == FALSE)
-        {    
-            if ((sm->disconnect_reason != hci_error_conn_timeout) && (!BdaddrIsZero(&sm->handset_addr)))
+        if((sm->disconnect_pairing == FALSE) && (linkloss_disconnect == FALSE))
+        {  
+            if (!BdaddrIsZero(&sm->handset_addr))/*BT address isn't zero, assume BT not BLE*/
                 Ui_InjectUiInput(ui_input_prompt_disconnected);
         }
 #endif        
@@ -304,6 +314,9 @@ static void handsetServiceSm_EnterConnectedBredr(handset_service_state_machine_t
 
     /* Update the "last connected" profile list */
     BtDevice_SetLastConnectedProfilesForDevice(sm->handset_device, connected_profiles, TRUE);
+#ifdef ENABLE_TYM_PLATFORM
+    sm->linkloss_state = FALSE;
+#endif    
 }
 
 static void handsetServiceSm_ExitConnectedBredr(handset_service_state_machine_t *sm)

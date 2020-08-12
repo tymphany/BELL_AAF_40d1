@@ -1138,6 +1138,7 @@ void HandsetService_SetDisconnectAfterPairing(const bdaddr *addr)
     {
         DEBUG_LOG("HandsetService_SetDisconnectAfterPairing get sm 0x%x",sm);
         sm->disconnect_pairing = TRUE;
+        sm->linkloss_state = FALSE;
     }     
 }
 #endif
