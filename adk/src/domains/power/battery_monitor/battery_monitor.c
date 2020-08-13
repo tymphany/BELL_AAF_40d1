@@ -471,7 +471,7 @@ void appBatteryGetPredictVoltage(void)
             battery->lock = batt_pskey[1] & 0x01;
             DEBUG_LOG("get batt pksey lock %d",battery->lock);
         }
-               
+        battery->predict_volt = voltage;    
         skip = 1;
     }
 
