@@ -115,6 +115,7 @@ typedef struct
     hci_status disconnect_reason;
 #ifdef ENABLE_TYM_PLATFORM
     bool disconnect_pairing;
+    bool linkloss_state;
 #endif    
 } handset_service_state_machine_t;
 
