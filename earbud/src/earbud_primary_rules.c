@@ -149,21 +149,18 @@ const rule_entry_t primary_rules_set[] =
     RULE(RULE_EVENT_PEER_IN_CASE,               ruleInEarCancelAudioPause,          CONN_RULES_A2DP_TIMEOUT_CANCEL),
     RULE(RULE_EVENT_IN_EAR,                     ruleInEarA2dpRestart,               CONN_RULES_MEDIA_PLAY),
     RULE(RULE_EVENT_PEER_IN_EAR,                ruleInEarA2dpRestart,               CONN_RULES_MEDIA_PLAY),
+#ifndef ENABLE_TYM_PLATFORM    /*in ear don't accept incoming call , don't tranfser to earbud or handset*/    
     RULE(RULE_EVENT_OUT_EAR,                    ruleOutOfEarScoActive,              CONN_RULES_SCO_TIMEOUT),
     RULE(RULE_EVENT_PEER_OUT_EAR,               ruleOutOfEarScoActive,              CONN_RULES_SCO_TIMEOUT),
-#ifndef ENABLE_TYM_PLATFORM    /*in ear don't accept incoming call*/
+
     RULE(RULE_EVENT_IN_EAR,                     ruleInEarCheckIncomingCall,         CONN_RULES_ACCEPT_INCOMING_CALL),
     RULE(RULE_EVENT_PEER_IN_EAR,                ruleInEarCheckIncomingCall,         CONN_RULES_ACCEPT_INCOMING_CALL),
-#endif    
-    /*! \} */
-    /*! \{
-        Rules to control SCO audio transfer. */
+  
     RULE(RULE_EVENT_IN_EAR,                     ruleInEarScoTransferToEarbud,       CONN_RULES_SCO_TRANSFER_TO_EARBUD),
     RULE(RULE_EVENT_PEER_IN_EAR,                ruleInEarScoTransferToEarbud,       CONN_RULES_SCO_TRANSFER_TO_EARBUD),
     RULE(RULE_EVENT_PEER_IN_CASE,               ruleInCaseScoTransferToHandset,     CONN_RULES_SCO_TRANSFER_TO_HANDSET),
-    /*! \} */
-    /*! \{
-        Rules to control SCO forwarding. */
+
+#endif
     RULE(RULE_EVENT_ROLE_SWITCH,                rulePeerScoControl,                     CONN_RULES_PEER_SCO_CONTROL),
     RULE(RULE_EVENT_PEER_IN_EAR,                rulePeerScoControl,                     CONN_RULES_PEER_SCO_CONTROL),
     RULE(RULE_EVENT_PEER_OUT_EAR,               rulePeerScoControl,                     CONN_RULES_PEER_SCO_CONTROL),
