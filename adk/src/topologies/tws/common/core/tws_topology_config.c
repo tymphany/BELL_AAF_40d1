@@ -8,13 +8,21 @@
 */
 
 #include "tws_topology_config.h"
+#ifdef ENABLE_TYM_PLATFORM
+#include "rtime.h"
+#endif
 
 static const bredr_scan_manager_scan_parameters_set_t inquiry_scan_params_set[] =
 {
     {
         {
+            #ifdef ENABLE_TYM_PLATFORM
+            [SCAN_MAN_PARAMS_TYPE_SLOW] = { .interval = US_TO_BT_SLOTS(1280000), .window = US_TO_BT_SLOTS(22500) },
+            [SCAN_MAN_PARAMS_TYPE_FAST] = { .interval = US_TO_BT_SLOTS(320000),  .window = US_TO_BT_SLOTS(11250) },
+            #else
             [SCAN_MAN_PARAMS_TYPE_SLOW] = { .interval = 0x800, .window = 0x24 },
             [SCAN_MAN_PARAMS_TYPE_FAST] = { .interval = 0x200, .window = 0x12 },
+            #endif
         },
     },
 };
@@ -23,8 +31,13 @@ static const bredr_scan_manager_scan_parameters_set_t page_scan_params_set[] =
 {
     {
         {
+            #ifdef ENABLE_TYM_PLATFORM
+            [SCAN_MAN_PARAMS_TYPE_SLOW] = { .interval = US_TO_BT_SLOTS(1280000), .window = US_TO_BT_SLOTS(22500) },
+            [SCAN_MAN_PARAMS_TYPE_FAST] = { .interval = US_TO_BT_SLOTS(100000),  .window = US_TO_BT_SLOTS(11250) },
+            #else
             [SCAN_MAN_PARAMS_TYPE_SLOW] = { .interval = 0x800, .window = 0x24 },
             [SCAN_MAN_PARAMS_TYPE_FAST] = { .interval = 0x200, .window = 0x12 },
+            #endif
         },
     },
 };

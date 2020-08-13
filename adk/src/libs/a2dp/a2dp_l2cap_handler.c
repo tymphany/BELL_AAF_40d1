@@ -1390,6 +1390,13 @@ void a2dpHandleL2capDisconnect(Sink sink, l2cap_disconnect_status status)
                 {   /* If signalling channel has gone, remove any remaining media channels */
                     if ( status != l2cap_disconnect_transferred && a2dpDisconnectAllMedia( device ) )
                     {   /* Media channels being disconnected.  Mark signalling as disconnected but postpone removal of data structure and app indication */
+                        #ifdef ENABLE_TYM_PLATFORM
+                        if (device->signal_conn.status.stream_state == avdtp_stream_local_opening)
+                        {
+                            a2dpMediaOpenCfm(device, NULL, a2dp_operation_fail);
+                        }
+                        #endif
+
                         signalling->status.connection_state = avdtp_connection_idle;
                     }
                     else

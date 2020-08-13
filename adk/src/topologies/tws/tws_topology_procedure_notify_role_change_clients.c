@@ -117,6 +117,11 @@ void TwsTopology_ProcedureNotifyRoleChangeClientsStart(Task result_task,
             DEBUG_LOG("TwsTopology_ProcedureNotifyRoleChangeClientsStart tws_notify_role_change_cancel_notification");
             td->notication_in_progress = tws_notify_role_change_cancel_notification;
             TwsTopology_NotifyListenersOfRoleChangeCancellation();
+            #ifdef ENABLE_TYM_PLATFORM
+            Procedures_DelayedCompleteCfmCallback(td->complete_fn,
+            tws_topology_procedure_notify_role_change_clients,
+            procedure_result_success);
+            #endif
         }
         break;
         case tws_notify_role_change_nothing_to_notify:

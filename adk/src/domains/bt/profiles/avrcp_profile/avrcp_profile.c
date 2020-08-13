@@ -185,6 +185,30 @@ static void appAvrcpExitConnectingRemoteWaitResponse(avInstanceTaskData *theInst
     DEBUG_LOG("appAvrcpExitConnectingRemoteWaitResponse(%p)", (void *)theInst);
 }
 
+#ifdef ENABLE_TYM_PLATFORM
+/*! \brief Enter AVRCP_STATE_CONNECTING_CROSSOVER
+
+    This state is used to track when another connection attempt occurs whilst
+    the original connection attempt is still in progress.  We'll stay in this
+    state until either one of the connection succeeds or fails.
+*/
+static void appAvrcpEnterConnectingCrossover(avInstanceTaskData *theInst)
+{
+    UNUSED(theInst);
+    DEBUG_LOG("appAvrcpEnterConnectingCrossover(%p)", (void *)theInst);
+}
+
+/*! \brief Exit AVRCP_STATE_CONNECTING_CROSSOVER
+
+    Only one connection is left, so no longer in the crossover state.
+*/
+static void appAvrcpExitConnectingCrossover(avInstanceTaskData *theInst)
+{
+    UNUSED(theInst);
+    DEBUG_LOG("appAvrcpExitConnectingCrossover(%p)", (void *)theInst);
+}
+#endif
+
 /*! \brief Enter 'connected' state
 
     The AVRCP state machine has entered 'connected' state, this means
@@ -333,6 +357,11 @@ static void appAvrcpSetState(avInstanceTaskData *theInst, avAvrcpState avrcp_sta
         case AVRCP_STATE_CONNECTING_REMOTE_WAIT_RESPONSE:
             appAvrcpExitConnectingRemoteWaitResponse(theInst);
             break;
+        #ifdef ENABLE_TYM_PLATFORM
+        case AVRCP_STATE_CONNECTING_CROSSOVER:
+            appAvrcpExitConnectingCrossover(theInst);
+            break;
+        #endif
         case AVRCP_STATE_CONNECTED:
             appAvrcpExitConnected(theInst);
             break;
@@ -370,6 +399,11 @@ static void appAvrcpSetState(avInstanceTaskData *theInst, avAvrcpState avrcp_sta
         case AVRCP_STATE_CONNECTING_REMOTE_WAIT_RESPONSE:
             appAvrcpEnterConnectingRemoteWaitResponse(theInst);
             break;
+        #ifdef ENABLE_TYM_PLATFORM
+        case AVRCP_STATE_CONNECTING_CROSSOVER:
+            appAvrcpEnterConnectingCrossover(theInst);
+            break;
+        #endif
         case AVRCP_STATE_CONNECTED:
             appAvrcpEnterConnected(theInst);
             break;
@@ -795,6 +829,15 @@ static void appAvrcpHandleInternalAvrcpConnectIndication(avInstanceTaskData *the
         return;
 
         case AVRCP_STATE_CONNECTING_LOCAL:
+        #ifdef ENABLE_TYM_PLATFORM
+        {
+            /* Accept incoming connection */
+            AvrcpConnectResponse(&theInst->av_task, ind->connection_id, ind->signal_id, TRUE, &theInst->bd_addr);
+
+            /* Move to 'connecting crossover' state */
+            appAvrcpSetState(theInst, AVRCP_STATE_CONNECTING_CROSSOVER);
+        }
+        #endif
         case AVRCP_STATE_CONNECTING_LOCAL_WAIT_RESPONSE:
         case AVRCP_STATE_CONNECTING_REMOTE:
         case AVRCP_STATE_CONNECTING_REMOTE_WAIT_RESPONSE:
@@ -1201,6 +1244,9 @@ static void appAvrcpHandleAvrcpConnectConfirm(avInstanceTaskData *theInst,
     {
         case AVRCP_STATE_CONNECTING_LOCAL:
         case AVRCP_STATE_CONNECTING_REMOTE:
+        #ifdef ENABLE_TYM_PLATFORM
+        case AVRCP_STATE_CONNECTING_CROSSOVER:
+        #endif
         {
             /* Send AV_AVRCP_CONNECT_CFM to all clients */
             MAKE_AV_MESSAGE(AV_AVRCP_CONNECT_CFM);

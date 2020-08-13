@@ -106,7 +106,15 @@ rule_action_t ruleTwsTopPriPairPeer(void)
 rule_action_t ruleTwsTopPriDisableConnectablePeer(void)
 {
     const ENABLE_CONNECTABLE_PEER_PARAMS_T disable_connectable =
+    #ifdef ENABLE_TYM_PLATFORM
+    {
+        .enable = FALSE,
+        .auto_disable = FALSE,
+        .page_scan_type = SCAN_MAN_PARAMS_TYPE_SLOW,
+    };
+    #else
     {.enable = FALSE, .auto_disable = FALSE};
+    #endif
     bdaddr secondary_addr;
     
     if (!appDeviceGetSecondaryBdAddr(&secondary_addr))
@@ -126,7 +134,15 @@ rule_action_t ruleTwsTopPriDisableConnectablePeer(void)
 rule_action_t ruleTwsTopPriEnableConnectablePeer(void)
 {
     const ENABLE_CONNECTABLE_PEER_PARAMS_T enable_connectable =
+    #ifdef ENABLE_TYM_PLATFORM
+    {
+        .enable = TRUE,
+        .auto_disable = TRUE,
+        .page_scan_type = SCAN_MAN_PARAMS_TYPE_FAST
+    };
+    #else
     {.enable = TRUE, .auto_disable = TRUE};
+    #endif
     bdaddr secondary_addr;
 
     if (!appDeviceGetSecondaryBdAddr(&secondary_addr))

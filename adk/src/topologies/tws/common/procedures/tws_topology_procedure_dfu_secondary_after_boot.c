@@ -24,7 +24,8 @@
     ENTRY(proc_set_address_fns, PROC_SET_ADDRESS_TYPE_DATA_SECONDARY), \
     ENTRY(proc_permit_bt_fns, PROC_PERMIT_BT_ENABLE), \
     ENTRY(proc_allow_connection_over_le_fns, PROC_ALLOW_CONNECTION_OVER_LE_ENABLE), \
-    ENTRY(proc_enable_connectable_peer_fns, PROC_ENABLE_CONNECTABLE_PEER_DATA_ENABLE_NO_AUTO_DISABLE)
+    ENTRY(proc_enable_connectable_peer_fns,PROC_ENABLE_CONNECTABLE_PEER_DATA_ENABLE_NO_AUTO_DISABLE_SLOW) /*ENABLE_TYM_PLATFORM*/
+    //ENTRY(proc_enable_connectable_peer_fns, PROC_ENABLE_CONNECTABLE_PEER_DATA_ENABLE_NO_AUTO_DISABLE)
 
 /* Define the dfu_secondary_after_boot_script */
 DEFINE_TOPOLOGY_SCRIPT(dfu_secondary_after_boot, DFU_SECONDARY_AFTER_BOOT_SCRIPT);

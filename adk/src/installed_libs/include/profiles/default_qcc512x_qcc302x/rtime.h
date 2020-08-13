@@ -102,6 +102,11 @@ typedef struct __wallclock_state
     Rounded up because it's not an integral number of us. */
 #define HALF_SLOT_US ((US_PER_SLOT + 1) / 2)
 
+/*! Convert a time from microseconds to BT slots rounding up */
+/*ENABLE_TYM_PLATFORM*/
+#define US_TO_BT_SLOTS(MICROSECONDS) (((MICROSECONDS) + (US_PER_SLOT-1)) / US_PER_SLOT)
+
+
 /**
  * \brief  Add two time values
  *

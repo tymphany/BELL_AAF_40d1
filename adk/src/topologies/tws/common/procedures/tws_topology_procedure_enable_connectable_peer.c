@@ -26,11 +26,38 @@
 #include <message.h>
 
 /*! Parameter definition for connectable enable */
+#ifdef ENABLE_TYM_PLATFORM
+const ENABLE_CONNECTABLE_PEER_PARAMS_T proc_enable_connectable_peer_enable_fast =
+{
+    .enable = TRUE,
+    .auto_disable = TRUE,
+    .page_scan_type = SCAN_MAN_PARAMS_TYPE_FAST,
+};
+#else
 const ENABLE_CONNECTABLE_PEER_PARAMS_T proc_enable_connectable_peer_enable = { .enable = TRUE, .auto_disable = TRUE };
+#endif
 /*! Parameter definition for connectable enable, but without automatically disabling page scan on procedure completion */
+#ifdef ENABLE_TYM_PLATFORM
+const ENABLE_CONNECTABLE_PEER_PARAMS_T proc_enable_connectable_peer_enable_no_auto_disable_slow =
+{
+    .enable = TRUE,
+    .auto_disable = FALSE,
+    .page_scan_type = SCAN_MAN_PARAMS_TYPE_SLOW,
+};
+#else
 const ENABLE_CONNECTABLE_PEER_PARAMS_T proc_enable_connectable_peer_enable_no_auto_disable = { .enable = TRUE, .auto_disable = FALSE };
+#endif
 /*! Parameter definition for connectable disable */
+#ifdef ENABLE_TYM_PLATFORM
+const ENABLE_CONNECTABLE_PEER_PARAMS_T proc_enable_connectable_peer_disable =
+{
+    .enable = FALSE,
+    .auto_disable = TRUE,
+    .page_scan_type =  SCAN_MAN_PARAMS_TYPE_SLOW,
+};
+#else
 const ENABLE_CONNECTABLE_PEER_PARAMS_T proc_enable_connectable_peer_disable = { .enable = FALSE, .auto_disable = TRUE };
+#endif
 
 static void twsTopology_ProcEnableConnectablePeerHandleMessage(Task task, MessageId id, Message message);
 static void TwsTopology_ProcedureEnableConnectablePeerStart(Task result_task,
@@ -113,7 +140,11 @@ static void TwsTopology_ProcedureEnableConnectablePeerStart(Task result_task,
     {
         DEBUG_LOG("TwsTopology_ProcedureEnableConnectablePeerStart ENABLE");
 
+        #ifdef ENABLE_TYM_PLATFORM
+        BredrScanManager_PageScanRequest(TwsTopProcEnableConnectablePeerGetTask(), td->params.page_scan_type);
+        #else
         BredrScanManager_PageScanRequest(TwsTopProcEnableConnectablePeerGetTask(), SCAN_MAN_PARAMS_TYPE_SLOW);
+        #endif
 
         /* register to get notified of connection to peer and
          * start timeout for the secondary to establish the ACL */

@@ -39,10 +39,13 @@
         AVRCP_STATE_CONNECTING_REMOTE = 4 + AVRCP_STATE_LOCK,
         /*! Remotely initiated connection in progress, waiting got client task to respond */
         AVRCP_STATE_CONNECTING_REMOTE_WAIT_RESPONSE = 5 + AVRCP_STATE_LOCK,
+        /*! Locally and remotely initiated connection is in progress */
+        /*ENABLE_TYM_PLATFORM => QC Solution : Fix L/R connection could not connect each other*/
+        AVRCP_STATE_CONNECTING_CROSSOVER = 6 + AVRCP_STATE_LOCK,
         /*! Control channel connected */
-        AVRCP_STATE_CONNECTED = 6,
+        AVRCP_STATE_CONNECTED = 7,
         /*! Disconnecting control channel */
-        AVRCP_STATE_DISCONNECTING = 7 + AVRCP_STATE_LOCK
+        AVRCP_STATE_DISCONNECTING = 8 + AVRCP_STATE_LOCK
     </typedef_enum>
 
     <typedef_struct name="avrcpTaskData" doc="AVRCP task data structure">

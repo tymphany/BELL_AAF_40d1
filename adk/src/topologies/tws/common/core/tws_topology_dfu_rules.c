@@ -231,7 +231,10 @@ static rule_action_t ruleTwsTopDfuConnectPeerProfiles(void)
 static rule_action_t ruleTwsTopDfuEnableConnectableHandset(void)
 {
     const ENABLE_CONNECTABLE_PEER_PARAMS_T enable_connectable =
-        {.enable = TRUE, .auto_disable = FALSE};
+            #ifdef ENABLE_TYM_PLATFORM
+            {.enable = TRUE, .auto_disable = FALSE, .page_scan_type = SCAN_MAN_PARAMS_TYPE_SLOW};
+            //{.enable = TRUE, .auto_disable = FALSE};
+            #endif
 
     if (appUpgradeIsDfuAbortOnHandoverDone())
     {
@@ -468,7 +471,10 @@ static rule_action_t ruleTwsTopDfuAllowHandsetConnect(void)
 static rule_action_t ruleTwsTopDfuDisablePageScan(void)
 {
     const ENABLE_CONNECTABLE_PEER_PARAMS_T disable_connectable =
-        {.enable = FALSE, .auto_disable = FALSE};
+        #ifdef ENABLE_TYM_PLATFORM
+        {.enable = FALSE, .auto_disable = FALSE, .page_scan_type = SCAN_MAN_PARAMS_TYPE_SLOW};
+        //{.enable = FALSE, .auto_disable = FALSE};
+        #endif
     bdaddr bd_addr;
     bool is_secondary = FALSE;
     bool is_DfuRebootDone = appUpgradeIsDfuRebootDone();
