@@ -140,8 +140,11 @@ void Kymera_CreateLeakthroughChain(void)
 
     /* Ensure audio amp is on */
     appKymeraExternalAmpControl(TRUE);
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+    appKymeraConfigureDspPowerMode();
+#else
     appKymeraConfigureDspPowerMode(FALSE);
+#endif    
     kymera_UpdateStandaloneLeakthroughStatus(ENABLED);
     Kymera_LeakthroughEnableAecSideToneAfterTimeout();
 }

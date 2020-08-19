@@ -119,12 +119,20 @@ const ui_event_indicator_table_t earbud_ui_prompts_table[] =
     {.sys_event=VOICE_UI_MIC_OPEN,      { .prompt.filename = "mic_open.sbc",
                                           .prompt.rate = 16000,
                                           .prompt.format = PROMPT_FORMAT_SBC,
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+                                          .prompt.interruptible = FALSE,
+#else
                                           .prompt.interruptible = TRUE,
+#endif
                                           .prompt.queueable = FALSE }},
     {.sys_event=VOICE_UI_MIC_CLOSE,     { .prompt.filename = "mic_close.sbc",
                                           .prompt.rate = 16000,
                                           .prompt.format = PROMPT_FORMAT_SBC,
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+                                          .prompt.interruptible = FALSE,
+#else
                                           .prompt.interruptible = TRUE,
+#endif
                                           .prompt.queueable = FALSE }},
     {.sys_event=VOICE_UI_DISCONNECTED,  { .prompt.filename = "bt_va_not_connected.sbc",
                                           .prompt.rate = 48000,

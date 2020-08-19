@@ -11,6 +11,11 @@
 # This list gets turned into a set of defines of the form
 # INSTALL_OPERATOR_XXXX
 #
+
+%cpp
+VOLUME_CONTROL_AUX_TTP_SUPPORT
+
+
 %list CFG_CAPABILITIES
 VOLUME
 

@@ -184,12 +184,32 @@ void appKymeraSetState(appKymeraState state)
     /* Set busy lock if not in idle or tone state */
     theKymera->busy_lock = (state != KYMERA_STATE_IDLE) && (state != KYMERA_STATE_TONE_PLAYING) && (state != KYMERA_STATE_STANDALONE_LEAKTHROUGH);
 }
-
-void appKymeraConfigureDspPowerMode(bool tone_playing)
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+bool appKymeraSetActiveDspClock(audio_dsp_clock_type type)
 {
-#if (defined(__QCC302X_APPS__) || defined(__QCC512X_APPS__) || defined(__QCC3400_APP__) || defined(__QCC514X_APPS__))
-    kymeraTaskData *theKymera = KymeraGetTaskData();
+    audio_dsp_clock_configuration cconfig =
+    {
+         .active_mode = type,
+         .low_power_mode =  AUDIO_DSP_CLOCK_NO_CHANGE,
+         .trigger_mode = AUDIO_DSP_CLOCK_NO_CHANGE
+    };
+    return AudioDspClockConfigure(&cconfig);    
+}
+#endif
 
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+void appKymeraConfigureDspPowerMode(void)
+#else
+void appKymeraConfigureDspPowerMode(bool tone_playing)
+#endif
+{
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+#if ! defined(__CSRA68100_APP__)
+#endif
+    kymeraTaskData *theKymera = KymeraGetTaskData();
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/    
+    bool tone_playing = appKymeraIsPlayingPrompt();
+#endif    
     DEBUG_LOG("appKymeraConfigureDspPowerMode, tone %u, state %u, a2dp seid %u", tone_playing, appKymeraGetState(), theKymera->a2dp_seid);
     
     /* Assume we are switching to the low power slow clock unless one of the
@@ -846,7 +866,22 @@ uint32 appKymeraGetOptimalMicSampleRate(uint32 sample_rate)
 
     return sample_rate;
 }
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+bool appKymeraAudioDisabled(int32 *due)
+{
+    kymeraTaskData *theKymera = KymeraGetTaskData();
 
+    if (audio_ss_client_count)
+    {
+        /* Audio SS is active, no pending disable time available */
+        if (due)
+            *due = -1;
+        return FALSE;
+    }
+    /* Check if the audio SS disable is pending */
+    return !MessagePendingFirst(&theKymera->task, KYMERA_INTERNAL_AUDIO_SS_DISABLE, due);
+}
+#endif
 #ifdef ENABLE_TYM_PLATFORM
 uint8 get_cur_preset_eq(void)
 {

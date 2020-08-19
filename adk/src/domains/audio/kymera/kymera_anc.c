@@ -348,7 +348,11 @@ void KymeraAnc_ConnectPassthroughSupportChainToDac(void)
                                  DAC_SNK_L));
 
         /* Configure DSP for low power */
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+        appKymeraConfigureDspPowerMode();
+#else        
         appKymeraConfigureDspPowerMode(FALSE);
+#endif        
 
         /* Start the operator */
         Operator op_list[] = {theKymera->anc_passthough_operator};
@@ -481,7 +485,11 @@ void KymeraAnc_DisconnectPassthroughSupportChainFromDac(void)
 
 void KymeraAnc_UpdateDspClock(void)
 {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+    appKymeraConfigureDspPowerMode();
+#else    
     appKymeraConfigureDspPowerMode(FALSE);
+#endif    
 }
 
 #else

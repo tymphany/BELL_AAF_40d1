@@ -40,4 +40,5 @@
     <file path="../../../prompts/15.ANC_ON.sbc"/>
     <file path="../../../prompts/16.Speech_OFF.sbc"/>
     <file path="../../../prompts/17.Speech_ON.sbc"/>
+    <file path="../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_volume_control.dkcs"/>
 </project>

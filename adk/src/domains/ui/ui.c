@@ -13,6 +13,9 @@
 */
 
 #include "ui.h"
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+#include "ui_private.h"
+#endif
 #include "ui_inputs.h"
 #include "ui_prompts.h"
 #include "ui_tones.h"
@@ -61,6 +64,11 @@ typedef struct{
 }registered_ui_provider_t;
 
 registered_ui_provider_t *registered_ui_providers = NULL;
+
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+/*! Lock for sharing of kymera resource for tone/prompt playing */
+uint16 ui_kymera_lock;
+#endif
 
 /*! \brief Ui provider context consumer struct*/
 typedef struct{
@@ -349,7 +357,9 @@ bool Ui_Init(Task init_task)
     {
         TaskList_Initialise(&ui_input_consumers_task_list[group]);
     }
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+    ui_ClearKymeraResourceLock();
+#endif    
     UNUSED(init_task);
     return TRUE;
 }

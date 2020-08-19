@@ -16,9 +16,16 @@
 #define BUFFER_SIZE_FACTOR 4
 
 #ifdef ENABLE_TYM_PLATFORM
+
 #define KYMERA_CONFIG_PROMPT_HIGH_VOLUME      (-20)//(-10),RHA think prompt too loud,reduce to -20
 #define KYMERA_CONFIG_PROMPT_FINDME_VOLUME     (-3)
 uint8 prompt_level = 0;
+/*add Qualcomm patch,for sync of prompt*/
+static enum
+{
+    kymera_tone_idle,
+    kymera_tone_playing
+}kymera_tone_state = kymera_tone_idle;
 #endif
 
 /*! \brief Setup the prompt audio source.
@@ -69,6 +76,14 @@ static Source appKymeraCreateTonePromptChain(const KYMERA_INTERNAL_TONE_PROMPT_P
     const bool has_resampler = (theKymera->output_rate != msg->rate);
     const bool is_tone = (msg->tone != NULL);
     const bool is_prompt = (msg->prompt != FILE_NONE);
+    
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+    /* If the DSP is already running, set turbo clock to reduce startup time.
+     If the DSP is not running this call will fail. That is ignored since
+    the DSP will subsequently be started when the first chain is created
+    and it starts by default at turbo clock */
+    appKymeraSetActiveDspClock(AUDIO_DSP_TURBO_CLOCK);
+#endif
 
     /* Can play tone or prompt, not both */
     PanicFalse(is_tone != is_prompt);
@@ -145,6 +160,13 @@ static bool kymeraTonesPrompts_isAuxTtpSupported(capablity_version_t cap_version
     return cap_version.version_msb >= VOLUME_CONTROL_SET_AUX_TTP_VERSION_MSB ? TRUE : FALSE;
 }
 
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+bool appKymeraIsPlayingPrompt(void)
+{
+    return (kymera_tone_state == kymera_tone_playing);
+}
+#endif
+
 void appKymeraHandleInternalTonePromptPlay(const KYMERA_INTERNAL_TONE_PROMPT_PLAY_T *msg)
 {
     kymeraTaskData *theKymera = KymeraGetTaskData();
@@ -158,7 +180,9 @@ void appKymeraHandleInternalTonePromptPlay(const KYMERA_INTERNAL_TONE_PROMPT_PLA
 
     /* If there is a tone still playing at this point, it must be an interruptable tone, so cut it off */
     appKymeraTonePromptStop();
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+    kymera_tone_state = kymera_tone_playing;
+#endif
     switch (appKymeraGetState())
     {
         case KYMERA_STATE_IDLE:
@@ -214,10 +238,13 @@ void appKymeraHandleInternalTonePromptPlay(const KYMERA_INTERNAL_TONE_PROMPT_PLA
 
                 OperatorsVolumeSetAuxTimeToPlay(op, msg->time_to_play,  0);
             }
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+            /* May need to exit low power mode to play tone simultaneously */
+            appKymeraConfigureDspPowerMode();
+#else
             /* May need to exit low power mode to play tone simultaneously */
             appKymeraConfigureDspPowerMode(TRUE);
-
+#endif
             /* Start tone */
             if (theKymera->chain_tone_handle)
             {
@@ -281,7 +308,11 @@ void appKymeraTonePromptStop(void)
             if (appKymeraGetState() != KYMERA_STATE_TONE_PLAYING)
             {
                 /* Return to low power mode (if applicable) */
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+                appKymeraConfigureDspPowerMode();
+#else                
                 appKymeraConfigureDspPowerMode(FALSE);
+#endif                
             }
             else
             {
@@ -297,6 +328,9 @@ void appKymeraTonePromptStop(void)
                     appKymeraDestroyOutputChain();
                     /* Move back to idle state if standalone leak-through is not active */
                     appKymeraSetState(KYMERA_STATE_IDLE);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+                    kymera_tone_state = kymera_tone_idle;
+#endif                    
                     theKymera->output_rate = 0;
                 }
 #else
@@ -316,7 +350,9 @@ void appKymeraTonePromptStop(void)
             Panic();
             break;
     }
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/    
+    kymera_tone_state = kymera_tone_idle;
+#endif    
     appKymeraClearToneLock(theKymera);
 
     PanicZero(theKymera->tone_count);

@@ -121,7 +121,8 @@ static const capability_bundle_t capability_bundle[] =
 #endif
 #ifdef DOWNLOAD_VOLUME_CONTROL
     {
-        "download_volume_control.edkcs",
+        /*ENABLE_TYM_PLATFORM,add Qualcomm patch for sync of prompt*/
+        "download_volume_control.dkcs",
         capability_bundle_available_p0
     },
 #endif

@@ -11,7 +11,11 @@
 
 #include "ui_tones.h"
 #include "ui_tones_private.h"
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+#include "ui_private.h"
+#include <av.h>
+#include <hfp_profile.h>
+#endif
 #include "ui_inputs.h"
 #include "pairing.h"
 #include "ui.h"
@@ -103,6 +107,18 @@ static void uiTones_PlayTone(uint16 tone_index, rtime_t time_to_play, const ui_t
 
     if (the_tones.tone_playback_enabled)
     {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+        if (!uiTones_IsRepeatingIndication(tone_index))
+        {
+            if (the_tones.sys_event_to_tone_data_mappings[tone_index].await_indication_completion)
+            {
+                MessageSendConditionally(&the_tones.task, UI_INTERNAL_TONE_PLAYBACK_COMPLETED, NULL, ui_GetKymeraResourceLockAddress());
+            }
+        }
+
+        ui_SetKymeraResourceLock();
+        appKymeraTonePlay(config->tone, time_to_play, config->interruptible,  ui_GetKymeraResourceLockAddress(), UI_KYMERA_RESOURCE_LOCKED);
+#else
         uint16 *client_lock = NULL;
         uint16 client_lock_mask = 0;
 
@@ -120,6 +136,7 @@ static void uiTones_PlayTone(uint16 tone_index, rtime_t time_to_play, const ui_t
         }
 
         appKymeraTonePlay(config->tone, time_to_play, config->interruptible, client_lock, client_lock_mask);
+#endif
     }
 }
 
@@ -135,12 +152,50 @@ static inline void uiTones_ClearActiveReminder(uint16 tone_index)
 
 static void uiTones_SchedulePlay(uint16 tone_index)
 {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+    /* Factor in the propagation latency through the various buffers for the aux channel and the time
+       to start the file source */
+    const ui_tone_data_t *config = uiTones_GetToneData(tone_index);
+
+    if (config->queueable || (!appKymeraIsTonePlaying() && !ui_IsKymeraResourceLocked()))
+    {
+        rtime_t time_to_play = SystemClockGetTimerTime();
+
+        if (!config->button_feedback)
+        {
+            /* First stage delay for tone prompt chain creation */
+            time_to_play = rtime_add(time_to_play, UI_SYNC_IND_AUDIO_SS_FIXED_DELAY);
+
+            if (!appAvIsStreaming() && !appHfpIsScoActive())
+            {
+                /* Second stage delay for out chain creation, including PEQ */
+                time_to_play = rtime_add(time_to_play, UI_SYNC_IND_OUTPUT_CHAIN_CREATION_DELAY);
+
+                int32 due;
+
+                if (appKymeraAudioDisabled(&due) || (due > 0 && due < D_SEC(3)))
+                {
+                    /* Third stage delay for audio SS boot, when audio SS has less than 3 seconds of active time */
+                    time_to_play = rtime_add(time_to_play, UI_SYNC_IND_AUDIO_SS_POWER_ON_DELAY);
+                }
+            }
+
+            /* Always add extra event marshal delay */
+            time_to_play = rtime_add(time_to_play, UI_SYNC_IND_UI_EVENT_MARSHAL_DELAY);
+            time_to_play = Ui_RaiseUiEvent(ui_indication_type_audio_tone, tone_index, time_to_play);
+        }
+
+        uiTones_PlayTone(tone_index, time_to_play, config);
+    }
+#else
     /* Factor in the propagation latency through the various buffers for the aux channel and the time
        to start the file source */
     rtime_t time_now = SystemClockGetTimerTime();
     const ui_tone_data_t *config = uiTones_GetToneData(tone_index);
 
+
     if (config->queueable || (!appKymeraIsTonePlaying() && (the_tones.tone_playback_ongoing_mask == 0)))
+
     {
         rtime_t time_to_play = time_now;
 
@@ -152,7 +207,48 @@ static void uiTones_SchedulePlay(uint16 tone_index)
 
         uiTones_PlayTone(tone_index, time_to_play, config);
     }
+#endif
 }
+
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+static bool uiTones_IsToneMandatory(uint16 tone_index)
+{
+    ui_event_indicator_table_t tone_to_play = the_tones.sys_event_to_tone_data_mappings[tone_index];
+    bool indicate_on_shutdown = tone_to_play.await_indication_completion;
+    bool button_press_feedback = tone_to_play.data.tone.button_feedback;
+    return (indicate_on_shutdown || button_press_feedback);
+}
+
+static void uiTones_HandleInternalTone(Task task, MessageId tone_index, Message message)
+{
+    UNUSED(task);
+    UNUSED(message);
+
+    DEBUG_LOG("uiTones_HandleInternalTone index=%u", tone_index);
+
+    /* Mandatory tones (e.g. indicating shutdown) should always be played,
+       regardless of whether we are rendering indications based on the current
+       device topology role and any other gating factors. */
+    if (the_tones.generate_ui_events || uiTones_IsToneMandatory(tone_index))
+    {
+        uiTones_SchedulePlay(tone_index);
+    }
+}
+
+static void uiTones_QueueTone(uint16 tone_index)
+{
+    Task t = &the_tones.tone_task;
+    if (MessagesPendingForTask(t, NULL) < UI_TONES_MAX_QUEUE_SIZE || uiTones_IsToneMandatory(tone_index))
+    {
+        DEBUG_LOG("uiTones_HandleMessage queuing");
+        MessageSendConditionally(t, tone_index, NULL, ui_GetKymeraResourceLockAddress());
+    }
+    else
+    {
+        DEBUG_LOG("uiTones_HandleMessage not queuing");
+    }
+}
+#endif
 
 static void uiTones_ScheduleReminder(uint16 tone_index)
 {
@@ -189,6 +285,18 @@ static void uiTones_HandleMessage(Task task, MessageId id, Message message)
 
     DEBUG_LOG("uiTones_HandleMessage Id=%04x", id);
 
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+    if (uiTones_GetToneIndexFromMappingTable(id, &tone_index))
+    {
+        uiTones_QueueTone(tone_index);
+    }
+    if (uiTones_GetStartToneIndexFromReminderMappingTable(id, &tone_index))
+    {
+        uiTones_QueueTone(tone_index);
+        DEBUG_LOG("schedule UI_INTERNAL_REMINDER_INDICATION_TIMER_EXPIRY index=%x", tone_index);
+        uiTones_ScheduleReminder(tone_index);
+    }
+#else
     bool tone_found = uiTones_GetToneIndexFromMappingTable(id, &tone_index);
     if (tone_found)
     {
@@ -215,6 +323,7 @@ static void uiTones_HandleMessage(Task task, MessageId id, Message message)
         DEBUG_LOG("schedule UI_INTERNAL_REMINDER_INDICATION_TIMER_EXPIRY index=%x", tone_index);
         uiTones_ScheduleReminder(tone_index);
     }
+#endif
     if (uiTones_GetCancelToneIndexFromReminderMappingTable(id, &tone_index))
     {
         DEBUG_LOG("cancel UI_INTERNAL_REMINDER_INDICATION_TIMER_EXPIRY index=%x", tone_index);
@@ -229,7 +338,11 @@ static void uiTones_HandleMessage(Task task, MessageId id, Message message)
         tone_index = ((UI_INTERNAL_REMINDER_INDICATION_TIMER_EXPIRY_T *)message)->reminder_index;
 
         DEBUG_LOG("UI_INTERNAL_REMINDER_INDICATION_TIMER_EXPIRY reminder_index=%x", tone_index);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+        uiTones_QueueTone(tone_index);
+#else
         uiTones_SchedulePlay(tone_index);
+#endif
         uiTones_ScheduleReminder(tone_index);
     }
     else if (id == UI_INTERNAL_TONE_PLAYBACK_COMPLETED)
@@ -309,6 +422,9 @@ bool UiTones_Init(Task init_task)
     memset(&the_tones, 0, sizeof(ui_tones_task_data_t));
 
     the_tones.task.handler = uiTones_HandleMessage;
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+    the_tones.tone_task.handler = uiTones_HandleInternalTone;
+#endif
     the_tones.generate_ui_events = TRUE;
     the_tones.tone_playback_enabled = TRUE;
 

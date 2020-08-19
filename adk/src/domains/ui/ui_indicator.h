@@ -20,6 +20,28 @@
 #define UI_INDICATOR_WAIT_FOR_INDICATION_COMPLETION 0x1
 
 // Includes times to message the operator, set up buffers and to apply volume fade in
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+// Includes times to message the operator, set up buffers and to apply volume fade in
+#define UI_SYNC_IND_PROMPT_CHAIN_CREATION_DELAY     (5*US_PER_MS)
+#define AUDIO_SS_MSG_TO_OPERATOR                    (5*US_PER_MS)
+#define AUDIO_SS_DATA_TO_BUFFERS                    (10*US_PER_MS)
+#define AUDIO_SS_OPERATOR_GETS_SAMPLES_ON_SUBGRAPH  (10*US_PER_MS)
+#define AUDIO_SS_VOLUME_RAMP_MAIN_TO_MIX_AUX        (10*US_PER_MS)
+#define AUDIO_SS_DOWNSTREAM_LATENCY                 (30*US_PER_MS)
+
+#define UI_SYNC_IND_AUDIO_SS_FIXED_DELAY \
+                        (UI_SYNC_IND_PROMPT_CHAIN_CREATION_DELAY + \
+                         AUDIO_SS_MSG_TO_OPERATOR + \
+                         AUDIO_SS_DATA_TO_BUFFERS + \
+                         AUDIO_SS_OPERATOR_GETS_SAMPLES_ON_SUBGRAPH + \
+                         AUDIO_SS_VOLUME_RAMP_MAIN_TO_MIX_AUX + \
+                         AUDIO_SS_DOWNSTREAM_LATENCY)
+
+#define UI_SYNC_IND_OUTPUT_CHAIN_CREATION_DELAY     (190*US_PER_MS)
+#define UI_SYNC_IND_AUDIO_SS_POWER_ON_DELAY         (140*US_PER_MS)
+#define UI_SYNC_IND_UI_EVENT_MARSHAL_DELAY          (40*US_PER_MS)
+#else
+
 #define AUDIO_SS_MSG_TO_OPERATOR                    (5*US_PER_MS)
 #define AUDIO_SS_DATA_TO_BUFFERS                    (10*US_PER_MS)
 #define AUDIO_SS_OPERATOR_GETS_SAMPLES_ON_SUBGRAPH  (10*US_PER_MS)
@@ -40,7 +62,7 @@
 #define UI_INDICATOR_DELAY_FOR_SYNCHRONISED_TTP_IN_MICROSECONDS \
                         (UI_SYNC_IND_AUDIO_SS_CHAIN_CREATION_DELAY +\
                          UI_SYNC_IND_AUDIO_SS_FIXED_DELAY)
-
+#endif
 typedef union
 {
     ui_tone_data_t tone;

@@ -65,6 +65,11 @@ static void vol_ctrl_kick_waiting(VOL_CTRL_DATA_T *op_extra_data, TOUCHED_TERMIN
 static metadata_tag* vol_ctrl_handle_aux_metadata(VOL_CTRL_DATA_T *op_extra_data);
 static void vol_ctrl_handle_input_metadata(VOL_CTRL_DATA_T *op_extra_data, metadata_tag* eoftag);
 #endif
+/*ENABLE_TYM_PLATFORM, add Qualcomm patch for sync of prompt*/
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+static void vol_ctrl_update_current_timestamp(VOL_CTRL_DATA_T *op_extra_data);
+static void vol_ctrl_timestamp_void_tags(VOL_CTRL_DATA_T *op_extra_data, metadata_tag *mtag, unsigned octets_before_tag);
+#endif
 
 /** The volume control capability function handler table */
 const handler_lookup_struct vol_ctlr_handler_table =
@@ -96,13 +101,21 @@ const opmsg_handler_lookup_table_entry vol_ctlr_opmsg_handler_table[] =
 
         {OPMSG_COMMON_SET_SAMPLE_RATE,                      vol_ctlr_opmsg_set_sample_rate},
         {OPMSG_COMMON_SET_DATA_STREAM_BASED,                vol_ctlr_opmsg_data_stream_based},
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+        {0x0001,                                            vol_ctlr_opmsg_set_aux_time_to_play},       /*OPMSG_VOL_CTRL_ID_SET_AUX_TIME_TO_PLAY */
+        {0x0002,                                            vol_ctlr_opmsg_set_downstream_latency_est}, /*OPMSG_VOL_CTRL_ID_SET_DOWNSTREAM_LATENCY_EST*/
+#endif
         {0, NULL}};
 
 /* Capability descriptor */
 const CAPABILITY_DATA vol_ctlr_cap_data =
 {
         _VOL_CTRL_VOL_CAP_ID,             /* Capability ID */
-        VOL_CTRL_VOL_VERSION_MAJOR, VOL_CTRL_CAP_VERSION_MINOR, /* Version information - hi and lo parts */
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+        2, VOL_CTRL_CAP_VERSION_MINOR, /* Version information - hi and lo parts, maj version 2 indicates Aux channel TTP support to apps1 */
+#else
+        VOL_CTRL_VOL_VERSION_MAJOR, VOL_CTRL_CAP_VERSION_MINOR, /* Version information - hi and lo parts*/
+#endif
         2*VOL_CTRL_CONSTANT_NUM_CHANNELS,VOL_CTRL_CONSTANT_NUM_CHANNELS,  /* Max number of sinks/inputs and sources/outputs */
         &vol_ctlr_handler_table,      /* Pointer to message handler function table */
         vol_ctlr_opmsg_handler_table, /* Pointer to operator message handler function table */
@@ -142,7 +155,7 @@ bool vol_ctlr_create(OPERATOR_DATA *op_data, void *message_data, unsigned *respo
         return FALSE;
     }
 
-    /*allocate the colume control shared memory*/
+    /*allocate the volume control shared memory*/
     op_extra_data->shared_volume_ptr = allocate_shared_volume_cntrl();
     if(!op_extra_data->shared_volume_ptr)
     {
@@ -150,21 +163,21 @@ bool vol_ctlr_create(OPERATOR_DATA *op_data, void *message_data, unsigned *respo
         return TRUE;
     }
 
-      op_extra_data->lpvols = &op_extra_data->host_vol;
-      op_extra_data->stream_based = FALSE;
+    op_extra_data->lpvols = &op_extra_data->host_vol;
+    op_extra_data->stream_based = FALSE;
 
-      /* Initialize mute control */
-      op_extra_data->mute_period = 10;
+    /* Initialize mute control */
+    op_extra_data->mute_period = 10;
 
-    /* Initialize extended data for operator.  Assume intialized to zero*/
+    /* Initialize extended data for operator.  Assume initialized to zero*/
     op_extra_data->ReInitFlag = 1;
 
     op_extra_data->pending_timer = TIMER_ID_INVALID;
 
     if(!cpsInitParameters(&op_extra_data->parms_def,(unsigned*)VOL_CTRL_GetDefaults(base_op_get_cap_id(op_data)),(unsigned*)&op_extra_data->parameters,sizeof(VOL_CTRL_PARAMETERS)))
     {
-       base_op_change_response_status(response_data, STATUS_CMD_FAILED);
-       return TRUE;
+        base_op_change_response_status(response_data, STATUS_CMD_FAILED);
+        return TRUE;
     }
 
     return TRUE;
@@ -283,7 +296,7 @@ bool vol_ctlr_buffer_details(OPERATOR_DATA *op_data, void *message_data, unsigne
 
     if (buffer_size==0)
     {
-       buffer_size = VOL_CTRL_BUFFER_SIZE;
+        buffer_size = VOL_CTRL_BUFFER_SIZE;
     }
 
     if (buffer_size < base_buffer_size)
@@ -396,7 +409,7 @@ bool vol_ctlr_connect(OPERATOR_DATA *op_data, void *message_data, unsigned *resp
 
     if (opmgr_op_is_running(op_data))
     {
-        /* Only Auxilliary Terminals Can be Altered while running */
+        /* Only Auxiliary Terminals Can be Altered while running */
         if(!(terminal_id & TERMINAL_SINK_MASK) || !(terminal_id&0x1))
         {
             base_op_change_response_status(response_data, STATUS_CMD_FAILED);
@@ -479,7 +492,7 @@ bool vol_ctlr_disconnect(OPERATOR_DATA *op_data, void *message_data, unsigned *r
 
     if (opmgr_op_is_running(op_data))
     {
-        /* Only Auxilliary Terminals Can be Altered while running */
+        /* Only Auxiliary Terminals Can be Altered while running */
         if(!(terminal_id & TERMINAL_SINK_MASK) || !(terminal_id&0x1))
         {
             base_op_change_response_status(response_data, STATUS_CMD_FAILED);
@@ -500,8 +513,8 @@ bool vol_ctlr_disconnect(OPERATOR_DATA *op_data, void *message_data, unsigned *r
                 bool found_alternative = FALSE;
                 vol_ctrl_aux_channel_t *aux_chan = NULL;
                 for (i = 0, aux_chan = &op_extra_data->aux_channel[0];
-                        i < VOL_CTRL_CONSTANT_NUM_CHANNELS;
-                        i++, aux_chan++)
+                     i < VOL_CTRL_CONSTANT_NUM_CHANNELS;
+                     i++, aux_chan++)
                 {
                     if (i == term_idx)
                     {
@@ -609,6 +622,36 @@ bool vol_ctlr_start(OPERATOR_DATA *op_data, void *message_data, unsigned *respon
         base_op_change_response_status(response_data, STATUS_CMD_FAILED);
     }
 
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+    /* Work out an estimate of downstream latency. This value is only
+     * used when timestamp is invented by this operator to play voice
+     * prompts at requested playback time.
+     *
+     * User can set that via DOWNSTREAM_LATENCY_EST parameter, if hasn't
+     * been set by the user we will find a suitable value.
+     */
+    op_extra_data->downstream_latency_estimate =
+        VOL_CTRL_DOWNSTREAM_LATENCY_EST(op_extra_data)*MILLISECOND;
+    if(0 == op_extra_data->downstream_latency_estimate &&
+       NULL != op_extra_data->metadata_op_buffer)
+    {
+        /* user hasn't set the parameter, a good achievable latency with the
+         * assumption that the operator's output buffer is directly consumed
+         * by a timed playback module at the end of chain is 75% of the buffers
+         * size plus one system kick period.
+         */
+        unsigned buf_size = cbuffer_get_size_in_words(op_extra_data->metadata_op_buffer);
+        op_extra_data->downstream_latency_estimate =
+            convert_samples_to_time(buf_size, op_extra_data->sample_rate)*3/4 +
+            stream_if_get_system_kick_period();
+    }
+    /* Reset timestamp references used for aux TTP*/
+    op_extra_data->current_timestamp_valid = FALSE;
+    op_extra_data->main_timestamp_valid = FALSE;
+    op_extra_data->prev_consumed_samples = 0;
+    op_extra_data->aux0_ttp.generate_ttp = FALSE;
+#endif /* VOLUME_CONTROL_AUX_TTP_SUPPORT */
+
     return TRUE;
 }
 
@@ -630,34 +673,34 @@ void destroy_processing(VOL_CTRL_DATA_T *op_extra_data)
 
 static void vol_ctrl_setup_mute(VOL_CTRL_DATA_T *op_extra_data,unsigned bMute)
 {
-   int mute_increment;
+    int mute_increment;
 
-   /*  cur_mute_gain = 0 at start, and default mute=FALSE
-         To immediately unmute set mute_period=0
-   */
+    /*  cur_mute_gain = 0 at start, and default mute=FALSE
+        To immediately unmute set mute_period=0
+    */
 
-   if((op_extra_data->sample_rate<1) || (op_extra_data->mute_period<1) )
-   {
-      /* Immediately set mute gain */
-      op_extra_data->cur_mute_gain  = bMute ? 0 : FRACTIONAL(1.0);
-      mute_increment=1;
-   }
-   else
-   {
+    if((op_extra_data->sample_rate<1) || (op_extra_data->mute_period<1) )
+    {
+        /* Immediately set mute gain */
+        op_extra_data->cur_mute_gain  = bMute ? 0 : FRACTIONAL(1.0);
+        mute_increment=1;
+    }
+    else
+    {
 
-      if(op_extra_data->mute_period<1000)
-      {
-	     mute_increment = pl_fractional_divide(op_extra_data->mute_period,1000);
-		 mute_increment = pl_fractional_divide(1,frac_mult(mute_increment,op_extra_data->sample_rate));
-      }
-	  else
-	  {
-	     mute_increment = pl_fractional_divide(1,op_extra_data->sample_rate);
-      }
-   }
+        if(op_extra_data->mute_period<1000)
+        {
+            mute_increment = pl_fractional_divide(op_extra_data->mute_period,1000);
+            mute_increment = pl_fractional_divide(1,frac_mult(mute_increment,op_extra_data->sample_rate));
+        }
+        else
+        {
+            mute_increment = pl_fractional_divide(1,op_extra_data->sample_rate);
+        }
+    }
 
-   /* Set direction of transition */
-  op_extra_data->mute_increment = (bMute) ? -mute_increment : mute_increment;
+    /* Set direction of transition */
+    op_extra_data->mute_increment = (bMute) ? -mute_increment : mute_increment;
 
 }
 
@@ -723,7 +766,7 @@ bool setup_processing(VOL_CTRL_DATA_T   *op_extra_data)
     {
         if(op_extra_data->output_buffer[i])
         {
-		    /* If inital value not specified before operator start, use -96db as default
+		    /* If initial value not specified before operator start, use -96db as default
 			 * If an initial value is specified calculate channel gain as master_gain + channel_trim - post gain
 			 */
 		    if(op_extra_data->vol_initialised)
@@ -743,11 +786,11 @@ bool setup_processing(VOL_CTRL_DATA_T   *op_extra_data)
         }
     }
 
-   op_extra_data->vol_initialised = 0;
-   op_extra_data->wait_on_space_buffer=NULL;
-   op_extra_data->wait_on_data_buffer=NULL;
-   op_extra_data->aux_pending = FALSE;
-   op_extra_data->used_all_input = FALSE;
+    op_extra_data->vol_initialised = 0;
+    op_extra_data->wait_on_space_buffer=NULL;
+    op_extra_data->wait_on_data_buffer=NULL;
+    op_extra_data->aux_pending = FALSE;
+    op_extra_data->used_all_input = FALSE;
 
     return TRUE;
 }
@@ -759,10 +802,14 @@ void vol_ctlr_timer_task(void *kick_object)
 
     patch_fn_shared(volume_control_wrapper);
 
+    base_op_profiler_start(op_data);
+
     op_extra_data->pending_timer = TIMER_ID_INVALID;
 
     /* Raise a bg int to process */
     opmgr_kick_operator(op_data);
+
+    base_op_profiler_stop(op_data);
 }
 
 /**
@@ -792,8 +839,8 @@ static metadata_tag* vol_ctrl_handle_aux_metadata(VOL_CTRL_DATA_T *op_extra_data
     if (op_extra_data->metadata_aux_channel != NULL)
     {
         aux_tag_head = buff_metadata_remove(op_extra_data->metadata_aux_channel->buffer,
-                op_extra_data->metadata_aux_channel->advance_buffer * OCTETS_PER_SAMPLE,
-                &b4idx, &afteridx);
+                                            op_extra_data->metadata_aux_channel->advance_buffer * OCTETS_PER_SAMPLE,
+                                            &b4idx, &afteridx);
     }
 
     /* only look for EOF if we could output it */
@@ -827,7 +874,186 @@ static metadata_tag* vol_ctrl_handle_aux_metadata(VOL_CTRL_DATA_T *op_extra_data
 
     return eoftag;
 }
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+/**
+ * \brief timestamps a VOID tag and turn it to a real TIMESTAMP tag.
+ * \param op_extra_data volume control operator specific data
+ * \param mtag taglist that should be timestamped
+ * \octets_before_tag octets before mtag first octet
+ */
+static void vol_ctrl_timestamp_void_tags(VOL_CTRL_DATA_T *op_extra_data,
+                                         metadata_tag *mtag,
+                                         unsigned octets_before_tag)
+{
+    while(NULL != mtag)
+    {
+        /* traverse through all tags in the list*/
+        if(IS_VOID_TTP_TAG(mtag))
+        {
+            /* tags is a VOID tag, turn it to a TIMESTAMP tags.
+             * Note: current_timestamp field holds ttp for octet 0
+             */
+            TIME_INTERVAL time_passed =
+                convert_samples_to_time(octets_before_tag/ADDR_PER_WORD,
+                                        op_extra_data->sample_rate);
+            METADATA_TIME_OF_ARRIVAL_UNSET(mtag);
+            METADATA_TIMESTAMP_SET(mtag,
+                                   time_add(op_extra_data->current_timestamp, time_passed),
+                                   METADATA_TIMESTAMP_LOCAL);
+        }
+        octets_before_tag += mtag->length;
+        mtag = mtag->next;
+    }
+}
 
+/**
+ * \brief updates the timestamp that is going to be used for timed
+ *        playback of aux inputs.
+ * \param op_extra_data volume control operator specific data
+ * \param amount_consumed amount of input consumed since last update
+ */
+static void vol_ctrl_update_current_timestamp(VOL_CTRL_DATA_T *op_extra_data)
+{
+    unsigned amount_consumed = op_extra_data->prev_consumed_samples;
+    /* This will be set again when op consumes samples from input */
+    op_extra_data->prev_consumed_samples = 0;
+
+/*
+ * NOTE: While timestamp is only required for when operator is handling
+ *       an auxiliary with ttp enabled, we need to keep updating it all
+ *       the time so we will have the most accurate valid timestamp
+ *       when we need it for mixing. This will add tiny bit of overhead
+ *       to the operator.
+ */
+#if 0
+    if(!op_extra_data->aux0_ttp.enabled)
+    {
+        /* We don't need timestamp if TTP isn't enabled */
+        op_extra_data->current_timestamp_valid = FALSE;
+        return;
+    }
+#endif
+
+    /* 1. See if we see timestamp in input buffer, if we do then that will
+     *    be used for timed mixing of aux input.
+     */
+    unsigned b4idx = 0;
+    metadata_tag *mtag = buff_metadata_peek_ex(op_extra_data->metadata_ip_buffer, &b4idx);
+    while(mtag != NULL)
+    {
+        /* Search the input buffer metadata, if we see a TTP tag, then we use input time
+         * stamps for the purpose of mixing time of auxiliary inputs to main inputs.
+         */
+        if(IS_TIMESTAMPED_TAG(mtag))
+        {
+            unsigned *err_offset_id;
+            unsigned out_length;
+            /* go back to first input sample */
+            TIME_INTERVAL time_back = convert_samples_to_time(b4idx / OCTETS_PER_SAMPLE,
+                                                              op_extra_data->sample_rate);
+            op_extra_data->current_timestamp = time_sub(mtag->timestamp, time_back);
+            if (buff_metadata_find_private_data(mtag, META_PRIV_KEY_TTP_OFFSET, &out_length,
+                                                (void **)&err_offset_id))
+            {
+                int *err_offset_ptr = ttp_info_get(*err_offset_id);
+                if (err_offset_ptr != NULL)
+                {
+                    /* subtract the offset */
+                    op_extra_data->current_timestamp =
+                        time_sub(op_extra_data->current_timestamp, *err_offset_ptr);
+                }
+            }
+            /* current_timestamp: time stamp associated with first sample of input
+             * main_timestamp_valid: whether main input has valid timestamp
+             * last_main_real_timestamp: last valid timestamp we received from main input
+             */
+            op_extra_data->last_main_real_timestamp =
+                op_extra_data->current_timestamp;
+            op_extra_data->main_timestamp_valid = TRUE;
+            op_extra_data->current_timestamp_valid = TRUE;
+
+            /* real timestamp from input update, no accumulated remainder*/
+            op_extra_data->current_timestamp_update_remainder = 0;
+
+            /* Op isn't generating ttp itself */
+            op_extra_data->aux0_ttp.generate_ttp = FALSE;
+            return;
+        }
+        b4idx += mtag->length;
+        mtag = mtag->next;
+    }
+
+    /* 2. If we don't have timestamp from input buffer see if
+     *    we can build based on last received timestamp from main
+     *    buffer. We stop relying on main timestamp if we
+     *    haven't received any timestamp from input in last
+     *    MAX_REBUILD_TIMESTAMP_PERIOD milliseconds.
+     */
+    if(op_extra_data->main_timestamp_valid)
+    {
+        TIME_INTERVAL time_passed_since_last_real_timestamp =
+            time_sub(op_extra_data->current_timestamp,
+                     op_extra_data->last_main_real_timestamp);
+        if(time_passed_since_last_real_timestamp >
+           (int)(VOL_CTRL_AUX_USE_MAIN_TIMESTAMP_PERIOD_MS*MILLISECOND))
+        {
+            /* stop using main timestamp */
+            op_extra_data->main_timestamp_valid = FALSE;
+            op_extra_data->current_timestamp_valid = FALSE;
+            op_extra_data->current_timestamp_update_remainder = 0;
+        }
+    }
+
+    /* If aren't receiving timestamp from main input,
+     * see if op should generate timestamp itself.
+     * It does so if aux timed playback has been enabled
+     * by the user and also the operator hasn't yet started
+     * to process actual aux data.
+     */
+    if(!op_extra_data->main_timestamp_valid &&
+       op_extra_data->aux0_ttp.enabled &&
+       !op_extra_data->aux0_ttp.generate_ttp &&
+       !op_extra_data->aux_active)
+    {
+        /* Start self ttp generating, with an estimated
+         * target latency from current time.
+         */
+        TIME cur_time = time_get_time();
+        op_extra_data->current_timestamp_valid = TRUE;
+        op_extra_data->current_timestamp =
+            time_add(cur_time, op_extra_data->downstream_latency_estimate);
+        op_extra_data->aux0_ttp.generate_ttp = TRUE;
+        return;
+    }
+
+    /* overall timestamp is valid if we receive
+     * timestamp from input or op is generating
+     * timestamp itself. Only one is valid at one time,
+     * if input has valid timestamp op will not
+     * generate ttp itself.
+     * */
+    op_extra_data->current_timestamp_valid =
+        op_extra_data->main_timestamp_valid ||
+        op_extra_data->aux0_ttp.generate_ttp;
+
+    /* Build timestamp from previous one considering number of samples
+     * consumed since
+     */
+    if(op_extra_data->current_timestamp_valid && amount_consumed != 0)
+    {
+        /* new_time_stamp = previous_time_stamp + amount_consumed/sample_rate
+         * we keep a remainder to avoid the effect of truncation.
+         */
+        uint64 tm_mul = (uint64)amount_consumed * 1000000 +
+            op_extra_data->current_timestamp_update_remainder;
+        TIME_INTERVAL time_passed = (TIME_INTERVAL) (tm_mul/op_extra_data->sample_rate);
+        op_extra_data->current_timestamp_update_remainder =
+            (unsigned)(tm_mul - ((uint64)time_passed*op_extra_data->sample_rate));
+        op_extra_data->current_timestamp =
+            time_add(op_extra_data->current_timestamp, time_passed);
+    }
+}
+#endif /* #ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT */
 /**
  * \brief Transport metadata from input to output and handle aux EOF.
  * \param op_extra_data     volume control operator specific data
@@ -845,7 +1071,7 @@ static void vol_ctrl_handle_input_metadata(VOL_CTRL_DATA_T *op_extra_data, metad
     if (op_extra_data->metadata_ip_buffer != NULL)
     {
         ret_mtag = buff_metadata_remove(op_extra_data->metadata_ip_buffer,
-                input_amount, &b4idx, &afteridx);
+                                        input_amount, &b4idx, &afteridx);
     }
     else
     {
@@ -856,12 +1082,21 @@ static void vol_ctrl_handle_input_metadata(VOL_CTRL_DATA_T *op_extra_data, metad
 
     if (op_extra_data->metadata_op_buffer != NULL)
     {
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+        if(op_extra_data->aux0_ttp.generate_ttp)
+        {
+            /* Operator shall generate timestamp itself, this
+             * is done by time-stamping VOID tags.
+             */
+            vol_ctrl_timestamp_void_tags(op_extra_data, ret_mtag, b4idx);
+        }
+#endif
         if (ret_mtag == NULL)
         {
             /* No metadata in input: we cannot append EOF tags!
              * In this case we need to save the EOF tag until
              * a new input tag comes in.
-             * If none does, we need to recognize the data closing
+             * If none does, we need to recognise the data closing
              * the last received tag and append the EOF there. */
             if (eoftag != NULL)
             {
@@ -968,80 +1203,86 @@ void vol_ctlr_process_data(OPERATOR_DATA *op_data, TOUCHED_TERMINALS *touched)
 
     op_extra_data->used_all_input = FALSE;
 
-    /* Accerators for data/space */
+
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+    /* update timestamp for using aux TTP */
+    vol_ctrl_update_current_timestamp(op_extra_data);
+#endif
+
+    /* Accelerators for data/space */
     samples_to_process = MAXINT;
     if(op_extra_data->stream_based)
     {
-       num_channels = 1;
+        num_channels = 1;
     }
     else
     {
-       if(op_extra_data->wait_on_space_buffer)
-       {
-          samples_to_process = cbuffer_calc_amount_space_in_words(op_extra_data->wait_on_space_buffer);
-          if(samples_to_process<block_size)
-          {
-             vol_ctrl_kick_waiting(op_extra_data, touched, VOL_CTRL_KICK_WAIT_ON_SPACE_LATE);
-             return;
-          }
-          op_extra_data->wait_on_space_buffer=NULL;
-       }
-       if(op_extra_data->wait_on_data_buffer)
-       {
-          amount = cbuffer_calc_amount_data_in_words(op_extra_data->wait_on_data_buffer);
-          if(amount<block_size)
-          {
-             vol_ctrl_kick_waiting(op_extra_data, touched, VOL_CTRL_KICK_WAIT_ON_DATA_LATE);
-            return;
-          }
-          op_extra_data->wait_on_data_buffer=NULL;
-       }
-       num_channels = op_extra_data->num_channels;
+        if(op_extra_data->wait_on_space_buffer)
+        {
+            samples_to_process = cbuffer_calc_amount_space_in_words(op_extra_data->wait_on_space_buffer);
+            if(samples_to_process<block_size)
+            {
+                vol_ctrl_kick_waiting(op_extra_data, touched, VOL_CTRL_KICK_WAIT_ON_SPACE_LATE);
+                return;
+            }
+            op_extra_data->wait_on_space_buffer=NULL;
+        }
+        if(op_extra_data->wait_on_data_buffer)
+        {
+            amount = cbuffer_calc_amount_data_in_words(op_extra_data->wait_on_data_buffer);
+            if(amount<block_size)
+            {
+                vol_ctrl_kick_waiting(op_extra_data, touched, VOL_CTRL_KICK_WAIT_ON_DATA_LATE);
+                return;
+            }
+            op_extra_data->wait_on_data_buffer=NULL;
+        }
+        num_channels = op_extra_data->num_channels;
     }
 
     /* Compute channel transfer amount */
     for(i=0;i<num_channels;i++)
     {
-      unsigned term_idx = op_extra_data->channels[i].chan_idx;
-      tCbuffer *buffer;
+        unsigned term_idx = op_extra_data->channels[i].chan_idx;
+        tCbuffer *buffer;
 
       buffer = op_extra_data->input_buffer[term_idx];
       amount = cbuffer_calc_amount_data_in_words(buffer);
       if(amount<=samples_to_process)
       {
-         if(amount < block_size)
-         {
-            op_extra_data->wait_on_data_buffer = buffer;
-            vol_ctrl_kick_waiting(op_extra_data, touched, VOL_CTRL_KICK_WAIT_ON_DATA);
-            return;
-         }
-         samples_to_process=amount;
-         op_extra_data->used_all_input = TRUE;
-      }
+            if(amount < block_size)
+            {
+                op_extra_data->wait_on_data_buffer = buffer;
+                vol_ctrl_kick_waiting(op_extra_data, touched, VOL_CTRL_KICK_WAIT_ON_DATA);
+                return;
+            }
+            samples_to_process=amount;
+            op_extra_data->used_all_input = TRUE;
+        }
 
-      buffer = op_extra_data->output_buffer[term_idx];
-      amount = cbuffer_calc_amount_space_in_words(buffer);
+        buffer = op_extra_data->output_buffer[term_idx];
+        amount = cbuffer_calc_amount_space_in_words(buffer);
 
-      /* Relatively likely to need changes below */
-      patch_fn(volume_control_adjust_amount);
+        /* Relatively likely to need changes below */
+        patch_fn(volume_control_adjust_amount);
 
-      if(amount<samples_to_process)
-      {
-         if(amount<block_size)
-         {
-            op_extra_data->wait_on_space_buffer = buffer;
-            vol_ctrl_kick_waiting(op_extra_data, touched, VOL_CTRL_KICK_WAIT_ON_SPACE);
-            return;
-         }
-         samples_to_process=amount;
-         op_extra_data->used_all_input = FALSE;
-      }
+        if(amount<samples_to_process)
+        {
+            if(amount<block_size)
+            {
+                op_extra_data->wait_on_space_buffer = buffer;
+                vol_ctrl_kick_waiting(op_extra_data, touched, VOL_CTRL_KICK_WAIT_ON_SPACE);
+                return;
+            }
+            samples_to_process=amount;
+            op_extra_data->used_all_input = FALSE;
+        }
     }
 
     /* Update AUX state.
        If the aux stream doesn't have enough data it indicates a state change */
     unsigned aux_check = (op_extra_data->aux_active | op_extra_data->aux_connected)
-                         & VOL_CTRL_CHANNEL_MASK;
+        & VOL_CTRL_CHANNEL_MASK;
 
     /* Relatively likely to need changes below */
     patch_fn(volume_control_aux_check);
@@ -1128,8 +1369,8 @@ void vol_ctlr_process_data(OPERATOR_DATA *op_data, TOUCHED_TERMINALS *touched)
                 /* (Re-)Start aux_pending */
                 touched->sinks |= aux_kick;
                 op_extra_data->pending_timer = timer_schedule_event_in(
-                        stream_if_get_system_kick_period() / 2,
-                        vol_ctlr_timer_task, (void*)op_data );
+                    stream_if_get_system_kick_period() / 2,
+                    vol_ctlr_timer_task, (void*)op_data );
                 op_extra_data->aux_pending = TRUE;
                 vol_ctrl_kick_waiting(op_extra_data, touched, VOL_CTRL_KICK_AUX_PENDING);
 
@@ -1150,8 +1391,60 @@ void vol_ctlr_process_data(OPERATOR_DATA *op_data, TOUCHED_TERMINALS *touched)
          * have to do a stopping transition. Amount of available data is in
          * each aux channel's advance_buffer field.
          */
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+        /* There is a possibility that vol_ctrl_update_aux_state
+         * limits the number of samples to process, so keep a copy
+         * of that now.
+         */
+        samples_to_process = op_extra_data->tc.num_words;
+#endif
 
         vol_ctrl_update_aux_state(op_extra_data, aux_check, &op_extra_data->tc);
+
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+        /* whole of this block is for debugging purpose only,
+         * showing to user whether aux is being mixed in timed mode
+         * or normal mode.
+         */
+        if(op_extra_data->dbg_aux_mixing_started)
+        {
+            if(op_extra_data->current_timestamp_valid && op_extra_data->aux0_ttp.enabled)
+            {
+                L2_DBG_MSG3("Volume Control: Started mixing auxiliary input in playback mode, "
+                            "requested ttp: %d, mixed at=%d, diff=%d",
+                            op_extra_data->aux0_ttp.time_to_play,
+                            op_extra_data->current_timestamp,
+                            time_sub(op_extra_data->current_timestamp,
+                                     op_extra_data->aux0_ttp.time_to_play));
+            }
+            else
+            {
+                L2_DBG_MSG("Volume Control: Started mixing auxiliary input in non-timed playback mode");
+            }
+            op_extra_data->dbg_aux_mixing_started = FALSE;
+        }
+
+        if(samples_to_process > op_extra_data->tc.num_words)
+        {
+            /* Aux timed playback limited amount to consume, this happens only once
+             * right at the start of mixing and is because we want to start mixing
+             * at a sample with timestamp close to the requested time to play.
+             */
+
+            /* recalculate time constants based on limited amount */
+            vol_ctrl_compute_time_constants(op_extra_data->sample_rate,
+                                            op_extra_data->parameters.OFFSET_VOLUME_TC,
+                                            &op_extra_data->tc);
+
+            /* Also do a self kick to process the rest of chunk immediately.*/
+            if (op_extra_data->pending_timer == TIMER_ID_INVALID)
+            {
+                op_extra_data->pending_timer =
+                    timer_schedule_event_in(0, vol_ctlr_timer_task, (void*)op_data );
+            }
+        }
+#endif  /* VOLUME_CONTROL_AUX_TTP_SUPPORT  */
+
     }
     else
     {
@@ -1168,6 +1461,10 @@ void vol_ctlr_process_data(OPERATOR_DATA *op_data, TOUCHED_TERMINALS *touched)
         timer_cancel_event_atomic(&op_extra_data->pending_timer);
     }
 
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+    /* update amount that is consumed this run */
+    op_extra_data->prev_consumed_samples = op_extra_data->tc.num_words;
+#endif
     if (op_extra_data->tc.num_words > 0)
     {
 #ifdef INSTALL_METADATA
@@ -1182,37 +1479,37 @@ void vol_ctlr_process_data(OPERATOR_DATA *op_data, TOUCHED_TERMINALS *touched)
     /* Handle backwards kicks for main channels */
     touched_sink = (op_extra_data->used_all_input) ? op_extra_data->touched_sink : 0;
 
-   /* Update Aux Buffers */
-   op_extra_data->aux_state   = 0;
-   amount    = op_extra_data->aux_connected;
-   if(amount)
-   {
-      vol_ctrl_aux_channel_t *aux_ptr=op_extra_data->aux_channel;
-      i = 0;
-      do
-      {
-          if(aux_ptr->state==AUX_STATE_IN_AUX)
-          {
-               unsigned index_mask = (1<<i);
-               op_extra_data->aux_state |= index_mask;
-               // only advance if used by a channel?
-               if(!(op_extra_data->aux_in_use&index_mask))
-               {
-                   aux_ptr->advance_buffer=0;
-               }
-          }
-          if(aux_ptr->advance_buffer)
-          {
-              touched_sink |= ( TOUCHED_SINK_0 << ((i<<1)+1) );
-              cbuffer_advance_read_ptr(aux_ptr->buffer,aux_ptr->advance_buffer);
-          }
-          i++;
-          aux_ptr++;
-          amount>>=1;
-      }while(amount);
-   }
+    /* Update Aux Buffers */
+    op_extra_data->aux_state   = 0;
+    amount    = op_extra_data->aux_connected;
+    if(amount)
+    {
+        vol_ctrl_aux_channel_t *aux_ptr=op_extra_data->aux_channel;
+        i = 0;
+        do
+        {
+            if(aux_ptr->state==AUX_STATE_IN_AUX)
+            {
+                unsigned index_mask = (1<<i);
+                op_extra_data->aux_state |= index_mask;
+                // only advance if used by a channel?
+                if(!(op_extra_data->aux_in_use&index_mask))
+                {
+                    aux_ptr->advance_buffer=0;
+                }
+            }
+            if(aux_ptr->advance_buffer)
+            {
+                touched_sink |= ( TOUCHED_SINK_0 << ((i<<1)+1) );
+                cbuffer_advance_read_ptr(aux_ptr->buffer,aux_ptr->advance_buffer);
+            }
+            i++;
+            aux_ptr++;
+            amount>>=1;
+        }while(amount);
+    }
 
-   touched->sinks   = touched_sink;
+   touched->sinks |= touched_sink;
    touched->sources = op_extra_data->touched_src;
 
 }
@@ -1240,13 +1537,13 @@ bool vol_ctlr_opmsg_obpm_set_control(OPERATOR_DATA *op_data, void *message_data,
     {
         unsigned  cntrl_id=cps_control_get(message_data,i,&cntrl_value,&cntrl_src);
 
-        /* Check for OBPM and Overide.   Override is all or none, not per control */
+        /* Check for OBPM and Override.   Override is all or none, not per control */
         if((i==0)&&(cntrl_src != CPS_SOURCE_HOST))
         {
-           bIsOBPM = TRUE;
-           lpvols  = &op_extra_data->obpm_vol;
-           /* Polarity of override enable/disable is inverted */
-           op_extra_data->Ovr_Control = (cntrl_src == CPS_SOURCE_OBPM_DISABLE) ?  VOL_CTRL_CONTROL_VOL_OVERRIDE : 0;
+            bIsOBPM = TRUE;
+            lpvols  = &op_extra_data->obpm_vol;
+            /* Polarity of override enable/disable is inverted */
+            op_extra_data->Ovr_Control = (cntrl_src == CPS_SOURCE_OBPM_DISABLE) ?  VOL_CTRL_CONTROL_VOL_OVERRIDE : 0;
         }
 
         if(cntrl_id==VOL_CTRL_CONSTANT_POST_GAIN_CTRL)
@@ -1275,7 +1572,7 @@ bool vol_ctlr_opmsg_obpm_set_control(OPERATOR_DATA *op_data, void *message_data,
             lpvols->mute = cntrl_value;
             if (opmgr_op_is_running(op_data))
             {
-               vol_ctrl_setup_mute(op_extra_data,lpvols->mute);
+                vol_ctrl_setup_mute(op_extra_data,lpvols->mute);
             }
         }
         else if(cntrl_id==VOL_CTRL_CONSTANT_MUTE_PERIOD_CTRL)
@@ -1283,7 +1580,7 @@ bool vol_ctlr_opmsg_obpm_set_control(OPERATOR_DATA *op_data, void *message_data,
             op_extra_data->mute_period = cntrl_value;
             if (opmgr_op_is_running(op_data))
             {
-               vol_ctrl_setup_mute(op_extra_data,lpvols->mute);
+                vol_ctrl_setup_mute(op_extra_data,lpvols->mute);
             }
         }
         else if( (cntrl_id>=VOL_CTRL_CONSTANT_TRIM1_GAIN_CTRL) &&
@@ -1342,7 +1639,7 @@ bool vol_ctlr_opmsg_obpm_set_params(OPERATOR_DATA *op_data, void *message_data, 
 
     retval = cpsSetParameterMsgHandler(&op_extra_data->parms_def ,message_data, resp_length,resp_data);
 
-    /* Set the Reinit flag after setting the paramters */
+    /* Set the Reinit flag after setting the parameters */
     op_extra_data->ReInitFlag = 1;
 
     return retval;
@@ -1381,13 +1678,13 @@ bool vol_ctlr_opmsg_obpm_get_status(OPERATOR_DATA *op_data, void *message_data, 
 
 
 static bool ups_params_vc(void* instance_data,PS_KEY_TYPE key,PERSISTENCE_RANK rank,
-        uint16 length, unsigned* data, STATUS_KYMERA status,uint16 extra_status_info)
+                          uint16 length, unsigned* data, STATUS_KYMERA status,uint16 extra_status_info)
 {
     VOL_CTRL_DATA_T *op_extra_data = get_instance_data((OPERATOR_DATA*)instance_data);
 
     cpsSetParameterFromPsStore(&op_extra_data->parms_def,length,data,status);
 
-    /* Set the Reinit flag after setting the paramters */
+    /* Set the Reinit flag after setting the parameters */
     op_extra_data->ReInitFlag = 1;
 
     return TRUE;
@@ -1433,3 +1730,193 @@ bool vol_ctlr_opmsg_data_stream_based(OPERATOR_DATA *op_data, void *message_data
 
     return TRUE;
 }
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+
+/* SET_AUX_TIME_TO_PLAY and SET_DOWNSTREAM_LATENCY_EST messages are not defined in ROM 2.0 version of OPMSG. Since that is auto generated code we dont want
+   to modify it... so here are the macros from the ROM2.1 version of OPMSG that this file needs to properly parse the AUX_TTP related messages. */
+
+/* The following macros take OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY *opmsg_vol_ctrl_set_aux_time_to_play_ptr */
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_MESSAGE_ID_WORD_OFFSET (0)
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_MESSAGE_ID_GET(opmsg_vol_ctrl_set_aux_time_to_play_ptr) ((OPMSG_VOL_CTRL_ID)(opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[0])
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_MESSAGE_ID_SET(opmsg_vol_ctrl_set_aux_time_to_play_ptr, message_id) ((opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[0] = (uint16)(message_id))
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_AUX_CHANNEL_INDEX_WORD_OFFSET (1)
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_AUX_CHANNEL_INDEX_GET(opmsg_vol_ctrl_set_aux_time_to_play_ptr) ((opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[1])
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_AUX_CHANNEL_INDEX_SET(opmsg_vol_ctrl_set_aux_time_to_play_ptr, aux_channel_index) ((opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[1] = (uint16)(aux_channel_index))
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_AUX_TIME_TO_PLAY_WORD_OFFSET (2)
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_AUX_TIME_TO_PLAY_GET(opmsg_vol_ctrl_set_aux_time_to_play_ptr)  \
+    (((uint32)((opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[2]) | \
+      ((uint32)((opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[3]) << 16)))
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_AUX_TIME_TO_PLAY_SET(opmsg_vol_ctrl_set_aux_time_to_play_ptr, aux_time_to_play) do { \
+        (opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[2] = (uint16)((aux_time_to_play) & 0xffff); \
+        (opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[3] = (uint16)((aux_time_to_play) >> 16); } while (0)
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_AUX_DRIFT_RATE_WORD_OFFSET (4)
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_AUX_DRIFT_RATE_GET(opmsg_vol_ctrl_set_aux_time_to_play_ptr) ((opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[4])
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_AUX_DRIFT_RATE_SET(opmsg_vol_ctrl_set_aux_time_to_play_ptr, aux_drift_rate) ((opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[4] = (uint16)(aux_drift_rate))
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_WORD_SIZE (5)
+/*lint -e(773) allow unparenthesized*/
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_CREATE(message_id, aux_channel_index, aux_time_to_play, aux_drift_rate) \
+    (uint16)(message_id), \
+    (uint16)(aux_channel_index), \
+    (uint16)((aux_time_to_play) & 0xffff), \
+    (uint16)((aux_time_to_play) >> 16), \
+    (uint16)(aux_drift_rate)
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_PACK(opmsg_vol_ctrl_set_aux_time_to_play_ptr, message_id, aux_channel_index, aux_time_to_play, aux_drift_rate) \
+    do { \
+        (opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[0] = (uint16)((uint16)(message_id)); \
+        (opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[1] = (uint16)((uint16)(aux_channel_index)); \
+        (opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[2] = (uint16)((uint16)((aux_time_to_play) & 0xffff)); \
+        (opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[3] = (uint16)(((aux_time_to_play) >> 16)); \
+        (opmsg_vol_ctrl_set_aux_time_to_play_ptr)->_data[4] = (uint16)((uint16)(aux_drift_rate)); \
+    } while (0)
+
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_MARSHALL(addr, opmsg_vol_ctrl_set_aux_time_to_play_ptr) memcpy((void *)(addr), (void *)(opmsg_vol_ctrl_set_aux_time_to_play_ptr), 5)
+#define OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY_UNMARSHALL(addr, opmsg_vol_ctrl_set_aux_time_to_play_ptr) memcpy((void *)(opmsg_vol_ctrl_set_aux_time_to_play_ptr), (void *)(addr), 5)
+
+/* The following macros take OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST *opmsg_vol_ctrl_set_downstream_latency_est_ptr */
+#define OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST_MESSAGE_ID_WORD_OFFSET (0)
+#define OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST_MESSAGE_ID_GET(opmsg_vol_ctrl_set_downstream_latency_est_ptr) ((OPMSG_VOL_CTRL_ID)(opmsg_vol_ctrl_set_downstream_latency_est_ptr)->_data[0])
+#define OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST_MESSAGE_ID_SET(opmsg_vol_ctrl_set_downstream_latency_est_ptr, message_id) ((opmsg_vol_ctrl_set_downstream_latency_est_ptr)->_data[0] = (uint16)(message_id))
+#define OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST_LATENCY_EST_MS_WORD_OFFSET (1)
+#define OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST_LATENCY_EST_MS_GET(opmsg_vol_ctrl_set_downstream_latency_est_ptr) ((opmsg_vol_ctrl_set_downstream_latency_est_ptr)->_data[1])
+#define OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST_LATENCY_EST_MS_SET(opmsg_vol_ctrl_set_downstream_latency_est_ptr, latency_est_ms) ((opmsg_vol_ctrl_set_downstream_latency_est_ptr)->_data[1] = (uint16)(latency_est_ms))
+#define OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST_WORD_SIZE (2)
+/*lint -e(773) allow unparenthesized*/
+#define OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST_CREATE(message_id, latency_est_ms) \
+    (uint16)(message_id), \
+    (uint16)(latency_est_ms)
+#define OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST_PACK(opmsg_vol_ctrl_set_downstream_latency_est_ptr, message_id, latency_est_ms) \
+    do { \
+        (opmsg_vol_ctrl_set_downstream_latency_est_ptr)->_data[0] = (uint16)((uint16)(message_id)); \
+        (opmsg_vol_ctrl_set_downstream_latency_est_ptr)->_data[1] = (uint16)((uint16)(latency_est_ms)); \
+    } while (0)
+
+#define OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST_MARSHALL(addr, opmsg_vol_ctrl_set_downstream_latency_est_ptr) memcpy((void *)(addr), (void *)(opmsg_vol_ctrl_set_downstream_latency_est_ptr), 2)
+#define OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST_UNMARSHALL(addr, opmsg_vol_ctrl_set_downstream_latency_est_ptr) memcpy((void *)(opmsg_vol_ctrl_set_downstream_latency_est_ptr), (void *)(addr), 2)
+
+
+bool vol_ctlr_opmsg_set_aux_time_to_play(OPERATOR_DATA *op_data, void *message_data, unsigned *resp_length, OP_OPMSG_RSP_PAYLOAD **resp_data)
+{
+    VOL_CTRL_DATA_T *op_extra_data = get_instance_data(op_data);
+
+
+    /* get aux channel index */
+    unsigned aux_channel_index = OPMSG_FIELD_GET(message_data,
+                                                 OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY,
+                                                 AUX_CHANNEL_INDEX);
+
+    /* requested play back time for aux channel */
+    TIME aux_time_to_play =
+        (TIME)OPMSG_FIELD_GET_FROM_OFFSET(message_data,
+                                          OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY,
+                                          AUX_TIME_TO_PLAY, 1) +
+        ((TIME)OPMSG_FIELD_GET_FROM_OFFSET(message_data,
+                                           OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY,
+                                          AUX_TIME_TO_PLAY, 0) << 16);
+    /* get drift rate */
+    int aux_drift_rate = (int)(int16)OPMSG_FIELD_GET(message_data,
+                                                     OPMSG_VOL_CTRL_SET_AUX_TIME_TO_PLAY,
+                                                     AUX_DRIFT_RATE);
+
+    /* Only channel 0 is supported */
+    if(aux_channel_index != 0)
+    {
+        L2_DBG_MSG1("Volume Control Aux Timed Playback, "
+                    "only channel 0 supports this feature, channel=%d",
+                    aux_channel_index);
+        return FALSE;
+    }
+
+    /* drift_rate is in 1/10 of ppm, so convert it to a
+     * fractional number.
+     */
+    aux_drift_rate = aux_drift_rate * FRACTIONAL(0.0001);
+    aux_drift_rate = frac_mult(aux_drift_rate, FRACTIONAL(0.001));
+
+    vol_ctrl_aux_channel_t  *aux_channel = &op_extra_data->aux_channel[aux_channel_index];
+
+    /* Message shall be sent once aux path set up but before starting it,
+     * if sent after that we aren't be able to meet the deadline for timed
+     * playback so just return FALSE.
+     */
+    if(aux_channel->buffer != NULL &&
+       aux_channel->state != AUX_STATE_NO_AUX &&
+       aux_channel->state != AUX_STATE_END_AUX)
+    {
+        L2_DBG_MSG1("Volume Control Aux Timed Playback: "
+                    "aux channel %d is already active",
+                    aux_channel_index);
+        return FALSE;
+    }
+
+    /* Sanity check on time to play time */
+    TIME current_time = time_get_time();
+    TIME_INTERVAL ttp_in_future = time_sub(aux_time_to_play, current_time);
+    if(ttp_in_future < (VOL_CTRL_AUX_MIN_TTP_IN_FUTURE_MS*MILLISECOND) ||
+       ttp_in_future > (VOL_CTRL_AUX_MAX_TTP_IN_FUTURE_MS*MILLISECOND))
+    {
+        L2_DBG_MSG2("Volume Control Aux Timed Playback: "
+                    "Requested time to play is too early or too late,"
+                    "current time=%d, time to play=%d",
+                    current_time, aux_time_to_play);
+        return FALSE;
+    }
+
+    /* Work out a gate time for aux input.
+     * aux_time_to_play will be for first sample of aux,
+     * we have a ramping down time for main channel before
+     * actual mixing happens.
+     * */
+    vol_ctrl_aux_params_t *aux_param = (vol_ctrl_aux_params_t *)
+        (&op_extra_data->parameters.OFFSET_AUX1_SCALE);
+    unsigned atk_tc = aux_param[aux_channel_index].atk_tc;
+    TIME_INTERVAL start_period = (TIME_INTERVAL) ((1<<(DAWTH-1))/atk_tc)*10;
+    TIME ttp_gate_time = time_sub(aux_time_to_play, start_period);
+
+    /* aux timed playback message in only for one tone/prompt,
+     * if we don't receive the actual aux data within reasonable
+     * time, timed playback will expire and later received aux data
+     * will be mixed in normal non-ttp mode */
+    TIME ttp_expiry_time = time_add(aux_time_to_play,
+                                    VOL_CTRL_AUX_TTP_EXPIRY_PERIOD_MS*MILLISECOND);
+
+    L2_DBG_MSG4("Volume Control, setting auxiliary playback time:"
+                " time=%d, channel=%d, ttp=%d, drift=%d",
+                time_get_time(), aux_channel_index, aux_time_to_play, aux_drift_rate);
+
+    /* blocking interrupts just in case this update is preempted
+     * by the operator's process. Normally user is expected to send
+     * this message before auxiliary path starts sending audio data,
+     * so practically perhaps not required.
+     */
+    opmgr_op_suspend_processing(op_data);
+    op_extra_data->aux0_ttp.time_to_play = aux_time_to_play;
+    op_extra_data->aux0_ttp.expiry_time = ttp_expiry_time;
+    op_extra_data->aux0_ttp.gate_time = ttp_gate_time;
+    op_extra_data->aux0_ttp.drift_rate = aux_drift_rate;
+    op_extra_data->aux0_ttp.enabled = TRUE;
+    opmgr_op_resume_processing(op_data);
+    return TRUE;
+}
+
+bool vol_ctlr_opmsg_set_downstream_latency_est(OPERATOR_DATA *op_data, void *message_data, unsigned *resp_length, OP_OPMSG_RSP_PAYLOAD **resp_data)
+{
+    VOL_CTRL_DATA_T *op_extra_data = get_instance_data(op_data);
+
+    /* get downstream latency field */
+    unsigned latency_est_ms = OPMSG_FIELD_GET(message_data,
+                                              OPMSG_VOL_CTRL_SET_DOWNSTREAM_LATENCY_EST,
+                                              LATENCY_EST_MS);
+    /* check maximum value */
+    if(latency_est_ms > VOL_CTRL_MAX_DOWNSTREAM_LATENCY_MS)
+    {
+        return FALSE;
+    }
+
+    /* set downstream latency config, change while
+	   the operator is running is ok, but the value
+	   will be used from next auxiliary burst.
+	 */
+    VOL_CTRL_DOWNSTREAM_LATENCY_EST(op_extra_data) = latency_est_ms;
+    return TRUE;
+}
+#endif /* VOLUME_CONTROL_AUX_TTP_SUPPORT */

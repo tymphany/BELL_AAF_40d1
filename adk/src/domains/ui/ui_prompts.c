@@ -14,6 +14,11 @@
 #include "ui_inputs.h"
 #include "pairing.h"
 #include "ui.h"
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+#include "ui_private.h"
+#include <av.h>
+#include <hfp_profile.h>
+#endif
 #include "av.h"
 #include <power_manager.h>
 
@@ -108,9 +113,7 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
     if (the_prompts.prompt_playback_enabled)
 #endif    	
     {
-        uint16 *client_lock = NULL;
-        uint16 client_lock_mask = 0;
-        #ifdef ENABLE_TYM_PLATFORM
+#ifdef ENABLE_TYM_PLATFORM
         if(appAvIsStreaming())
         {
             a2dp_volume = AudioSources_GetVolume(audio_source_a2dp_1);
@@ -123,7 +126,10 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
             }
 
         }
-        #endif
+#else   /*add Qualcomm patch,for sync of prompt*/     
+        uint16 *client_lock = NULL;
+        uint16 client_lock_mask = 0;
+
         UiIndicator_ScheduleIndicationCompletedMessage(
                 the_prompts.sys_event_to_prompt_data_mappings,
                 the_prompts.mapping_table_size,
@@ -133,7 +139,7 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
                 &the_prompts.prompt_playback_ongoing_mask,
                 &client_lock,
                 &client_lock_mask);
-
+#endif   
         FILE_INDEX *index = &the_prompts.prompt_file_indexes[prompt_index];
 
         if (*index == FILE_NONE)
@@ -143,11 +149,21 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
             /* Prompt not found */
             PanicFalse(*index != FILE_NONE);
         }
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/     
+        if (the_prompts.sys_event_to_prompt_data_mappings[prompt_index].await_indication_completion)
+        {
+            MessageSendConditionally(&the_prompts.task, UI_INTERNAL_PROMPT_PLAYBACK_COMPLETED, NULL, ui_GetKymeraResourceLockAddress());
+        }
+#endif        
         DEBUG_LOG("uiPrompts_PlayPrompt FILE_INDEX=%08x format=%d rate=%d", *index , config->format, config->rate );
-
+        
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/     
+        appKymeraPromptPlay(*index, config->format, config->rate, time_to_play,
+                            config->interruptible, ui_GetKymeraResourceLockAddress(), UI_KYMERA_RESOURCE_LOCKED);
+#else
         appKymeraPromptPlay(*index, config->format, config->rate, time_to_play,
                             config->interruptible, client_lock, client_lock_mask);
+#endif                            
 
         if(the_prompts.no_repeat_period_in_ms != 0)
         {
@@ -175,19 +191,71 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
 static void uiPrompts_SchedulePromptPlay(uint16 prompt_index)
 {
     const ui_prompt_data_t *config = uiPrompts_GetDataForPrompt(prompt_index);
-
+    
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/  
+    if (uiPrompt_isNotARepeatPlay(prompt_index) &&
+        (config->queueable || (!appKymeraIsTonePlaying() && !ui_IsKymeraResourceLocked()))) 
+#else
     if (uiPrompt_isNotARepeatPlay(prompt_index) &&
         (config->queueable || (!appKymeraIsTonePlaying() && (the_prompts.prompt_playback_ongoing_mask == 0))))
+#endif        
     {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+        /* Factor in the propagation latency through the various buffers for the aux channel and the time to start the file source */
+        rtime_t time_to_play = SystemClockGetTimerTime();
+
+        /* First stage delay for tone prompt chain creation */
+        time_to_play = rtime_add(time_to_play, UI_SYNC_IND_AUDIO_SS_FIXED_DELAY);
+
+        if (!appAvIsStreaming() && !appHfpIsScoActive())
+        {
+            /* Second stage delay for out chain creation, including PEQ */
+            time_to_play = rtime_add(time_to_play, UI_SYNC_IND_OUTPUT_CHAIN_CREATION_DELAY);
+            int32 due;
+            if (appKymeraAudioDisabled(&due) || (due > 0 && due < D_SEC(3)))
+            {
+                /* Third stage delay for audio SS boot, when audio SS has less than 3 seconds of active time */
+                time_to_play = rtime_add(time_to_play, UI_SYNC_IND_AUDIO_SS_POWER_ON_DELAY);
+            }
+        }
+
+        /* Always add extra event marshal delay */
+        time_to_play = rtime_add(time_to_play, UI_SYNC_IND_UI_EVENT_MARSHAL_DELAY);
+#else
         /* Factor in the propagation latency through the various buffers for the aux channel and the time to start the file source */
         rtime_t time_now = SystemClockGetTimerTime();
         rtime_t time_to_play = rtime_add(time_now, UI_INDICATOR_DELAY_FOR_SYNCHRONISED_TTP_IN_MICROSECONDS);
-
+#endif
         time_to_play = Ui_RaiseUiEvent(ui_indication_type_audio_prompt, prompt_index, time_to_play);
 
         uiPrompts_PlayPrompt(prompt_index, time_to_play, config);
     }
 }
+
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/  
+static bool uiPrompts_IsPromptMandatory(uint16 prompt_index)
+{
+    ui_event_indicator_table_t prompt_to_play = the_prompts.sys_event_to_prompt_data_mappings[prompt_index];
+    bool indicate_on_shutdown = prompt_to_play.await_indication_completion;
+    return indicate_on_shutdown;
+}
+
+static void uiPrompts_HandleInternalPrompt(Task task, MessageId prompt_index, Message message)
+{
+    UNUSED(task);
+    UNUSED(message);
+
+    DEBUG_LOG("uiPrompts_HandleInternalPrompt index=%u", prompt_index);
+
+    /* Mandatory prompts (e.g. indicating shutdown) should always be played,
+       regardless of whether we are rendering indications based on the current
+       device topology role and any other gating factors. */
+    if (the_prompts.generate_ui_events || uiPrompts_IsPromptMandatory(prompt_index))
+    {
+        uiPrompts_SchedulePromptPlay(prompt_index);
+    }
+}
+#endif
 
 static void uiPrompts_HandleMessage(Task task, MessageId id, Message message)
 {
@@ -197,7 +265,20 @@ static void uiPrompts_HandleMessage(Task task, MessageId id, Message message)
     UNUSED(message);
 
     DEBUG_LOG("uiPrompts_HandleMessage Id=%04x", id);
-
+#ifdef ENABLE_TYM_PLATFORM   /*add Qualcomm patch,for sync of prompt*/  
+    if (uiPrompts_GetPromptIndexFromMappingTable(id, &prompt_index))
+    {
+        Task t = &the_prompts.prompt_task;
+        if (MessagesPendingForTask(t, NULL) < UI_PROMPTS_MAX_QUEUE_SIZE || uiPrompts_IsPromptMandatory(prompt_index))
+        {
+            MessageSendConditionally(t, prompt_index, NULL, ui_GetKymeraResourceLockAddress());
+        }
+        else
+        {
+            DEBUG_LOG("uiPrompts_HandleMessage not queuing id=%04x", id);
+        }
+    }
+#else 
     bool prompt_found = uiPrompts_GetPromptIndexFromMappingTable(id, &prompt_index);
     if (prompt_found)
     {
@@ -218,6 +299,7 @@ static void uiPrompts_HandleMessage(Task task, MessageId id, Message message)
             }
         }
     }
+#endif    
     else if (id == UI_INTERNAL_CLEAR_LAST_PROMPT)
     {
         DEBUG_LOG("UI_INTERNAL_CLEAR_LAST_PROMPT");
@@ -337,6 +419,9 @@ bool UiPrompts_Init(Task init_task)
 
     the_prompts.last_prompt_played_index = PROMPT_NONE;
     the_prompts.task.handler = uiPrompts_HandleMessage;
+#ifdef ENABLE_TYM_PLATFORM   /*add Qualcomm patch,for sync of prompt*/      
+    the_prompts.prompt_task.handler = uiPrompts_HandleInternalPrompt;    
+#endif    
     the_prompts.no_repeat_period_in_ms = DEFAULT_NO_REPEAT_DELAY;
     the_prompts.generate_ui_events = TRUE;
     the_prompts.prompt_playback_enabled = TRUE;

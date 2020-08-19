@@ -20,12 +20,20 @@
 #include <task_list.h>
 #include <rtime.h>
 
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+/*! The maximum number of tones to queue when waiting for the kymera resource */
+#define UI_TONES_MAX_QUEUE_SIZE 5
+#endif
+
 /*! \brief ui_tone task structure */
 typedef struct
 {
     /*! The task. */
     TaskData task;
-
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+    /*! Seperate task for handling conditional messages to play prompts */
+    TaskData tone_task;
+#endif
     /*! The configuration table of System Event to tones to play, passed from the Application. */
     const ui_event_indicator_table_t * sys_event_to_tone_data_mappings;
     uint8 mapping_table_size;
@@ -37,10 +45,10 @@ typedef struct
     /*! Used to track which repeating reminder indications are active so if multiple are ongoing,
         these can be rescheduled in the event that one is cancelled. */
     unsigned active_reminders;
-
+#ifndef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt to remove*/
     /*! Used to trigger a conditional message send when the current requested tone has completed playback. */
     uint16 tone_playback_ongoing_mask;
-
+#endif
     /*! Used to gate audio tones and prevent them from being played. */
     unsigned tone_playback_enabled :1;
 

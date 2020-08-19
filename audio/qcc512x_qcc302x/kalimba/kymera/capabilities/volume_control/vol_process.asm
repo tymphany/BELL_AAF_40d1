@@ -35,13 +35,30 @@
 //    has been put in aux_channel[i].advance_buffer.
 //
 // *****************************************************************************
+//ENABLE_TYM_PLATFORM, for sync of prompt
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+// Start Transient time is when we have aux ready
+// but we are decreasing main to a certain level
+// before starting to mix aux. When TTP is enabled
+// we might need to slightly extend that transient
+// time so aux can start mixing from right sample.
+// We don't expect to need to extend more than the
+// size of chunks that are consumed by op, so max
+// 30ms check is applied. If more than that needed
+// will allow mixing and revert it to non-ttp mode.
+.CONST $vol_ctrl.MAX_EXTENDING_START_TRANSIENT_TIME_US 30000;
 
-// Frame Pointer Referesnces
+// macro for easy access to aux0 ttp fields
+#define VOL_CTRL_AUX0_TTP_FIELD(x) \
+        ($volume_control_cap._vol_ctrl_data_struct.AUX0_TTP_FIELD + \
+        ($volume_control_cap.vol_ctrl_aux_channel_ttp_struct.##x##_FIELD))
+#endif // VOLUME_CONTROL_AUX_TTP_SUPPORT
+
+// Frame Pointer References
 .CONST $vol_ctrl.axfp.aux_ptr       1*ADDR_PER_WORD;  // r0
 .CONST $vol_ctrl.axfp.aparm_ptr     2*ADDR_PER_WORD;  // r1
 .CONST $vol_ctrl.axfp.num_words     3*ADDR_PER_WORD;  // r2
 .CONST $vol_ctrl.axfp.period        4*ADDR_PER_WORD;  // r3
-
 .MODULE $M.vol_ctrl_update_aux_state;
     .CODESEGMENT PM;
 
@@ -57,10 +74,10 @@ $_vol_ctrl_update_aux_state:
     r5 = r0;
 
     /* Setup Parameters Pointer */
-    r1 = r0 + ($volume_control_cap.vol_ctrl_exdata_struct.PARAMETERS_FIELD +
+    r1 = r0 + ($volume_control_cap._vol_ctrl_data_struct.PARAMETERS_FIELD +
                $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_AUX1_SCALE_FIELD);
     /* Setup Aux Pointer */
-    r0 = r5 + $volume_control_cap.vol_ctrl_exdata_struct.AUX_CHANNEL_FIELD;
+    r0 = r5 + $volume_control_cap._vol_ctrl_data_struct.AUX_CHANNEL_FIELD;
     /* setup period */
     r3 = M[r2 + $volume_control_cap.vol_time_constants_struct.PERIOD_FIELD];
     /* Get number of words to process */
@@ -80,10 +97,82 @@ vol_ctrl_update_aux_state_next:
 
     // Get aux->state
     r4 = M[r0 + $volume_control_cap.vol_ctrl_aux_channel_struct.STATE_FIELD];
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+    // ------------ AUX TTP GATE CONTROL -------------
+    // In aux timed playback mode we don't allow aux data
+    // to be consumed until the right time.
 
+    // Auxiliary timed playback is only for channel 0, skip ttp handling
+    // if this isn't first aux channel.
+    r1 = r5 + $volume_control_cap._vol_ctrl_data_struct.AUX_CHANNEL_FIELD;
+    NULL = r1 - r0;
+    if NZ jump aux_ttp_gate_control_done;
+
+    // timed playback requires that aux ttp to have been enabled by the user and
+    // also we have valid timestamp to honour the ttp request, check both below,
+    // if any fails then no gate control.
+
+    // see if TTP is enabled for this aux channel
+    NULL = M[r5 + VOL_CTRL_AUX0_TTP_FIELD(ENABLED)];
+    if Z jump aux_ttp_gate_control_done;
+    // also see if we have a valid timestamp to handle aux timed playback
+    // if not as if aux ttp isn't enabled
+    NULL = M[r5 + $volume_control_cap._vol_ctrl_data_struct.CURRENT_TIMESTAMP_VALID_FIELD];
+    if Z jump aux_ttp_gate_control_done;
+
+    // timed playback is enabled and we have valid timestamp, now see if it is the
+    // time to open the gate. We open the gate when time passes TTP_GATE_TIME,
+    // this is a bit before AUX_TTP time (default 10ms but user configurable) it will
+    // give time to main channel for fading.
+    // r1 = time stamp for first sample
+    // r3 = ttp gate time
+    r1 = M[r5 + $volume_control_cap._vol_ctrl_data_struct.CURRENT_TIMESTAMP_FIELD];
+    r3 = M[r5 + VOL_CTRL_AUX0_TTP_FIELD(GATE_TIME)];
+    r3 = r1 - r3;
+    if POS jump check_aux_ttp_expiry;
+
+    // gate time hasn't passed yet, AUX is expected to be
+    // inactive, if for any reason it is in an active state
+    // then we can't meet TTP deadline, just disable TTP playback.
+    NULL = r4 - $volume_control_cap.AUX_STATE_NO_AUX;
+    if NZ jump disable_aux_ttp;
+
+    // see if it is the time to open the gate
+    // we open the gate if the gate time lies in
+    // a sample within this chunk, i.e between
+    // current timestamp and and next timestamp
+    // timestamp ----gate_time --- (timestamp+period)
+    rMAC = M[FP + $vol_ctrl.axfp.period]; // rMAC = period in 10us
+    rMAC = rMAC * 10 (int);               // rMAC = period in us
+    NULL = r3 + rMAC;                     // rMAC > time left to gate?
+    if POS jump aux_ttp_gate_control_done;// if yes then open the gate
+    // keep the gate closed
+    // it's not time to open the aux gate
+    // don't allow anything to be consumed from aux
+    M[r0 + $volume_control_cap.vol_ctrl_aux_channel_struct.ADVANCE_BUFFER_FIELD] = 0;
+    jump aux_ttp_gate_control_done;
+
+check_aux_ttp_expiry:
+    // if expiry time has reached and we haven't yet started
+    // playing the aux then no longer need to honour the timed
+    // playback request, we can't meet the deadline.
+    NULL = r4 - $volume_control_cap.AUX_STATE_NO_AUX;
+    if NZ jump aux_ttp_gate_control_done;
+
+    r3 = M[r5 + VOL_CTRL_AUX0_TTP_FIELD(EXPIRY_TIME)];
+    NULL = r1 - r3;
+    if NEG jump aux_ttp_gate_control_done;
+    // Aux ttp has expired
+disable_aux_ttp:
+    // disabling aux timed playback
+    M[r5 + VOL_CTRL_AUX0_TTP_FIELD(ENABLED)] = NULL;
+    M[r5 + VOL_CTRL_AUX0_TTP_FIELD(GENERATE_TTP)] = 0;
+aux_ttp_gate_control_done:
+#endif // VOLUME_CONTROL_AUX_TTP_SUPPORT
     // amount = aux_ptr->advance_buffer
     //        = aux_ptr->buffer ? cbuffer_calc_amount_data_in_words(aux_ptr->buffer) : 0
     r0 = M[r0 + $volume_control_cap.vol_ctrl_aux_channel_struct.ADVANCE_BUFFER_FIELD];
+
 
     // Is Aux Data Present in sufficient quantity to mix?
     r1 = M[FP + $vol_ctrl.axfp.num_words];
@@ -120,6 +209,86 @@ vol_ctrl_update_aux_state_next:
             M[r3 + $volume_control_cap.vol_ctrl_aux_channel_struct.TRANSITION_FIELD] = rMAC;
             NULL = rMAC - r2;
             if NZ jump update_aux_do_not_use_data;
+
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+            /* auxiliary timed playback is only for channel 0, skip ttp handling
+             * if this isn't first aux channel.
+             */
+            r1 = r5 + $volume_control_cap._vol_ctrl_data_struct.AUX_CHANNEL_FIELD;
+            NULL = r1 - r3;
+            if NZ jump aux_ttp_start_done;
+
+            // transient time has finished, in non-ttp mode at this
+            // time we start mixing aux into main channel. In ttp mode we
+            // might need to delay it to make sure aux starts mixing at a time
+            // as close as to requested playback time.
+
+            // see if TTP is enabled at all for aux channel
+            NULL = M[r5 + VOL_CTRL_AUX0_TTP_FIELD(ENABLED)];
+            if Z jump aux_ttp_start_done;
+            // and we have valid timestamp
+            NULL = M[r5 + $volume_control_cap._vol_ctrl_data_struct.CURRENT_TIMESTAMP_VALID_FIELD];
+            if Z jump aux_ttp_start_done;
+
+            // r1 = aux requested ttp, this is the timestamp we want the aux to be mixed with main
+            // r2 = timestamp, this is the timestamp for first sample of main
+            r1 = M[r5 + VOL_CTRL_AUX0_TTP_FIELD(TIME_TO_PLAY)];
+            r2 = M[r5 + $volume_control_cap._vol_ctrl_data_struct.CURRENT_TIMESTAMP_FIELD];
+            r1 = r1 - r2;
+
+            // because of the gate we expect to be very close to TTP time. If that
+            // not the case, i.e. it's unexpectedly far in the future then something
+            // should have gone wrong, to avoid stalling of mixing for long time ignore
+            // TTP and let it go ahead with mixing.
+            NULL = r1 - $vol_ctrl.MAX_EXTENDING_START_TRANSIENT_TIME_US;
+            if POS jump aux_ttp_start_done_without_ttp;
+
+            // Good news, we are very close to TTP time, lets work out how
+            // many sample we are to TTP time
+            // samples = time * fs
+            // r1 = time*1000000, so we calculate it this way:
+            // samples = (r1 / 2000) * (fs/500)
+            r2 = M[r5 + $volume_control_cap._vol_ctrl_data_struct.SAMPLE_RATE_FIELD];
+            r2 = r2 * (1/500.0)(frac);
+            r2 = r2 * r1 (int)(sat);
+            r2 = r2 * (1.0/2000.0)(frac); // r2 = samples to ttp time
+            // negative r2 means that ttp was in a sample in the past
+            // i.e. already exited the operator, this shall not happen
+            // since we open the gate at right time, however in case that
+            // happened continue without ttp.
+            if NEG jump aux_ttp_start_done_without_ttp;
+
+            // r2 = 0, means TTP is exactly at first sample,
+            // lucky, go to IN_AUX state now and start mixing
+            if Z jump aux_ttp_start_done;
+
+            // if TTP is for later than whole of this chunk then extend transient time
+            rMAC = M[FP + $vol_ctrl.axfp.num_words];
+            NULL = r2 - rMAC;
+            if POS jump update_aux_do_not_use_data;
+
+            // TTP lies somewhere within current chunk, we split the
+            // current chunk, so only samples before TTP are consumed
+            // from the main channel, so next time will be start of TTP
+            rMAC = r5 + $volume_control_cap._vol_ctrl_data_struct.TC_FIELD;
+            M[rMAC + $volume_control_cap.vol_time_constants_struct.NUM_WORDS_FIELD] = r2;
+            M[FP + $vol_ctrl.axfp.num_words] = r2;
+            r1 = r1 * 10 (int);
+            M[FP + $vol_ctrl.axfp.period] = r1;
+            jump update_aux_do_not_use_data;
+aux_ttp_start_done_without_ttp:
+            // We are here since either ttp time passed or is quite into the future.
+            // We aren't expected to come to this point if gate opened at right time.
+            // We go to IN_AUX now and timed playback won't be honoured.
+            // clearing TTP_ENABLED field but not stopping TTP generation if active,
+            // this is to avoid unnecessary disturbance it timed playback.
+            M[r5 + VOL_CTRL_AUX0_TTP_FIELD(ENABLED)] = 0;
+aux_ttp_start_done:
+            // debug var only, just shows that started to mix aux, the flag shall be
+            // cleared by the caller.
+            r1 = 1;
+            M[r5 + $volume_control_cap._vol_ctrl_data_struct.DBG_AUX_MIXING_STARTED_FIELD] = r1;
+#endif // VOLUME_CONTROL_AUX_TTP_SUPPORT
             /* Entering IN_AUX state */
             r1 = $volume_control_cap.AUX_STATE_IN_AUX;
             M[r3 + $volume_control_cap.vol_ctrl_aux_channel_struct.STATE_FIELD] = r1;
@@ -153,6 +322,12 @@ vol_ctrl_update_aux_state_next:
             if NEG rMAC=NULL;
             M[r3 + $volume_control_cap.vol_ctrl_aux_channel_struct.TRANSITION_FIELD] = rMAC;
             if GT jump update_aux_do_not_use_data;
+#ifdef VOLUME_CONTROL_AUX_TTP_SUPPORT
+            // timed playback is only for one tone/prompt, once
+            // finished disable aux timed playback
+            M[r5 + VOL_CTRL_AUX0_TTP_FIELD(GENERATE_TTP)] = 0;
+            M[r5 + VOL_CTRL_AUX0_TTP_FIELD(ENABLED)] = 0;
+#endif
             /* Entering NO_AUX state */
             r1 = $volume_control_cap.AUX_STATE_NO_AUX;
             M[r3 + $volume_control_cap.vol_ctrl_aux_channel_struct.STATE_FIELD] = r1;
@@ -181,7 +356,7 @@ update_aux_state_done:
     if NZ jump vol_ctrl_update_aux_state_next;
 
     /* Save overall state */
-    M[r5 + $volume_control_cap.vol_ctrl_exdata_struct.AUX_ACTIVE_FIELD] = r8;
+    M[r5 + $volume_control_cap._vol_ctrl_data_struct.AUX_ACTIVE_FIELD] = r8;
 
     popm <FP,r0,r1,r2,r3,r4,r6,r8,rLink>;
 
@@ -202,7 +377,7 @@ update_aux_state_abort:
 // OUTPUTS:
 //      none
 // DESCRIPTION:
-//    Compute Time Consants used for volume.  Function is C compatible
+//    Compute Time Constants used for volume.  Function is C compatible
 //
 // ------------------------------------------------------------------
 // calculate coefficients, we have received n=r0 sample to process
@@ -253,12 +428,12 @@ $_vol_ctrl_compute_time_constants:
     M[r2 + $volume_control_cap.vol_time_constants_struct.PERIOD_FIELD] = r4;
 
     r4 = r4 ASHIFT (DAWTH-14);
-    // compute volume update coeff: 11.5*n/fs (rougly 0.1dB/ms)
+    // compute volume update coeff: 11.5*n/fs (roughly 0.1dB/ms)
     r5 = r4 * 0.942071589546666;      // update coef in Q1.23 (arch4: Q1.31)
     // positive VOL_TC will increase the rate.
     // modified_coef ~= coef*r*(1+(r-1)*coef) (r = ramp factor)
     r1 = r3 + POS_ONE_Q16_N;
-    if NEG r1 = 0;          // safegaurd
+    if NEG r1 = 0;          // safeguard
     rMAC = r1 * r5;
     r1 = rMAC ASHIFT 15;    // coef*r                in Q1.23 (arch4: Q1.31)
     rMAC = POS_ONE_Q16_N;
@@ -344,7 +519,7 @@ $_vol_ctrl_update_channel:
    LIBS_PUSH_R0_SLOW_SW_ROM_PATCH_POINT($vol_ctrl_update_channel.PATCH_ID_0, r7)
 
     /* Number of channels */
-    r7 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.NUM_CHANNELS_FIELD];
+    r7 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.NUM_CHANNELS_FIELD];
     if LE jump vol_ctrl_apply_volume_abort;
 
     // Enable saturate on add/sub
@@ -356,7 +531,7 @@ $_vol_ctrl_update_channel:
 
     /* Update Channel for AUX stream priority.   */
     /* op_extra_data->aux_in_use  = 0; */
-    M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.AUX_IN_USE_FIELD] = NULL;
+    M[r0 + $volume_control_cap._vol_ctrl_data_struct.AUX_IN_USE_FIELD] = NULL;
 
 
     /*
@@ -386,7 +561,7 @@ vol_ctrl_update_channel_next:
     r6 = M[r2 + r6];
     // chan_params (r7) = (vol_ctrl_chan_params_t*)&op_extra_data->parameters.OFFSET_CHAN1_AUX_ROUTE;
     // aux_routing (r9) = chan_params[chan_ptr->chan_idx].aux_routing;
-    r8 = r0 + ($volume_control_cap.vol_ctrl_exdata_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_CHAN1_AUX_ROUTE_FIELD);
+    r8 = r0 + ($volume_control_cap._vol_ctrl_data_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_CHAN1_AUX_ROUTE_FIELD);
     r7 = r4 * ($volume_control_cap.vol_ctrl_chan_params_struct.STRUC_SIZE * ADDR_PER_WORD) (int);
     r7 = r7 + r8;
     r9 = M[r7 + $volume_control_cap.vol_ctrl_chan_params_struct.AUX_ROUTING_FIELD];
@@ -396,7 +571,7 @@ vol_ctrl_update_channel_next:
     // Conditionally add in NDVC adjustment
     NULL = r9 AND $M.VOL_CTRL.CONSTANT.CHAN_NDVC_ENABLE_BIT;
     if Z jump vol_ctrl_update_channel_no_ndvc;
-        r8 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.SHARED_VOLUME_PTR_FIELD];
+        r8 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.SHARED_VOLUME_PTR_FIELD];
         r8 = M[r8 + $volume_control_cap._shared_volume_struct.NDVC_NOISE_LEVEL_FIELD];
 	    /* NDVC is in 3dB steps */
         r8 = r8 * 180 (int);
@@ -404,11 +579,11 @@ vol_ctrl_update_channel_next:
     vol_ctrl_update_channel_no_ndvc:
 
    /* Bypass Aux */
-   NULL = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.AUX_ACTIVE_FIELD];
+   NULL = M[r0 + $volume_control_cap._vol_ctrl_data_struct.AUX_ACTIVE_FIELD];
    if Z r9 = NULL;
 
     // channel_trim -= op_extra_data->post_gain;
-    r8 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.POST_GAIN_FIELD];
+    r8 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.POST_GAIN_FIELD];
     r6 = r6 - r8;
     // target_vol = dB60toLinearQ5(target_vol+channel_trim);
     r0 = r6 + r5;
@@ -434,7 +609,7 @@ vol_ctrl_update_channel_next:
     vol_ctrl_update_channel_no_vol_change:
 
      r0 = M[FP + $vol_ctrl.cufp.op_data_ptr];
-     r0 = r0 + $volume_control_cap.vol_ctrl_exdata_struct.AUX_CHANNEL_FIELD;
+     r0 = r0 + $volume_control_cap._vol_ctrl_data_struct.AUX_CHANNEL_FIELD;
 
 // r9=routing, r1=chan_ptr, I0=prim_scale, r0=aux_chan_ptr, r6=chan_trim, r4=chan_idx
 
@@ -508,14 +683,14 @@ vol_ctrl_update_channel_aux_prio_found:
 
             // aux_in_use |= (1<<aux_idx);
             r2 = 1 LSHIFT r5;
-            r3 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.AUX_IN_USE_FIELD];
+            r3 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.AUX_IN_USE_FIELD];
             r3 = r3 OR r2;
-            M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.AUX_IN_USE_FIELD]=r3;
+            M[r0 + $volume_control_cap._vol_ctrl_data_struct.AUX_IN_USE_FIELD]=r3;
 
             // aux_params = (vol_ctrl_aux_params_t*)&op_extra_data->parameters.OFFSET_AUX1_SCALE;
             // aux_volume = aux_params[aux_idx].aux_scale;
             r0 = M[FP+$vol_ctrl.cufp.op_data_ptr];
-            r0 = r0 + ($volume_control_cap.vol_ctrl_exdata_struct.PARAMETERS_FIELD+$volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_AUX1_SCALE_FIELD);
+            r0 = r0 + ($volume_control_cap._vol_ctrl_data_struct.PARAMETERS_FIELD+$volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_AUX1_SCALE_FIELD);
             r2 = r5 * ($volume_control_cap.vol_ctrl_aux_params_struct.STRUC_SIZE * ADDR_PER_WORD) (int);
             r0 = M[r0 + r2];
             // aux_volume += op_extra_data->lpvols->auxiliary_gain[aux_idx];
@@ -539,7 +714,7 @@ vol_ctrl_update_channel_aux_prio_done:
     // limiter_attn = 0;
     r5 = NULL;
 
-    r1 = M[r0 + ($volume_control_cap.vol_ctrl_exdata_struct.PARAMETERS_FIELD+$volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_CONFIG_FIELD)];
+    r1 = M[r0 + ($volume_control_cap._vol_ctrl_data_struct.PARAMETERS_FIELD+$volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_CONFIG_FIELD)];
     NULL = r1 AND $M.VOL_CTRL.CONFIG.SATURATEENA;
     if Z jump vol_ctrl_update_channel_sat_done;
     r7 = M[FP + $vol_ctrl.cufp.chan_ptr];
@@ -549,7 +724,7 @@ vol_ctrl_update_channel_aux_prio_done:
 
         // Get Data Buffer
         r6 = r4 * ADDR_PER_WORD (int);
-        r6 = r6 + $volume_control_cap.vol_ctrl_exdata_struct.INPUT_BUFFER_FIELD;
+        r6 = r6 + $volume_control_cap._vol_ctrl_data_struct.INPUT_BUFFER_FIELD;
         r0 = M[r0 + r6];
         call $cbuffer.get_read_address_and_size_and_start_address;
         I0 = r0;
@@ -577,12 +752,12 @@ vol_ctrl_update_channel_aux_prio_done:
         rMAC = r3 * r8;
 
         r0 = M[FP + $vol_ctrl.cufp.op_data_ptr];
-        r1 = M[r0 + ($volume_control_cap.vol_ctrl_exdata_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_LIMIT_THRESHOLD_LINEAR_FIELD)];
+        r1 = M[r0 + ($volume_control_cap._vol_ctrl_data_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_LIMIT_THRESHOLD_LINEAR_FIELD)];
         NULL = rMAC - r1;
         if NEG jump vol_ctrl_update_channel_sat_done;
 
-        r7 = M[r0 + ($volume_control_cap.vol_ctrl_exdata_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_LIMIT_ADAPTATION_RATIO_FIELD)];
-        r9 = M[r0 + ($volume_control_cap.vol_ctrl_exdata_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_LIMIT_THRESHOLD_LOG_FIELD)];
+        r7 = M[r0 + ($volume_control_cap._vol_ctrl_data_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_LIMIT_ADAPTATION_RATIO_FIELD)];
+        r9 = M[r0 + ($volume_control_cap._vol_ctrl_data_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_LIMIT_THRESHOLD_LOG_FIELD)];
 
         // limiter_attn = (LIMIT_THRESHOLD - log2(max_abs)) * LIMIT_RATIO;
         call $math.log2_table;
@@ -654,12 +829,12 @@ vol_ctrl_update_channel_sat_done:
 // *****************************************************************************
 $_vol_ctrl_update_saturation:
     /* Saturation protection may be per channel or across all channels */
-    r1 = M[r0 + ($volume_control_cap.vol_ctrl_exdata_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_CONFIG_FIELD)];
+    r1 = M[r0 + ($volume_control_cap._vol_ctrl_data_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_CONFIG_FIELD)];
     NULL = r1 AND $M.VOL_CTRL.CONFIG.SATURATEENA;
     if Z jump vol_ctrl_update_saturation_done;
 
-        r2 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.CHANNELS_FIELD];
-        r10 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.NUM_CHANNELS_FIELD];
+        r2 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.CHANNELS_FIELD];
+        r10 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.NUM_CHANNELS_FIELD];
         M3 = ($volume_control_cap.vol_ctrl_channel_struct.STRUC_SIZE * ADDR_PER_WORD);
         I0 = r2 + $volume_control_cap.vol_ctrl_channel_struct.LIMIT_GAIN_LOG2_FIELD;
         I1 = r2 + $volume_control_cap.vol_ctrl_channel_struct.LIMITER_GAIN_LINEAR_FIELD;
@@ -724,10 +899,10 @@ $_vol_ctrl_apply_volume:
     r0 = M[FP + $vol_ctrl.cufp.op_data_ptr];
 
     /* Number of channels */
-    r7 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.NUM_CHANNELS_FIELD];
+    r7 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.NUM_CHANNELS_FIELD];
 
     // Reset chan_ptr
-    r1 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.CHANNELS_FIELD];
+    r1 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.CHANNELS_FIELD];
     M[FP + $vol_ctrl.cuup.chan_ptr]=r1;
 
     // Move time constants */
@@ -748,14 +923,14 @@ vol_ctrl_apply_volume_next:
     // r2: vol_time_constants_t *lpvcs
 
     // r3: routing
-    r7 = r0 + ($volume_control_cap.vol_ctrl_exdata_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_CHAN1_AUX_ROUTE_FIELD);
+    r7 = r0 + ($volume_control_cap._vol_ctrl_data_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_CHAN1_AUX_ROUTE_FIELD);
     r6 = M[r1 + $volume_control_cap.vol_ctrl_channel_struct.CHAN_IDX_FIELD];
     r6 = r6  * ($volume_control_cap.vol_ctrl_chan_params_struct.STRUC_SIZE * ADDR_PER_WORD) (int);
     r3 = M[r7+r6];
 
     // Boost
     r8 = $volume_and_limit.OneQ5;
-    r5  = M[r0 + ($volume_control_cap.vol_ctrl_exdata_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_BOOST_FIELD)];
+    r5  = M[r0 + ($volume_control_cap._vol_ctrl_data_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_BOOST_FIELD)];
     NULL = r3 AND $M.VOL_CTRL.CONSTANT.CHAN_BOOST_CLIP_ENABLE_BIT;
     if Z r5 = r8;
 
@@ -772,7 +947,7 @@ vol_ctrl_apply_volume_next:
     rMAC = rMAC * r5;
     rMAC = rMAC ASHIFT 4 (56bit);  // Boost
 
-    // Complute the volume step size
+    // Compute the volume step size
     r4  = M[r1 + $volume_control_cap.vol_ctrl_channel_struct.LAST_VOLUME_FIELD];         // Q5.xx
     r2 = rMAC - r4;
     rMAC = r2 ASHIFT 0 (LO);
@@ -785,10 +960,10 @@ vol_ctrl_apply_volume_next:
 
     /* Adjust Clip Point
        (might as well do it even if we don't use it, divide takes time anyway) */
-    r5 = M[r0 + ($volume_control_cap.vol_ctrl_exdata_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_CLIP_POINT_FIELD)];
-    r2 = M[r0 + ($volume_control_cap.vol_ctrl_exdata_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_BOOST_CLIP_POINT_FIELD)];
+    r5 = M[r0 + ($volume_control_cap._vol_ctrl_data_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_CLIP_POINT_FIELD)];
+    r2 = M[r0 + ($volume_control_cap._vol_ctrl_data_struct.PARAMETERS_FIELD + $volume_control_cap._tag_VOL_CTRL_PARAMETERS_struct.OFFSET_BOOST_CLIP_POINT_FIELD)];
     // Multiply the Clip Point (r5) with the Inverse Post Gain (r7)
-    r7 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.SHARED_VOLUME_PTR_FIELD];
+    r7 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.SHARED_VOLUME_PTR_FIELD];
     r7 = M[r7 + $volume_control_cap._shared_volume_struct.INV_POST_GAIN_FIELD];
     // The inverse DAC gain is Q5.xx, so we need to shift r7 to get Q1.xx
     rMAC = r5 * r7;
@@ -815,7 +990,7 @@ vol_ctrl_apply_volume_next:
     L0 = r1;
 
     pop r0;
-    r0 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.OUTPUT_BUFFER_FIELD];
+    r0 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.OUTPUT_BUFFER_FIELD];
     call $cbuffer.get_write_address_and_size_and_start_address;
     I5 = r0;
     push r2;
@@ -844,8 +1019,8 @@ vol_ctrl_apply_volume_next:
 
     /* Check Mute */
     r0 = M[FP + $vol_ctrl.cuup.op_data_ptr];
-    r6 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.CUR_MUTE_GAIN_FIELD];
-    r9 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.MUTE_INCREMENT_FIELD];
+    r6 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.CUR_MUTE_GAIN_FIELD];
+    r9 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.MUTE_INCREMENT_FIELD];
     if NZ jump vol_ctrl_apply_volume_mute;
 
     NULL = r3 AND $M.VOL_CTRL.CONSTANT.CHAN_BOOST_CLIP_ENABLE_BIT;
@@ -927,7 +1102,7 @@ vol_ctrl_apply_volume_done:
     r1 = I0;
     call $cbuffer.set_read_address;
     pop r0;
-    r0 = M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.OUTPUT_BUFFER_FIELD];
+    r0 = M[r0 + $volume_control_cap._vol_ctrl_data_struct.OUTPUT_BUFFER_FIELD];
     r1 = I5;
     call $cbuffer.set_write_address;
 
@@ -948,10 +1123,10 @@ vol_ctrl_apply_volume_done:
     if GT jump vol_ctrl_apply_volume_next;
 
     // Save current mute
-    M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.CUR_MUTE_GAIN_FIELD]=r6;
+    M[r0 + $volume_control_cap._vol_ctrl_data_struct.CUR_MUTE_GAIN_FIELD]=r6;
     NULL = r6 - 1.0;
     if Z r9=NULL;
-    M[r0 + $volume_control_cap.vol_ctrl_exdata_struct.MUTE_INCREMENT_FIELD]=r9;
+    M[r0 + $volume_control_cap._vol_ctrl_data_struct.MUTE_INCREMENT_FIELD]=r9;
 
     // Restore arithmetic mode */
     pop r4;
@@ -966,5 +1141,3 @@ vol_ctrl_apply_volume_abort:
 
     rts;
 .ENDMODULE;
-
-

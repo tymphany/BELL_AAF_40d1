@@ -164,7 +164,11 @@ kymera_chain_handle_t appKymeraScoCreateChain(const appKymeraScoChainInfo *info)
     theKymera->chainu.sco_handle = ChainCreate(info->chain);
 
     /* Configure DSP power mode appropriately for SCO chain */
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+    appKymeraConfigureDspPowerMode();
+#else    
     appKymeraConfigureDspPowerMode(FALSE);
+#endif    
 
     return theKymera->chainu.sco_handle;
 }

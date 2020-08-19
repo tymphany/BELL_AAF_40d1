@@ -37,7 +37,9 @@ static const lp_power_table powertable_a2dp[]=
 {
     /* mode,        min_interval, max_interval, attempt, timeout, duration */
     {lp_active,     0,            0,            0,       0,       5},  /* Active mode for 5 sec */
+#ifndef ENABLE_TYM_PLATFORM    /*add Qualcomm patch,for sync of prompt to remove*/
     {lp_passive,    0,            0,            0,       0,       1},  /* Passive mode for 1 sec */
+#endif
     {lp_sniff,      48,           400,          2,       4,       0}   /* Enter sniff mode*/
 };
 

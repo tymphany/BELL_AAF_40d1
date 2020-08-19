@@ -20,6 +20,10 @@
 #include <task_list.h>
 #include <rtime.h>
 
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+/*! The maximum number of prompts to queue when waiting for the kymera resource */
+#define UI_PROMPTS_MAX_QUEUE_SIZE 5
+#endif
 /*! \brief ui_prompt task structure */
 typedef struct
 {
@@ -27,6 +31,9 @@ typedef struct
     TaskData task;
 #ifdef ENABLE_TYM_PLATFORM    
     task_list_t clients;/*!< List of client tasks */
+
+    /*! Seperate task for handling conditional messages to play prompts */
+    TaskData prompt_task; /*add Qualcomm patch,for sync of prompt*/
 #endif    
     /*! The configuration table of System Event to prompts to play, passed from the Application. */
     const ui_event_indicator_table_t * sys_event_to_prompt_data_mappings;
@@ -43,10 +50,10 @@ typedef struct
 
     /*! The last prompt played, used to avoid repeating prompts. */
     uint16 last_prompt_played_index;
-
+#ifndef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt to remove*/
     /*! Used to trigger a conditional message send when the current requested prompt has completed playback. */
     uint16 prompt_playback_ongoing_mask;
-
+#endif
     /*! Used to gate audio prompts and prevent them from being played. */
     unsigned prompt_playback_enabled :1;
 

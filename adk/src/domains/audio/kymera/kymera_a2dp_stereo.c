@@ -157,7 +157,11 @@ static bool appKymeraA2dpStartStereo(const a2dp_codec_settings *codec_settings, 
             appKymeraConfigureInputChain(theKymera, seid,
                                          rate, cp_header_enabled);
             appKymeraJoinInputOutputChains(theKymera);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+            appKymeraConfigureDspPowerMode();
+#else            
             appKymeraConfigureDspPowerMode(FALSE);
+#endif            
             /* Connect media source to chain */
             StreamDisconnect(media_source, 0);
             appKymeraStartChains(theKymera, media_source);

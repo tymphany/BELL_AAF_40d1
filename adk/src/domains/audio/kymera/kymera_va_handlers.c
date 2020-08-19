@@ -195,6 +195,10 @@ void Kymera_StopGraphManagerDelegation(const void *params)
 void Kymera_UpdateAudioFrameworkConfig(const void *params)
 {
     UNUSED(params);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+    appKymeraConfigureDspPowerMode();    
+#else
     appKymeraConfigureDspPowerMode(FALSE);
+#endif       
     OperatorsFrameworkSetKickPeriod(KICK_PERIOD_VOICE);
 }

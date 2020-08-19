@@ -652,6 +652,14 @@ void Kymera_DisableLeakthrough(void);
 #else
 #define Kymera_DisableLeakthrough() ((void)(0))
 #endif
+
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+/*! \brief Check if audio subsystem is disabled.
+    \param due How much time in milliseconds the audio subsystem remains active. Negative value means infinite.
+*/
+bool appKymeraAudioDisabled(int32 *due);
+#endif
+
 #ifdef ENABLE_TYM_PLATFORM
 void appKymeraChangeCVCMode(int mode);
 #endif

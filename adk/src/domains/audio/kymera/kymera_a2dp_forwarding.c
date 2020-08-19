@@ -276,7 +276,11 @@ bool appKymeraA2dpStartMaster(const a2dp_codec_settings *codec_settings, uint32 
             appKymeraExternalAmpControl(TRUE);
 
             /* Configure DSP for low power */
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/            
+            appKymeraConfigureDspPowerMode();
+#else
             appKymeraConfigureDspPowerMode(FALSE);
+#endif            
 
             /* Connect media source to chain */
             StreamDisconnect(media_source, 0);
@@ -529,7 +533,11 @@ void appKymeraA2dpStartSlave(a2dp_codec_settings *codec_settings, int16 volume_i
     ChainConnect(theKymera->chain_input_handle);
 
     /* Configure DSP for low power */
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+    appKymeraConfigureDspPowerMode();
+#else    
     appKymeraConfigureDspPowerMode(FALSE);
+#endif    
 
     /* Create output chain */
     theKymera->output_rate = rate;

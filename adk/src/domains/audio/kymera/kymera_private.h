@@ -396,14 +396,28 @@ void appKymeraExternalAmpSetup(void);
    \note Calling this function with chains already started may cause audible
    glitches if using I2S output.
 */
-void appKymeraConfigureDspPowerMode(bool tone_playing);
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/
+void appKymeraConfigureDspPowerMode(void);
 
+/*! \brief Configure the active DSP clock.
+    \return TRUE on success.
+    \note Changing the clock with chains already started may cause audible
+    glitches if using I2S output.
+*/
+bool appKymeraSetActiveDspClock(audio_dsp_clock_type type);
+/*! \brief Check if prompt is being played.
+*   return TRUE for yes, FALSE for no.
+*/
+bool appKymeraIsPlayingPrompt(void);
+
+#else
+void appKymeraConfigureDspPowerMode(bool tone_playing);
 /*! \brief Convert volume on 0..127 scale to MIN_VOLUME_DB..MAX_VOLUME_DB and
     return the KYMERA_DB_SCALE value.
     \param volume Set to 0 to mute the output.
  */
+#endif
 int32 volTo60thDbGain(int16 volume);
-
 /*! \brief Handle request to play a tone or prompt.
     \param msg The request message.
 */
