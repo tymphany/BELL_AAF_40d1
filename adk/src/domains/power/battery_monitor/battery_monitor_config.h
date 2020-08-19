@@ -10,10 +10,10 @@
 #define BATTERY_MONITOR_CONFIG_H_
 
 #ifdef ENABLE_TYM_PLATFORM /*follow E.E. suggest */
-#define appConfigBatteryFullyCharged()      (4200)
+#define appConfigBatteryFullyCharged()      (4250)
 #define appConfigBatteryVoltageOk()         (3684)
 #define appConfigBatteryVoltageLow()        (3570)/* must > 10% */
-#define appConfigBatteryVoltageCritical()   (3450)
+#define appConfigBatteryVoltageCritical()   (3350)
 #else
 //!@{ @name Battery voltage levels in milli-volts
 #define appConfigBatteryFullyCharged()      (4200)

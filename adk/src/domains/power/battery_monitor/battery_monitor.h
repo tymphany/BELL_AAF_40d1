@@ -138,6 +138,7 @@ typedef struct
     batteryRegisteredClient *client_list;
 #ifdef ENABLE_TYM_PLATFORM
     uint16 predict_volt;
+    uint8  critical_count;    
     bool   lock;
 #endif
 } batteryTaskData;

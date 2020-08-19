@@ -290,11 +290,27 @@ static void appBatteryServiceClients(batteryTaskData *battery)
                             Ui_InjectUiInput(ui_input_prompt_battery_low);
                         }
                     }
-#endif
+
+                    if((new_state == battery_level_too_low) && (battery->critical_count < 4))
+                    {
+                        DEBUG_LOG("battery_level_too_low crititial_count %d,voltage %d",battery->critical_count,voltage);
+                        battery->critical_count++;
+                        battery->predict_volt = appBatteryGetQualcommVoltage();
+                    }
+                    else
+                    {     
+                        battery->critical_count = 0;   
+                        MESSAGE_MAKE(msg, MESSAGE_BATTERY_LEVEL_UPDATE_STATE_T);
+                        msg->state = new_state;
+                        client->last.state = new_state;
+                        MessageSend(client->form.task, MESSAGE_BATTERY_LEVEL_UPDATE_STATE, msg);
+                    }
+#else
                     MESSAGE_MAKE(msg, MESSAGE_BATTERY_LEVEL_UPDATE_STATE_T);
                     msg->state = new_state;
                     client->last.state = new_state;
-                    MessageSend(client->form.task, MESSAGE_BATTERY_LEVEL_UPDATE_STATE, msg);
+                    MessageSend(client->form.task, MESSAGE_BATTERY_LEVEL_UPDATE_STATE, msg);  
+#endif
                 }
             }
             break;
