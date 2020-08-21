@@ -31,6 +31,7 @@
 #include "earbud_tym_psid.h"
 #include "logical_input_switch.h"
 #include "1_button.h"
+#include "ui_prompts.h"
 /* Todo
 #include "sink_tym_anc.h"
 #include "sink_tym_main.h"
@@ -104,14 +105,14 @@ void bell_gaia_set_auto_play(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_get_auto_play(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_set_ambient_ext_anc(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_get_ambient_ext_anc(GAIA_UNHANDLED_COMMAND_IND_T *command);
-
+void bell_gaia_get_prompt_language(GAIA_UNHANDLED_COMMAND_IND_T *command);
  /* -------------------------------------------------------------------------
  * ------- Private functions ------------------------------------------------
  * --------------------------------------------------------------------------
  */
 void bell_gaia_rename(GAIA_UNHANDLED_COMMAND_IND_T *command)
 {
-    int max_len = 15,len = command->size_payload;
+    int max_len = 11,len = command->size_payload;
     //Add rename function at chip init
     if((command->size_payload < 64) && (command->size_payload > 0))
     {
@@ -438,7 +439,7 @@ void bell_gaia_set_earbudcustom(GAIA_UNHANDLED_COMMAND_IND_T *command)
 
         if(app_set->custom_ui[uiseq_right_tapx2] == uifunc_track)
             app_set->custom_ui[uiseq_right_tapx3] = uifunc_track;
-        else if(app_set->custom_ui[uiseq_right_tapx3] == uifunc_vol)
+        else if(app_set->custom_ui[uiseq_right_tapx2] == uifunc_vol)
             app_set->custom_ui[uiseq_right_tapx3] = uifunc_vol;        
         else
             app_set->custom_ui[uiseq_right_tapx3] = uifunc_disable;
@@ -911,6 +912,23 @@ void bell_gaia_get_ambient_ext_anc(GAIA_UNHANDLED_COMMAND_IND_T *command)
         tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_INVALID_PARAMETER);
     }   
 }
+
+void bell_gaia_get_prompt_language(GAIA_UNHANDLED_COMMAND_IND_T *command)
+{
+    uint16 payload_len = 1;
+    uint8 payload[payload_len];
+
+    if(command->size_payload == 0)
+    {
+        payload[0] = UiPrompts_GetLanguage();
+        tym_gaia_send_response(command->command_id, GAIA_STATUS_SUCCESS, payload_len, payload);
+    }
+    else
+    {
+        tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_INVALID_PARAMETER);
+    }   
+}
+
  /* -------------------------------------------------------------------------
  * ------- Public functions  ------------------------------------------------
  * --------------------------------------------------------------------------
@@ -1038,6 +1056,9 @@ bool _bell_GAIAMessageHandle(Task task, const GAIA_UNHANDLED_COMMAND_IND_T *mess
         case BELL_GAIA_GET_AMBIENT_EXT_ANC_COMMAND:
             bell_gaia_get_ambient_ext_anc(command);
             break;   
+        case BELL_GAIA_GET_PROMPT_LANG_COMMAND:
+            bell_gaia_get_prompt_language(command);
+            break;    
         default:
             tym_gaia_send_simple_response(command_id,GAIA_STATUS_NOT_SUPPORTED);
             handled = FALSE;

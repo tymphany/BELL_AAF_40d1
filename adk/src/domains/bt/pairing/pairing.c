@@ -42,6 +42,7 @@
 #include "ui.h"
 #include "ui_prompts.h"
 #include "tym_anc.h"
+#include "earbud_sm.h"
 #endif
 
 /*! Macro for simplifying creating messages */
@@ -367,6 +368,9 @@ static void pairing_Complete(pairingTaskData *thePairing, pairingStatus status, 
 
     /* Move back to 'idle' state */
     pairing_SetState(thePairing, PAIRING_STATE_IDLE);
+#ifdef ENABLE_TYM_PLATFORM   /*earbud state machine leave paring*/
+    appExitHandsetPairing();
+#endif    
 }
 
 uint8 profile_list[] =

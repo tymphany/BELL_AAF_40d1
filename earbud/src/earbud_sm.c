@@ -1505,13 +1505,7 @@ static void appSmHandleConnRulesHandsetPair(void)
         case APP_STATE_IN_CASE_IDLE: /*in case support pairing*/
 #endif
             DEBUG_LOG_DEBUG("appSmHandleConnRulesHandsetPair, rule said pair with handset");
-#ifdef ENABLE_TYM_PLATFORM            
-            if(sm->pairing_req)
-            {    
-                DEBUG_LOG("HAVE pairing,need clean");
-                appExitHandsetPairing();
-            }
-#endif             
+            
             appSmClearUserPairing();            
             appSmSetState(APP_STATE_HANDSET_PAIRING);
             break;
@@ -2194,11 +2188,6 @@ static void appSmHandleInternalPairHandset(void)
     smTaskData *sm = SmGetTaskData();
     if (appSmIsPrimary())
     {
-        if(sm->pairing_req)
-        {
-            DEBUG_LOG("HAVE pairing,need clean");
-            appExitHandsetPairing();   
-        }
         appSmSetUserPairing();
         appSmSetState(APP_STATE_HANDSET_PAIRING);
     }

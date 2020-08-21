@@ -412,7 +412,10 @@ void UiPrompts_NotifyUiIndication(uint16 prompt_index, rtime_t time_to_play)
 bool UiPrompts_Init(Task init_task)
 {
     UNUSED(init_task);
-
+#ifdef ENABLE_TYM_PLATFORM    
+    FILE_INDEX prompt_index = FILE_NONE;
+    Source prompt_source;    
+#endif    
     DEBUG_LOG("UiPrompts_Init");
 
     memset(&the_prompts, 0, sizeof(ui_prompts_task_data_t));
@@ -428,6 +431,15 @@ bool UiPrompts_Init(Task init_task)
 #ifdef ENABLE_TYM_PLATFORM
     TaskList_Initialise(&the_prompts.clients);
     Ui_RegisterUiInputsMessageGroup(&the_prompts.task, UI_INPUTS_PROMPT_MESSAGE_GROUP);
+    prompt_index = FileFind(FILE_ROOT, "prompt.index", strlen("prompt.index"));
+    if(prompt_index != FILE_NONE)
+    {
+        prompt_source = StreamFileSource(prompt_index);
+        const uint8 *data = SourceMap(prompt_source);
+        the_prompts.prompt_lang = (*data - 0x30);//0 ->asscii 0x30
+        DEBUG_LOG("prompt language %d",the_prompts.prompt_lang);
+        SourceClose(prompt_source);
+    }        
 #endif
     return TRUE;
 }
@@ -623,6 +635,11 @@ void UiPrompts_SetA2DPVolume_InTone(int volume)
 {
     a2dp_volume_backup = volume;
     DEBUG_LOG("UiPrompts_SetToneVolume_InMusic %d\n",a2dp_volume_backup);
+}
+
+uint8 UiPrompts_GetLanguage(void)
+{
+    return the_prompts.prompt_lang;
 }
 
 MESSAGE_BROKER_GROUP_REGISTRATION_MAKE(PROMPTS, prompts_RegisterMessageGroup, NULL);

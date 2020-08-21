@@ -1249,6 +1249,7 @@ void appPhyStateHold2s(void)
         phy_state->quickattention_enable = TRUE;
         if(playing == TRUE)
         {
+            phy_state->quickattention_play = TRUE;
             Ui_InjectUiInput(ui_input_pause);
         }            
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_quick_attention_on);
@@ -1279,6 +1280,11 @@ void appPhyStateHold2sEnd(void)
     {
         phy_state->quickattention_enable = FALSE;
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_quick_attention_off);
+        if(phy_state->quickattention_play)
+        {
+            phy_state->quickattention_play = FALSE;
+            Ui_InjectUiInput(ui_input_play);  
+        }    
     }    
 }
 

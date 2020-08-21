@@ -69,6 +69,7 @@ typedef struct
     /*! Needed to indicate back to the Power Manager UI Prompt completion, if a prompt was configured
     to be played on Power Off. */
     unsigned indicate_when_user_poweroff_prepared :1;
+    uint8    prompt_lang;
 #endif
 } ui_prompts_task_data_t;
 
@@ -133,6 +134,7 @@ void UiPrompts_SendTymPromptLater(MessageId id,uint32 delay);
 void UiPrompt_ConnectedPrompt(void);
 bool uiPrompt_NoPromptPlay(void);
 void UiPrompts_SetA2DPVolume_InTone(int volume);
+uint8 UiPrompts_GetLanguage(void);
 #endif/*ENABLE_TYM_PLATFORM*/
 
 #endif // UI_PROMPTS_H
