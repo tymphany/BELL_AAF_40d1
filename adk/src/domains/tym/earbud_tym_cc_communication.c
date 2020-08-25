@@ -289,13 +289,16 @@ void startCommunicationToChargingCase(void)
     {
         setCommunPort(CH_UART);
     }
-       
+    /*if pairing wait pairing send then send battery*/
     if(procCmd.startstop == 0)
     {
         procCmd.startstop = 1;    
         procCmd.askBattery = 0;    
         MessageCancelFirst((TaskData *)&_statusReportTask, statusAskBattery); 
-        MessageSend((TaskData *)&_statusReportTask, statusAskBattery, 0);    
+        if(procCmd.btStatus == btPairing)
+            MessageSendLater((TaskData *)&_statusReportTask, statusAskBattery, 0, 500);
+        else
+            MessageSend((TaskData *)&_statusReportTask, statusAskBattery, 0);
     }
 }
 
