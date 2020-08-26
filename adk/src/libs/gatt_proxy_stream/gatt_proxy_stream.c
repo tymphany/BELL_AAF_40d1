@@ -210,7 +210,6 @@ gatt_proxy_stream_t GattProxyStreamNew(uint16 cid, uint16 client_handle, uint16 
     if(cid && client_handle && server_handle)
     {
         proxy = findProxy(NULL, 0);
-        
         if(proxy)
         {
             Source source = StreamAttClientSource(cid);
@@ -220,14 +219,22 @@ gatt_proxy_stream_t GattProxyStreamNew(uint16 cid, uint16 client_handle, uint16 
             SourceConfigure(source, VM_SOURCE_MESSAGES, VM_MESSAGES_SOME);
             MessageStreamTaskFromSource(source, (Task)&proxy_task);
 
-            PanicFalse(StreamAttAddHandle(source, client_handle));
+            /*== ENABLE_TYM_PLATFORM , add Qualcomm patch for iOS bisto OTA panic ==*/
+            //PanicFalse(StreamAttAddHandle(source, client_handle));
+            if(StreamAttAddHandle(source, client_handle))
+            {    
+                PRINT(("Proxy: New on %d 0x%04x -> 0x%04x\n", cid, client_handle, server_handle));
 
-            PRINT(("Proxy: New on %d 0x%04x -> 0x%04x\n", cid, client_handle, server_handle));
-
-            proxy->cid = cid;
-            proxy->server_handle = server_handle;
-            proxy->client_handle = client_handle;
-            proxy->source = source;
+                proxy->cid = cid;
+                proxy->server_handle = server_handle;
+                proxy->client_handle = client_handle;
+                proxy->source = source;
+            }
+            else
+            {
+                PRINT(("Proxy: Failed to create proxy, add handle failed\n"));
+                proxy = NULL;
+            }    
         }
     }
     else
