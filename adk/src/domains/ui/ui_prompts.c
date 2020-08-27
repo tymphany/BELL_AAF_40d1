@@ -532,9 +532,9 @@ static void uiPrompts_UiInputProcess(MessageId id)
         if((StateProxy_IsInEar() == TRUE)||(StateProxy_IsPeerInEar() == TRUE))
             Ui_InjectUiInput(ui_input_prompt_pairing);
     }
-    else if(id == ui_input_prompt_connected)
+    else if((id == ui_input_prompt_connected) || (id == ui_input_prompt_stop_findme))
     {
-        DEBUG_LOG("check connect prompt"); 
+        DEBUG_LOG("check connect prompt or stop findme"); 
     }
     else if(id == ui_input_prompt_repeat_findme)
     {
