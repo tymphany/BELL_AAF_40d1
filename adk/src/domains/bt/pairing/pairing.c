@@ -198,7 +198,10 @@ static void pairing_EnterDiscoverable(pairingTaskData *thePairing)
     }
 #ifdef ENABLE_TYM_PLATFORM
     if(tymAnc->onceAnc == 0)
+    {
+        Prompts_CancelPairingContinue();    
         Ui_InjectUiInput(ui_input_prompt_pairing_continue);
+    }
 #endif
     /* notify clients that pairing is in progress */
     pairing_MsgActivity(pairingInProgress, NULL);

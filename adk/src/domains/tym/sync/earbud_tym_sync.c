@@ -24,6 +24,7 @@
 #include "earbud_tym_psid.h"
 #include "ui_prompts.h"
 #include "hfp_profile.h"
+#include "earbud_sm.h"
 
 /* ------------------------ Defines ------------------------ */
 
@@ -98,6 +99,7 @@ static void tymSync_HandleMessage(Task task, MessageId id, Message message)
 /*! no case trigger pairing process*/
 static void noCasePairProcess(uint8 context)
 {
+    tymAncTaskData *tymAnc = TymAncGetTaskData();      
     xprintf("noCasePairProcess context 0x%x",context);
     if(context & 0x01) //5s trigger
     {
@@ -113,7 +115,15 @@ static void noCasePairProcess(uint8 context)
         if( (tym_sync.leftpairact == TRUE) && (tym_sync.rightpairact == TRUE) )
         {
             DEBUG_LOG("noCasePairProcess send pairing");
-            LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_sm_pair_handset);
+            if(appSmIsPrimary())
+            {    
+                if(tymAnc->onceAnc == 0)
+                {
+                    Prompts_CancelPairingContinue();    
+                    Ui_InjectUiInput(ui_input_prompt_pairing_continue);
+                }
+                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_sm_pair_handset);
+            }
         }    
                     
     }
