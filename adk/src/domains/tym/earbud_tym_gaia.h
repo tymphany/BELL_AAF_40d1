@@ -67,6 +67,7 @@ typedef enum {
     BELL_GAIA_GET_AUTOWEAR_COMMAND = 0x0022,
     BELL_GAIA_GET_TWS_STATUS_COMMAND = 0x0023,
     BELL_GAIA_GET_BATTERY_LEVEL_COMMAND = 0x0024,
+    BELL_GAIA_GET_CHARGING_COMMAND = 0x0029,    
     BELL_GAIA_GET_PLAYPAUSE_STATUS_COMMAND = 0x0027,
     BELL_GAIA_GET_FIRMWARE_VERSION_COMMAND = 0x0030,
     BELL_GAIA_GET_SERIAL_NUMBER_COMMAND = 0x0031,
@@ -95,6 +96,7 @@ typedef enum {
     BELL_GAIA_BATTERY_NOTIFY = 0x0044,
     BELL_GAIA_TWS_LINK_STATUS_NOTIFY,
     BELL_GAIA_PLAY_PAUSE_NOTIFY,
+    BELL_GAIA_CASE_NOTIFY = 0x004a,    
     BELL_GAIA_TWS_TOUCH_NOTIFY = 0x0080,
 }BELL_GAIA_NOTIFY_E;
 
@@ -122,4 +124,5 @@ void bell_gaia_play_pause_notify_event(uint8 val);
 void bell_gaia_set_report_battery_notify(void);
 void bell_gaia_disconnect_event(void);
 void bell_gaia_connect_event(void);
+void bell_gaia_case_notify(void);
 #endif

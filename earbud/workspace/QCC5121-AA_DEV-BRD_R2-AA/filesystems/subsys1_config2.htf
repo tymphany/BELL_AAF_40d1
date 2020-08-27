@@ -81,4 +81,6 @@ PSKEY_BT_POWER_TABLE_V2 = { \
 # Maximum transmit power
 PSKEY_LC_MAX_TX_POWER = 10
 
+#ENABLE_TYM_PLATFORM 20200825, RF request for certification
+PSKEY_BLE_DEFAULT_TX_POWER = 4
 

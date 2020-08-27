@@ -106,6 +106,7 @@ void bell_gaia_get_auto_play(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_set_ambient_ext_anc(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_get_ambient_ext_anc(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_get_prompt_language(GAIA_UNHANDLED_COMMAND_IND_T *command);
+void bell_gaia_get_charging_status(GAIA_UNHANDLED_COMMAND_IND_T *command);
  /* -------------------------------------------------------------------------
  * ------- Private functions ------------------------------------------------
  * --------------------------------------------------------------------------
@@ -929,6 +930,23 @@ void bell_gaia_get_prompt_language(GAIA_UNHANDLED_COMMAND_IND_T *command)
     }   
 }
 
+void bell_gaia_get_charging_status(GAIA_UNHANDLED_COMMAND_IND_T *command)
+{
+    uint16 payload_len = 2;
+    uint8 payload[payload_len];
+
+    if(command->size_payload == 0)
+    {
+        payload[0] = StateProxy_IsInCase();
+        payload[1] = StateProxy_IsPeerInCase();
+        tym_gaia_send_response(command->command_id, GAIA_STATUS_SUCCESS, payload_len, payload);
+    }
+    else
+    {
+        tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_INVALID_PARAMETER);
+    }      
+}
+
  /* -------------------------------------------------------------------------
  * ------- Public functions  ------------------------------------------------
  * --------------------------------------------------------------------------
@@ -1059,6 +1077,9 @@ bool _bell_GAIAMessageHandle(Task task, const GAIA_UNHANDLED_COMMAND_IND_T *mess
         case BELL_GAIA_GET_PROMPT_LANG_COMMAND:
             bell_gaia_get_prompt_language(command);
             break;    
+        case BELL_GAIA_GET_CHARGING_COMMAND:
+            bell_gaia_get_charging_status(command);
+            break;    
         default:
             tym_gaia_send_simple_response(command_id,GAIA_STATUS_NOT_SUPPORTED);
             handled = FALSE;
@@ -1162,6 +1183,17 @@ void bell_gaia_set_report_battery_notify(void)
     bell_gaia_battery_notify_event();
     MessageSendLater(GaiaGetTask(), GAIA_BATT_REPORT_IND, NULL, D_MIN(5)); //5 min report battery   
 }
+
+void bell_gaia_case_notify(void)
+{
+    uint8 val;
+    uint16 payload_size = 1;
+    uint8 payload[payload_size];
+    val = StateProxy_IsInCase();    
+    payload[0] = StateProxy_IsPeerInCase();
+    tym_gaia_send_notification(BELL_GAIA_CASE_NOTIFY, val, payload_size, payload);    
+}
+
 
 void bell_gaia_connect_event(void)
 {

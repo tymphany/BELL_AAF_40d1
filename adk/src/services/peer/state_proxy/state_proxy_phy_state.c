@@ -24,6 +24,7 @@
 #ifdef ENABLE_TYM_PLATFORM
 #include "tym_touch.h"
 #include "phy_state.h"
+#include "earbud_tym_gaia.h"
 #endif
 /* forward declarations */
 static void stateProxy_UpdatePhyState(state_proxy_data_t* data, phy_state_event event);
@@ -79,6 +80,12 @@ static void stateProxy_HandlePhyStateChangedIndImpl(const PHY_STATE_CHANGED_IND_
     }
     updateTouchPadMode();
     appPhyUpdateSleepStandbyMode();
+    /*incase , outcase notify phy_state_event_in_case,phy_state_event_out_of_case*/
+    if((ind->event == phy_state_event_in_case) || (ind->event == phy_state_event_out_of_case) )
+    {
+        //notify gaia in/out case
+        bell_gaia_case_notify();
+    }    
 #else
     if (source == state_proxy_source_local)
     {
