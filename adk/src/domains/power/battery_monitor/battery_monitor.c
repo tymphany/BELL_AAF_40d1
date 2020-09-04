@@ -473,7 +473,7 @@ void appBatteryGetPredictVoltage(void)
     uint16 voltage = appBatteryGetQualcommVoltage();
     uint16 batt_pskey[2];
     bool charging = appChargerIsCharging();
-    bool connected = (appChargerIsConnected() == CHARGER_CONNECTED_NO_ERROR);
+    bool connected = (appChargerIsConnected() != CHARGER_DISCONNECTED);
     bool skip = 0;
     charger_status ch_status = ChargerStatus();
     uint8 percent = appBatteryGetPercent();

@@ -1578,7 +1578,8 @@ void appPhyChangeSleepStandbyMode(phy_state_event phyState)
 void appPhySetPowerOffMode(uint8 mode)
 {
     tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
-    app_set->auto_power_off_cmd = mode;
+    if(mode != uifunc_poweroff_now) /*customer request power-off enter standby don't kept command state*/
+        app_set->auto_power_off_cmd = mode;
     if(mode == uifunc_poweroff_disable)
     {
        app_set->auto_power_off_timer = 0xff;
