@@ -117,11 +117,9 @@ static void noCasePairProcess(uint8 context)
             DEBUG_LOG("noCasePairProcess send pairing");
             if(appSmIsPrimary())
             {    
-                if(tymAnc->onceAnc == 0)
-                {
-                    Prompts_CancelPairingContinue();    
-                    Ui_InjectUiInput(ui_input_prompt_pairing_continue);
-                }
+                tymAnc->onceAnc = 0;
+                Prompts_CancelPairingContinue();    
+                Ui_InjectUiInput(ui_input_prompt_pairing_continue);
                 LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_sm_pair_handset);
             }
         }    

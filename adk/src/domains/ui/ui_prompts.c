@@ -487,7 +487,7 @@ void Prompts_SetConnectedStatus(bool connected)
 /*! brief cancel prompts pairing */
 void Prompts_CancelPairingContinue(void)
 {
-    MessageCancelFirst(&the_prompts.task, ui_input_prompt_pairing_continue);
+    MessageCancelAll(&the_prompts.task, ui_input_prompt_pairing_continue);
 }
 
 void UiPrompts_SendTymPrompt(MessageId id)
