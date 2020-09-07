@@ -159,7 +159,8 @@ const rule_entry_t primary_rules_set[] =
     RULE(RULE_EVENT_IN_EAR,                     ruleInEarScoTransferToEarbud,       CONN_RULES_SCO_TRANSFER_TO_EARBUD),
     RULE(RULE_EVENT_PEER_IN_EAR,                ruleInEarScoTransferToEarbud,       CONN_RULES_SCO_TRANSFER_TO_EARBUD),
     RULE(RULE_EVENT_PEER_IN_CASE,               ruleInCaseScoTransferToHandset,     CONN_RULES_SCO_TRANSFER_TO_HANDSET),
-
+#else
+    RULE(RULE_EVENT_ROLE_SWITCH,                ruleInEarScoTransferToEarbud,       CONN_RULES_SCO_TRANSFER_TO_EARBUD),
 #endif
     RULE(RULE_EVENT_ROLE_SWITCH,                rulePeerScoControl,                     CONN_RULES_PEER_SCO_CONTROL),
     RULE(RULE_EVENT_PEER_IN_EAR,                rulePeerScoControl,                     CONN_RULES_PEER_SCO_CONTROL),
@@ -490,7 +491,9 @@ static rule_action_t ruleInEarScoTransferToEarbud(void)
         PRIMARY_RULE_LOG("ruleInEarScoTransferToEarbud, ignore as this earbud already has SCO");
         return rule_action_ignore;
     }
-
+#ifdef ENABLE_TYM_PLATFORM
+    return rule_action_run;
+#else
     /* For TWS+ transfer the audio the local earbud is in Ear.
      * For TWS Standard, transfer the audio if local earbud or peer is in Ear. */
     if (appSmIsInEar() || (!appDeviceIsTwsPlusHandset(appHfpGetAgBdAddr()) && StateProxy_IsPeerInEar()))
@@ -501,6 +504,7 @@ static rule_action_t ruleInEarScoTransferToEarbud(void)
 
     PRIMARY_RULE_LOG("ruleInEarScoTransferToEarbud, ignore as SCO not active or both earbuds out of the ear");
     return rule_action_ignore;
+#endif    
 }
 
 /*! @brief Determine if a handset disconnect should be allowed */

@@ -161,6 +161,17 @@ static void logicalInputSwitch_SendPassthroughLogicalInput(ui_input_t ui_input, 
     MessageSend(LogicalInputSwitch_GetTask(), passthrough_msg, msg);
 }
 
+#ifdef ENABLE_TYM_PLATFORM
+static void logicalInputSwitch_SendPassthroughLogicalInputWithDelay(ui_input_t ui_input, MessageId passthrough_msg, uint32 delay)
+{
+    MESSAGE_MAKE(msg, PASSTHROUGH_LOGICAL_INPUT_MSG_T);
+    msg->ui_input = ui_input;
+
+    MessageSendLater(LogicalInputSwitch_GetTask(), passthrough_msg, msg, delay);
+}
+
+#endif
+
 Task LogicalInputSwitch_GetTask(void)
 {
     return &lis_task;
@@ -188,6 +199,12 @@ void LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_t ui_input)
     logicalInputSwitch_SendPassthroughLogicalInput(ui_input, PASSTHROUGH_LOGICAL_INPUT_MSG);
 }
 
+#ifdef ENABLE_TYM_PLATFORM
+void LogicalInputSwitch_SendPassthroughLogicalInputWithDelay(ui_input_t ui_input, uint32 delay)
+{
+    logicalInputSwitch_SendPassthroughLogicalInputWithDelay(ui_input, PASSTHROUGH_LOGICAL_INPUT_MSG, delay);
+}
+#endif
 void LogicalInputSwitch_SendPassthroughDeviceSpecificLogicalInput(ui_input_t ui_input)
 {
     logicalInputSwitch_SendPassthroughLogicalInput(ui_input, PASSTHROUGH_DEVICE_SPECIFIC_LOGICAL_INPUT_MSG);

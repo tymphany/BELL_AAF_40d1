@@ -143,5 +143,7 @@ void LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_t ui_input);
 */
 void LogicalInputSwitch_SendPassthroughDeviceSpecificLogicalInput(ui_input_t ui_input);
 /*\}*/
-
+#ifdef ENABLE_TYM_PLATFORM
+void LogicalInputSwitch_SendPassthroughLogicalInputWithDelay(ui_input_t ui_input, uint32 delay);
+#endif
 #endif /* LOGICAL_INPUT_SWITCH_H */
