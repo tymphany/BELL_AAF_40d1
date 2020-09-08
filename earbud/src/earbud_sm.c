@@ -2228,7 +2228,6 @@ static void appSmHandleInternalDeleteHandsets(void)
             /*clean OTA flag*/
             UpgradeSetIsOutCaseDFU(FALSE);
             UpgradePeerSetDFUMode(FALSE);
-            appUpgradeAbortDuringDeviceDisconnect();
 #endif            
             appSmInitiateLinkDisconnection(SM_DISCONNECT_HANDSET, appConfigLinkDisconnectionTimeoutTerminatingMs(),
                                                 POST_DISCONNECT_ACTION_DELETE_HANDSET_PAIRING);

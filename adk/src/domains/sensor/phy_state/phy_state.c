@@ -1252,7 +1252,7 @@ void appPhyStateHold2s(void)
             phy_state->quickattention_play = TRUE;
             Ui_InjectUiInput(ui_input_pause);
         }            
-        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_quick_attention_on);
+        LogicalInputSwitch_SendPassthroughLogicalInputWithDelay(ui_input_bell_ui_quick_attention_on, 200);
     }
     else if(app_set->smartassistant == smartasst_bisto)
     {            
@@ -1279,11 +1279,11 @@ void appPhyStateHold2sEnd(void)
 	else if(phy_state->quickattention_enable == TRUE)
     {
         phy_state->quickattention_enable = FALSE;
-        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_quick_attention_off);
+        LogicalInputSwitch_SendPassthroughLogicalInputWithDelay(ui_input_bell_ui_quick_attention_off, 100);       
         if(phy_state->quickattention_play)
         {
-            phy_state->quickattention_play = FALSE;
-            Ui_InjectUiInput(ui_input_play);  
+            phy_state->quickattention_play = FALSE;  
+            LogicalInputSwitch_SendPassthroughLogicalInputWithDelay(ui_input_play, 200);
         }    
     }    
 }
@@ -1578,7 +1578,8 @@ void appPhyChangeSleepStandbyMode(phy_state_event phyState)
 void appPhySetPowerOffMode(uint8 mode)
 {
     tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
-    app_set->auto_power_off_cmd = mode;
+    if(mode != uifunc_poweroff_now) /*customer request power-off enter standby don't kept command state*/
+        app_set->auto_power_off_cmd = mode;
     if(mode == uifunc_poweroff_disable)
     {
        app_set->auto_power_off_timer = 0xff;

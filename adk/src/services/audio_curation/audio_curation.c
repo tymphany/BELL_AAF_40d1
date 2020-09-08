@@ -810,11 +810,11 @@ void BellUiAncControl(MessageId ui_input)
             BellUiPPAmbient();
             break;
         case ui_input_bell_ui_quick_attention_on:
+            tymAnc->onceAnc = 1;
             if(tymAnc->curAncMode != ambient)
             {
                 tymAnc->prevAncMode = tymAnc->curAncMode;
                 tymAnc->curAncMode = ambient;
-                tymAnc->onceAnc = 1;
                 BellUiAmbientOn();
                 bell_gaia_anc_notify_event(BELL_GAIA_AMBIENT_NOTIFY, 1);
             }

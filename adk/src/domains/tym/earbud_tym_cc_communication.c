@@ -150,7 +150,7 @@ void statusCommunicationMessage(MessageId pId,statusSendCmd_T *cmdId)
     }
     else if(pId == statusSendCmd)
     {
-        if((procCmd.haveCmdExist == FALSE) && (appChargerIsConnected() == CHARGER_CONNECTED_NO_ERROR) )
+        if(procCmd.haveCmdExist == FALSE)
         {
 #ifdef ENABLE_UART
             procCmd.haveCmdExist = TRUE;
@@ -163,14 +163,10 @@ void statusCommunicationMessage(MessageId pId,statusSendCmd_T *cmdId)
 #endif
         }
         else
-        {
-            /*CHARGING CONNECT and have command exist,retry*/
-            if (appChargerIsConnected() == CHARGER_CONNECTED_NO_ERROR)
-            {                    
-                MESSAGE_MAKE(sendCmdId, statusSendCmd_T);
-                sendCmdId->event = cmdId->event;
-                MessageSendLater((TaskData *)&_statusReportTask, statusSendCmd, sendCmdId, 20);
-            }
+        {                   
+            MESSAGE_MAKE(sendCmdId, statusSendCmd_T);
+            sendCmdId->event = cmdId->event;
+            MessageSendLater((TaskData *)&_statusReportTask, statusSendCmd, sendCmdId, 20);
         }        
     }
     else if(pId == statusEndCmd)
@@ -257,7 +253,7 @@ void reportBattStatus(void)
 
 void _sendStatusCmd(uint8 event)
 {
-    if((appChargerIsConnected() == CHARGER_CONNECTED_NO_ERROR) && (procCmd.systemReady == TRUE))
+    if((appChargerIsConnected() != CHARGER_DISCONNECTED) && (procCmd.systemReady == TRUE))
     {
         MESSAGE_MAKE(sendCmdId, statusSendCmd_T);
         sendCmdId->event = event;
@@ -266,8 +262,8 @@ void _sendStatusCmd(uint8 event)
     else
     {
         /* force send status don't care ready */
-        /* ack, sleep mode,standby mode*/
-        if((event == statusACKReport) || (event == statusSLPReport) || (event == statusSTBReport))
+        /* ack, sleep mode,standby,restore mode*/
+        if((event == statusACKReport) || (event == statusSLPReport) || (event == statusSTBReport) || (event == statusRestoreMode))
         {
             MESSAGE_MAKE(sendCmdId, statusSendCmd_T);
             sendCmdId->event = event;

@@ -368,7 +368,7 @@ void sendCmdToChargingCase(uint8 cmdId)
     if(cmdId < statusReportCmdMAX)
     {
         uart_data_stream_tx_data((const uint8*)cmdRaw[cmdId].cmd,5);
-        if(cmdId == statusPairingMode) /*for RST can't receive left earbud pairing */
+        if((cmdId == statusPairingMode) || (cmdId == statusRestoreMode)) /*for RST can't receive left earbud pairing */
             uart_data_stream_tx_data((const uint8*)cmdRaw[cmdId].cmd,5);            
     }
 }
