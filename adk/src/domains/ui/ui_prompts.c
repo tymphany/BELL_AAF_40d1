@@ -528,7 +528,7 @@ static void uiPrompts_UiInputProcess(MessageId id)
         if(tymAnc->onceAnc != 0) /*have set ANC don't play pairing prompt*/
             return;
         MessageCancelFirst(&the_prompts.task, ui_input_prompt_pairing_continue);
-        MessageSendLater(&the_prompts.task, ui_input_prompt_pairing_continue, NULL, 2500);//interval 0.5 second + 2 second pairing play time
+        MessageSendLater(&the_prompts.task, ui_input_prompt_pairing_continue, NULL, 4500);//interval 2.5 second + 2 second pairing play time
         if((StateProxy_IsInEar() == TRUE)||(StateProxy_IsPeerInEar() == TRUE))
             Ui_InjectUiInput(ui_input_prompt_pairing);
     }
