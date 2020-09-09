@@ -64,8 +64,8 @@ static void gaa_Cancel(void)
     DEBUG_LOG("gaa_CancelBisto");
     /* Simulates a "Button Down -> Button Up -> Button Down -> Button Up -> Double Press Detected"
     sequence for the default configuration of a dedicated VA button */
-    LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_1);
-    LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_6);
+    //LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_1);
+    //LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_6);
     LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_4);
 }
 
