@@ -53,7 +53,7 @@
 #define appConfigAncMicGainStepSize()           (5)
 #define appConfigAncSidetoneGain()              (10)
 #ifdef ENABLE_TYM_PLATFORM
-#define appConfigAncMode()                      (anc_mode_4) /* init ambient mode*/
+#define appConfigAncMode()                      (anc_mode_3) /* init ambient mode*/
 #else
 #define appConfigAncMode()                      (anc_mode_1)
 #endif
