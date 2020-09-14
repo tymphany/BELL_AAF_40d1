@@ -367,6 +367,23 @@ static void appAvVolumeLoadDeviceVolumeAndSet(avInstanceTaskData *theInst)
 
         AvGetTaskData()->volume = volume;
     }
+#ifdef ENABLE_TYM_PLATFORM    
+    else if(AvGetTaskData()->volume_sync == TRUE)
+    {
+        uint8 volume;
+        if(av_GetVolume(&theInst->bd_addr, &volume))
+        {
+            DEBUG_LOG("appAvVolumeLoadDeviceVolumeAndSet(%p), volume=%u", theInst, volume);
+
+            /* Forward volume to other instance if AV connected */
+            Volume_SendAudioSourceVolumeUpdateRequest(audio_source_a2dp_1, getOrigin(theInst), volume);
+
+            AvGetTaskData()->volume = volume;    
+            AvGetTaskData()->volume_sync = FALSE;
+        }
+    }    
+#endif    
+         
 }
 
 /*! \brief Volume handling on A2DP connect.
@@ -418,6 +435,14 @@ static void appAvVolumeHandleAvrcpConnect(avInstanceTaskData *theInst)
                 }
             }
         }
+#ifdef ENABLE_TYM_PLATFORM        
+        else
+        {
+            /*for handset connect again sync volume*/
+            AvGetTaskData()->volume_sync = TRUE;
+        }    
+#endif        
+        
     }
 }
 

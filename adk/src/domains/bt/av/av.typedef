@@ -58,5 +58,7 @@
         <member marshal="false" doc="A2DP disconnect request clients">task_list_with_data_t a2dp_disconnect_request_clients</member>
         <member marshal="false" doc="AVRCP connect request clients">task_list_with_data_t avrcp_connect_request_clients</member>
         <member marshal="false" doc="AVRCP disconnect request clients">task_list_with_data_t avrcp_disconnect_request_clients</member>
+/*enable_tym_platform*/
+        <member marshal="false" doc="The sync volume">bool volume_sync</member>
     </typedef_struct>
 </types>
