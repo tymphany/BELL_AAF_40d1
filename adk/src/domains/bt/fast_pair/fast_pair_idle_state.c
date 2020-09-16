@@ -12,7 +12,11 @@
 #include "fast_pair_advertising.h"
 #include "fast_pair_session_data.h"
 #include "fast_pair_events.h"
-
+#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch Subsequent pairing of fast paring */
+#include "av.h"
+#include "bt_device.h"
+#include "hfp_profile.h"
+#endif
 #include <panic.h>
 
 static bool fastpair_ProcessACLConnect(fast_pair_state_event_connect_args_t* args)
@@ -31,6 +35,34 @@ static bool fastpair_ProcessACLConnect(fast_pair_state_event_connect_args_t* arg
 
     return status;
 }
+
+#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch Subsequent pairing of fast paring */
+static void fastpair_DisconnectHandset(void)
+{
+    bool disconnect_av = FALSE;
+
+    if (!appDeviceIsHandsetHfpDisconnected())
+    {
+        DEBUG_LOG("fastpair_DisconnectHandset HANDSET HFP IS NOT DISCONNECTED");
+        appHfpDisconnectInternal();
+    }
+
+    if (!appDeviceIsHandsetA2dpDisconnected())
+    {
+        DEBUG_LOG("fastpair_DisconnectHandset HANDSET A2DP IS NOT DISCONNECTED");
+        disconnect_av = TRUE;
+    }
+    if(!appDeviceIsHandsetAvrcpDisconnected())
+    {
+        DEBUG_LOG("fastpair_DisconnectHandset HANDSET AVRCP IS NOT DISCONNECTED");
+        disconnect_av = TRUE;
+    }
+    if(disconnect_av)
+    {
+        appAvDisconnectHandset();
+    }
+}
+#endif
 
 static bool fastpair_ProcessACLDisconnect(fast_pair_state_event_disconnect_args_t* args)
 {
@@ -187,6 +219,10 @@ static bool fastpair_KeyBasedPairingWriteEventHandler(fast_pair_state_event_kbp_
     }
     else if(args->size == FAST_PAIR_ENCRYPTED_REQUEST_LEN)
     {
+#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch Subsequent pairing of fast paring */
+        /* Disconnect the first handset before pairing with the second one*/
+        fastpair_DisconnectHandset();
+#endif
        /* If only encrypted request is written to KbP, then try to find an account key
           from account key list which can function as AES key to decode encrypted packets
         */
