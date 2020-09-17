@@ -471,8 +471,11 @@ static bool pairing_ResendAuthenticateCfmIfDeviceDbFull(const CL_SM_AUTHENTICATE
 {
     pairingTaskData *thePairing = PairingGetTaskData();
     bool was_full = FALSE;
-
+#ifdef ENABLE_TYM_PLATFORM
+    if(BtDevice_IsFull() && !BtDevice_isKnownBdAddr(&cfm->bd_addr))
+#else
     if(BtDevice_IsFull())
+#endif
     {
         CL_SM_AUTHENTICATE_CFM_T *new_cfm = PanicUnlessMalloc(sizeof(CL_SM_AUTHENTICATE_CFM_T));
         DEBUG_LOG_VERBOSE("pairing_ResendAuthenticateCfm device list full, re-sending message");
