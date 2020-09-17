@@ -13,7 +13,7 @@
 #define appConfigBatteryFullyCharged()      (4250)
 #define appConfigBatteryVoltageOk()         (3684)
 #define appConfigBatteryVoltageLow()        (3570)/* must > 10% */
-#define appConfigBatteryVoltageCritical()   (3350)
+#define appConfigBatteryVoltageCritical()   (3400)
 #else
 //!@{ @name Battery voltage levels in milli-volts
 #define appConfigBatteryFullyCharged()      (4200)
