@@ -14,9 +14,9 @@
 /*! Minimum RSSI to pair with a device */
 #define appConfigPeerPairingMinRssi() (-60)
 #else
-#ifdef ENABLE_TYM_PLATFORM /*for reduced LE TX Power,change from -50 to -60 */
+#ifdef ENABLE_TYM_PLATFORM /*for reduced LE TX Power,change from -50 to -65 */
 /*! Minimum RSSI to pair with a device */
-#define appConfigPeerPairingMinRssi() (-60)
+#define appConfigPeerPairingMinRssi() (-65)
 #else
 /*! Minimum RSSI to pair with a device */
 #define appConfigPeerPairingMinRssi() (-50)

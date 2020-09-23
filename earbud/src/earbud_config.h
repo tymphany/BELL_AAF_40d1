@@ -67,7 +67,7 @@ role selection. */
 
 /*! User will need to change this as per the hardware used. 0xEC (for CF376+ QCC5126) */
 #ifdef ENABLE_TYM_PLATFORM
-#define BOARD_TX_POWER_PATH_LOSS        (0xE9) /*E9(-23) 4 - 23 = -19 */
+#define BOARD_TX_POWER_PATH_LOSS        (0xEC) /*EC(-20), 4 - 20 = -16 */
 #else
 #define BOARD_TX_POWER_PATH_LOSS        (0xEC) /* default -20 */
 #endif
