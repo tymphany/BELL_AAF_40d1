@@ -101,13 +101,13 @@
     <file path="../../src/services/voice_ui/gaa/gsound/gsound_target_trace.h"/>
     <file path="../../src/services/voice_ui/gaa/gsound/gsound_target_tws.h"/>
     <file path="../../src/services/voice_ui/gaa/gsound/gsound_types.h"/>
-    <configurations defaultKit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}">
-        <configuration name="makefile_project" kit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}" options="clean|build|default">
+    <configurations defaultKit="kitres://{5c6ea392-6bda-46e5-b7a6-6a529eb11d8d}">
+        <configuration name="makefile_project" kit="kitres://{5c6ea392-6bda-46e5-b7a6-6a529eb11d8d}" options="clean|build|default">
             <devkitConfiguration>makefile_project</devkitConfiguration>
-            <devkitPath>C:/qtil/ADK_Toolkit_0.9.1.9_x64</devkitPath>
+            <devkitPath>C:/qtil/ADK_Toolkit_0.9.1.28_x64</devkitPath>
             <devkitGroup>kitres://{ce02c436-164b-46aa-8938-497c1665beae}</devkitGroup>
             <deployProject></deployProject>
-            <devkitRevision>1576251075</devkitRevision>
+            <devkitRevision>1587643991</devkitRevision>
             <property name="BUILD_ARGUMENTS">EXTRA_WARNINGS=FALSE</property>
             <property name="BUILD_TYPE">MAKEFILE</property>
             <property name="CHIP_TYPE">qcc512x_qcc302x</property>

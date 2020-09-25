@@ -21,13 +21,13 @@
     <file path="../../../adk/src/topologies/tws/tws_classic/rules/tws_topology_secondary.rules"/>
     <file path="../../../adk/src/topologies/tws/tws_classic/rules/tws_topology_tws_classic_primary.rules"/>
     <file path="../../../adk/src/topologies/tws/tws_classic/rules/tws_topology_tws_classic_secondary.rules"/>
-    <configurations defaultKit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}">
-        <configuration kit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}" name="debug" options="clean|build|deploy|run|default">
+    <configurations defaultKit="kitres://{5c6ea392-6bda-46e5-b7a6-6a529eb11d8d}">
+        <configuration name="debug" kit="kitres://{5c6ea392-6bda-46e5-b7a6-6a529eb11d8d}" options="clean|build|deploy|run|default">
             <devkitConfiguration>application</devkitConfiguration>
-            <devkitPath>C:/qtil/ADK_Toolkit_0.9.1.9_x64</devkitPath>
+            <devkitPath>C:/qtil/ADK_Toolkit_0.9.1.28_x64</devkitPath>
             <devkitGroup>kitres://{ce02c436-164b-46aa-8938-497c1665beae}</devkitGroup>
             <deployProject>deploy</deployProject>
-            <devkitRevision>1576251075</devkitRevision>
+            <devkitRevision>1587643991</devkitRevision>
             <property name="BUILD_ID">../../../adk/tools/packages/buildid/examples/timestamp.py</property>
             <property name="BUILD_TYPE">DEBUG</property>
             <property name="CHIP_TYPE">qcc512x_qcc302x</property>

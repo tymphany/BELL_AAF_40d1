@@ -4,14 +4,16 @@
     <file path="../../QCC5121-AA_DEV-BRD_R2-AA/filesystems/anc_tuning_config.htf"/>
     <file path="../../QCC5121-AA_DEV-BRD_R2-AA/filesystems/cvc_config.htf"/>
     <file path="../../QCC5121-AA_DEV-BRD_R2-AA/filesystems/subsys7_psflash.htf"/>
-    <configurations>
-        <configuration name="filesystem" options="build|deploy">
+    <configurations defaultKit="kitres://{5c6ea392-6bda-46e5-b7a6-6a529eb11d8d}">
+        <configuration name="filesystem" kit="kitres://{5c6ea392-6bda-46e5-b7a6-6a529eb11d8d}" options="build|deploy|default">
             <devkitConfiguration>filesystem</devkitConfiguration>
-            <devkitGroup>kitres://{CE02C436-164B-46AA-8938-497C1665BEAE}</devkitGroup>
+            <devkitPath>C:/qtil/ADK_Toolkit_0.9.1.28_x64</devkitPath>
+            <devkitGroup>kitres://{ce02c436-164b-46aa-8938-497c1665beae}</devkitGroup>
             <deployProject>deploy</deployProject>
+            <devkitRevision>1587643991</devkitRevision>
+            <property name="CHIP_TYPE">qcc512x_qcc302x</property>
             <property name="TYPE">user_ps</property>
             <property name="system_label">QCC512X_CONFIG</property>
-            <property name="CHIP_TYPE">qcc512x_qcc302x</property>
         </configuration>
     </configurations>
 </project>

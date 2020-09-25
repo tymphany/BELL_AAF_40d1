@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project path="">
     <file path="../../../../os/bin/qcc512x_qcc302x/image/apps_p0_firmware.xuv"/>
-    <configurations>
-        <configuration name="prebuilt_image" options="deploy">
-            <devkitGroup>kitres://{CE02C436-164B-46AA-8938-497C1665BEAE}</devkitGroup>
-            <deployProject>deploy</deployProject>
+    <configurations defaultKit="kitres://{5c6ea392-6bda-46e5-b7a6-6a529eb11d8d}">
+        <configuration name="prebuilt_image" kit="kitres://{5c6ea392-6bda-46e5-b7a6-6a529eb11d8d}" options="deploy|default">
             <devkitConfiguration>prebuilt_image</devkitConfiguration>
-            <property name="SUBSYSTEM_NAME">apps0</property>
+            <devkitPath>C:/qtil/ADK_Toolkit_0.9.1.28_x64</devkitPath>
+            <devkitGroup>kitres://{ce02c436-164b-46aa-8938-497c1665beae}</devkitGroup>
+            <deployProject>deploy</deployProject>
+            <devkitRevision>1587643991</devkitRevision>
+            <property name="BUILD_TYPE">DO_NOT_BUILD</property>
             <property name="CHIP_TYPE">qcc512x_qcc302x</property>
+            <property name="OUTPUT_TYPE">NONE</property>
+            <property name="SUBSYSTEM_NAME">apps0</property>
         </configuration>
     </configurations>
 </project>

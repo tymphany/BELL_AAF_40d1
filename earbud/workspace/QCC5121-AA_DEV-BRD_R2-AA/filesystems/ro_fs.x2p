@@ -7,13 +7,13 @@
     <file path="../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_cvc_fbc.edkcs"/>
     <file path="../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_opus_celt_encode.edkcs"/>
     <file path="../../../../audio/qcc512x_qcc302x/kalimba_ROM_4786/kymera/prebuilt_dkcs/stre_rom_v02_release/download_switched_passthrough_consumer.edkcs"/>
-    <configurations defaultKit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}">
-        <configuration name="filesystem" kit="kitres://{663c7b2b-7f55-483e-936a-ca1dd345fbba}" options="build|deploy|default">
+    <configurations defaultKit="kitres://{5c6ea392-6bda-46e5-b7a6-6a529eb11d8d}">
+        <configuration name="filesystem" kit="kitres://{5c6ea392-6bda-46e5-b7a6-6a529eb11d8d}" options="build|deploy|default">
             <devkitConfiguration>filesystem</devkitConfiguration>
-            <devkitPath>C:/qtil/ADK_Toolkit_0.9.1.9_x64</devkitPath>
+            <devkitPath>C:/qtil/ADK_Toolkit_0.9.1.28_x64</devkitPath>
             <devkitGroup>kitres://{ce02c436-164b-46aa-8938-497c1665beae}</devkitGroup>
             <deployProject>deploy</deployProject>
-            <devkitRevision>1576251075</devkitRevision>
+            <devkitRevision>1587643991</devkitRevision>
             <property name="CHIP_TYPE">qcc512x_qcc302x</property>
             <property name="FS_ROOT">..\customer_ro_filesystem</property>
             <property name="TYPE">customer_ro</property>
