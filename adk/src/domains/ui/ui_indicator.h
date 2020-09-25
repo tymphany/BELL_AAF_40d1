@@ -39,7 +39,8 @@
 
 #define UI_SYNC_IND_OUTPUT_CHAIN_CREATION_DELAY     (190*US_PER_MS)
 #define UI_SYNC_IND_AUDIO_SS_POWER_ON_DELAY         (140*US_PER_MS)
-#define UI_SYNC_IND_UI_EVENT_MARSHAL_DELAY          (40*US_PER_MS)
+/*follow Qualcomm suggestion modify to 70~90ms*/
+#define UI_SYNC_IND_UI_EVENT_MARSHAL_DELAY          (70*US_PER_MS)
 #else
 
 #define AUDIO_SS_MSG_TO_OPERATOR                    (5*US_PER_MS)
