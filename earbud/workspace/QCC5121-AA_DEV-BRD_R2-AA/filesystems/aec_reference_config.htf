@@ -13,7 +13,8 @@ file = audio
 0x200380 = [ 01 10 01 00 02 00 00 00 00 00 00 00 00 00 ]
 
 # PSID=0x200382, capID=0x43 (downloadable capability), UCID=0x0001 (Wideband)
-0x200382 = [ 01 10 01 00 02 00 00 00 00 00 00 00 00 00 ]
+#ENABLE_TYM_PLATFORM, configuration on cvc
+#0x200382 = [ 01 10 01 00 02 00 00 00 00 00 00 00 00 00 ]
 
 # PSID=0x200386, capID=0x43 (downloadable capability), UCID=0x0003 (Ultra Wideband)
 0x200386 = [ 01 10 01 00 02 00 00 00 00 00 00 00 00 00 ]
@@ -25,7 +26,8 @@ file = audio
 0x002180 = [ 01 10 01 00 02 00 00 00 00 00 00 00 00 00 ]
 
 # PSID=0x002182 , capID=0x43, (built-in capability), UCID=0x0001 (Wideband)
-0x002182  = [ 01 10 01 00 02 00 00 00 00 00 00 00 00 00 ]
+#ENABLE_TYM_PLATFORM, configuration on cvc
+#0x002182  = [ 01 10 01 00 02 00 00 00 00 00 00 00 00 00 ]
 
 # PSID=0x002186 , capID=0x43, (built-in capability), UCID=0x0003 (Ultra Wideband)
 0x002186  = [ 01 10 01 00 02 00 00 00 00 00 00 00 00 00 ]
