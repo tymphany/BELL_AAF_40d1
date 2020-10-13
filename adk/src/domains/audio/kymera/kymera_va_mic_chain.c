@@ -327,9 +327,11 @@ static void kymera_ConfigurePassGain(void)
 {
     int32 db = 20; /* need tuning */
     int32 value = GainIn60thdB(db);
-    Operator passthrough = kymera_GetChainOperator(OPR_CVC_DUMMY_BUFFER);
-    PanicFalse(passthrough);
-    OperatorsSetPassthroughGain(passthrough,value);
+    Operator passthrough1 = kymera_GetChainOperator(OPR_CVC_DUMMY_BUFFER1);
+    Operator passthrough2 = kymera_GetChainOperator(OPR_CVC_DUMMY_BUFFER2);
+    PanicFalse(passthrough1);
+    OperatorsSetPassthroughGain(passthrough1,value);
+    OperatorsSetPassthroughGain(passthrough2,value);
 }
 #endif
 

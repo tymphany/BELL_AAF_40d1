@@ -5,7 +5,10 @@
 
 <include_header name="../earbud_cap_ids.h"/> <include_header name="kymera_chain_roles.h"/> 
 
-<operator name="OPR_CVC_DUMMY_BUFFER" id="CAP_ID_BASIC_PASS"> <sink name="IN" terminal="0"/> <source name="OUT" terminal="0"/> </operator> 
+<operator name="OPR_CVC_DUMMY_BUFFER1" id="CAP_ID_BASIC_PASS"> <sink name="IN" terminal="0"/> <source name="OUT" terminal="0"/> </operator>
+<operator name="OPR_CVC_DUMMY_BUFFER2" id="CAP_ID_BASIC_PASS"> <sink name="IN" terminal="0"/> <source name="OUT" terminal="0"/> </operator>
 
+<input sink="OPR_CVC_DUMMY_BUFFER1.IN" role="EPR_VA_MIC_MIC1_IN"/>
+<connection source="OPR_CVC_DUMMY_BUFFER1.OUT" sink="OPR_CVC_DUMMY_BUFFER2.IN"/>
 
-<input sink="OPR_CVC_DUMMY_BUFFER.IN" role="EPR_VA_MIC_MIC1_IN"/> <output source="OPR_CVC_DUMMY_BUFFER.OUT" role="EPR_VA_MIC_ENCODE_OUT"/> </chain>
+<output source="OPR_CVC_DUMMY_BUFFER2.OUT" role="EPR_VA_MIC_ENCODE_OUT"/> </chain>

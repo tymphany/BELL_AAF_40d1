@@ -128,7 +128,8 @@ typedef enum chain_operator_roles
     /*! VA graph manager operator */
     OPR_VA_GRAPH_MANAGER,
 #ifdef ENABLE_TYM_PLATFORM
-    OPR_CVC_DUMMY_BUFFER,
+    OPR_CVC_DUMMY_BUFFER1,
+    OPR_CVC_DUMMY_BUFFER2,
     /*! USER EQ */
     OPR_USER_EQ,
 
