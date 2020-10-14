@@ -1189,13 +1189,11 @@ static void appHfpHandleHfpAudioConnectIndication(const HFP_AUDIO_CONNECT_IND_T 
 
 #ifdef ENABLE_TYM_PLATFORM
             bool factory_mode = getFactoryModeEnable();
-#else  
-            /*for BQB certification == always hfp -> earbud*/
+#endif  
             if(AcceptCallCallback)
             {
                 accept = AcceptCallCallback();
             }           
-#endif
 
 #ifdef ENABLE_TYM_PLATFORM
             if(factory_mode)

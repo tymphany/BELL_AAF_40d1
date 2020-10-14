@@ -159,8 +159,6 @@ const rule_entry_t primary_rules_set[] =
     RULE(RULE_EVENT_IN_EAR,                     ruleInEarScoTransferToEarbud,       CONN_RULES_SCO_TRANSFER_TO_EARBUD),
     RULE(RULE_EVENT_PEER_IN_EAR,                ruleInEarScoTransferToEarbud,       CONN_RULES_SCO_TRANSFER_TO_EARBUD),
     RULE(RULE_EVENT_PEER_IN_CASE,               ruleInCaseScoTransferToHandset,     CONN_RULES_SCO_TRANSFER_TO_HANDSET),
-#else
-    RULE(RULE_EVENT_ROLE_SWITCH,                ruleInEarScoTransferToEarbud,       CONN_RULES_SCO_TRANSFER_TO_EARBUD),
 #endif
     RULE(RULE_EVENT_ROLE_SWITCH,                rulePeerScoControl,                     CONN_RULES_PEER_SCO_CONTROL),
     RULE(RULE_EVENT_PEER_IN_EAR,                rulePeerScoControl,                     CONN_RULES_PEER_SCO_CONTROL),
