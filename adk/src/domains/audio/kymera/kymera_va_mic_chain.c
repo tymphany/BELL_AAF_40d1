@@ -325,13 +325,14 @@ static void kymera_ChainWake(Operator *array, unsigned length_of_array)
 #ifdef ENABLE_TYM_PLATFORM
 static void kymera_ConfigurePassGain(void)
 {
-    int32 db = 20; /* need tuning */
-    int32 value = GainIn60thdB(db);
+    int32 db1 = 20; /* need tuning */
+    int32 db2 = 10;
+    int32 value1 = GainIn60thdB(db1),value2 = GainIn60thdB(db2);
     Operator passthrough1 = kymera_GetChainOperator(OPR_CVC_DUMMY_BUFFER1);
     Operator passthrough2 = kymera_GetChainOperator(OPR_CVC_DUMMY_BUFFER2);
     PanicFalse(passthrough1);
-    OperatorsSetPassthroughGain(passthrough1,value);
-    OperatorsSetPassthroughGain(passthrough2,value);
+    OperatorsSetPassthroughGain(passthrough1,value1);
+    OperatorsSetPassthroughGain(passthrough2,value2);
 }
 #endif
 
