@@ -133,6 +133,12 @@ typedef enum chain_operator_roles
     /*! USER EQ */
     OPR_USER_EQ,
 
+    /*! -12dB to provide headroom for music processing */
+    OPR_ADD_HEADROOM,
+
+    /*! +12dB to cancel headroom added for music processing */
+    OPR_REMOVE_HEADROOM,
+
     /*! SPEAKER EQ1 */
     OPR_SPEAKER_EQ1,
 

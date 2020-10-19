@@ -14,6 +14,9 @@
 #include <anc_state_manager.h>
 
 #include "kymera_private.h"
+//For Scrach Noise
+#include "kymera_ucid.h"
+//For Scrach Noise
 #include "kymera_anc.h"
 #include "kymera_aec.h"
 #include "kymera_config.h"
@@ -559,6 +562,7 @@ void appKymeraConfigureOutputChainOperators(kymera_chain_handle_t chain,
     Operator volume_op;
 #ifdef ENABLE_TYM_PLATFORM
     Operator peq_op; //add peq op here
+    Operator bypass_op; //add peq op here
 #endif
 
     /* Configure operators */
@@ -571,6 +575,18 @@ void appKymeraConfigureOutputChainOperators(kymera_chain_handle_t chain,
     volume_op = ChainGetOperatorByRole(chain, OPR_VOLUME_CONTROL);
     OperatorsStandardSetSampleRate(volume_op, sample_rate);
 #ifdef ENABLE_TYM_PLATFORM
+    bypass_op = ChainGetOperatorByRole(chain, OPR_ADD_HEADROOM);
+    if(bypass_op)
+    {
+        OperatorsStandardSetUCID(bypass_op, UCID_PASS_ADD_HEADROOM); //default ucid=0x00
+    }
+
+    bypass_op = ChainGetOperatorByRole(chain, OPR_REMOVE_HEADROOM);
+    if(bypass_op)
+    {
+        OperatorsStandardSetUCID(bypass_op, UCID_PASS_REMOVE_HEADROOM); //default ucid=0x0
+    }
+
     peq_op = ChainGetOperatorByRole(chain, OPR_USER_EQ);
     if(peq_op)
     {
