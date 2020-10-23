@@ -5,7 +5,8 @@
 /*20200617 modify ambient/speech filter */
 /*20200724 modify user eq*/
 /*20200827 level Reversed */
-#define EQ_VER   "0.0.0.6"
+/*20201023 update SPK EQ and add headromm for scratch noise*/
+#define EQ_VER   "0.0.0.7"
 
 
 #endif

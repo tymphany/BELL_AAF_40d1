@@ -36,3 +36,5 @@ CodecOutputDisableTimeout = 1800000000
 #IsAncIirFilter16k = true
 
 AncEnableDelay = 300
+#ENABLE_TYM_PLATFORM.Qualcomm suggest for earbud no sound
+ProfilerEnable=true
