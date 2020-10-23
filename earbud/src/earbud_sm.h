@@ -240,6 +240,7 @@ typedef struct
 #ifdef ENABLE_TYM_PLATFORM
     bool UpgradeStarted:1;
     bool pairing_req:1;
+    bool otaerr:1;
 #endif
     tws_topology_role role;             /*!< Current primary/secondary/none role of the earbud */
     rule_set_t primary_rules;
@@ -471,4 +472,6 @@ void appDisconnectAll(void);
 void appExitHandsetPairing(void);
 #endif
 
+/*added by Qualcomm patch - 04838455 abort dfu out of case */
+extern void appAbortDfuReboot(void);
 #endif /* EARBUD_SM_H_ */

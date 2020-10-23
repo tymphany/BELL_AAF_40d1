@@ -2,7 +2,7 @@
 \copyright  Copyright (c) 2008 - 2019 Qualcomm Technologies International, Ltd.
             All Rights Reserved.
             Qualcomm Technologies International, Ltd. Confidential and Proprietary.
-\version    
+\version
 \file       phy_state.c
 \brief      Manage physical state of an Earbud.
 */
@@ -13,6 +13,8 @@
 #include "adk_log.h"
 #include "proximity.h"
 #include "acceleration.h"
+/*added by Qualcomm patch - 04838455 abort dfu out of case */
+#include "earbud_sm.h"
 
 #include <charger_monitor.h>
 
@@ -21,13 +23,13 @@
 #include <logical_input_switch.h>
 #include <input_event_manager.h>
 #include <ps.h>
+#include <device_upgrade.h>
 #include "ui.h"
 #include "tym_anc_config.h"
 #include "tym_touch_config.h"
 #include "earbud_tym_util.h"
 #include "tym_power_control.h"
 #include "earbud_tym_factory.h"
-#include "earbud_sm.h"
 #include "tym_anc.h"
 #include "earbud_tym_cc_communication.h"
 #include "hfp_profile.h"
@@ -119,12 +121,12 @@ static void appPhyStateEnterInCase(void)
     {
         DEBUG_LOG("report standby mode");
         reportSleepStandbyStatus(FALSE);
-    }    
+    }
     if (appPhyStateGetPowerState() == TRUE)
     {
-        DEBUG_LOG("STANC3 mute");    
+        DEBUG_LOG("STANC3 mute");
         /*In case mute stanc3*/
-        stanc3_audiomute(TRUE); 
+        stanc3_audiomute(TRUE);
     }
 #endif
     appPhyStateMsgSendStateChangedInd(PHY_STATE_IN_CASE, phy_state_event_in_case);
@@ -148,6 +150,7 @@ static void appPhyStateEnterOutOfEarAtRest(void)
 {
     DEBUG_LOG("appPhyStateEnterOutOfEarAtRest");
     appPhyStateMsgSendStateChangedInd(PHY_STATE_OUT_OF_EAR_AT_REST, phy_state_event_not_in_motion);
+    appAbortDfuReboot();
 }
 
 /*! \brief Perform actions on exiting PHY_STATE_UNKNOWN state. */
@@ -160,13 +163,15 @@ static void appPhyStateExitInCase(void)
 {
     DEBUG_LOG("appPhyStateExitInCase");
     appPhyStateMsgSendStateChangedInd(PHY_STATE_OUT_OF_EAR, phy_state_event_out_of_case);
+   /*added by Qualcomm patch - 04838455 abort dfu out of case */
+    appAbortDfuReboot();
 #ifdef ENABLE_TYM_PLATFORM /*for exit in case unmute stanc3*/
     if (appPhyStateGetPowerState() == TRUE)
     {
-        DEBUG_LOG("STANC3 unmute");    
-        stanc3_audiomute(FALSE); 
+        DEBUG_LOG("STANC3 unmute");
+        stanc3_audiomute(FALSE);
     }
-#endif    
+#endif
 }
 
 /*! \brief Perform actions on exiting PHY_STATE_OUT_OF_EAR state. */
@@ -246,7 +251,7 @@ static void appPhyStateHandleInternalOutOfCaseEvent(void)
                 appPhyStateSetState(PhyStateGetTaskData(), PHY_STATE_IN_EAR);
 #ifdef ENABLE_TYM_PLATFORM
                 appPhyStateInEarPromptCheck();
-#endif                
+#endif
             }
             else if (!phy_state->in_motion)
             {
@@ -289,7 +294,7 @@ static void appPhyStateHandleInternalInEarEvent(void)
             appPhyStateSetState(PhyStateGetTaskData(), PHY_STATE_IN_EAR);
 #ifdef ENABLE_TYM_PLATFORM
             appPhyStateInEarPromptCheck();
-#endif            
+#endif
             break;
 
         default:
@@ -399,7 +404,7 @@ static void appPhyStateHandleInternalNotInMotionEvent(void)
 static void appPhyStateHandleInternalTimeoutNotificationLimit(void)
 {
     phyStateTaskData *phy_state = PhyStateGetTaskData();
-    
+
     if (phy_state->state != phy_state->reported_state)
     {
         appPhyStateSetState(phy_state, phy_state->state);
@@ -501,7 +506,7 @@ static void appPhyStateHandleMessage(Task task, MessageId id, Message message)
             }
             break;
         case TOUCH_MESSAGE_HOLD2S:
-            appPhyStateHold2s();            
+            appPhyStateHold2s();
             break;
         case TOUCH_MESSAGE_HOLD5S:
             DEBUG_LOG("TOUCH_MESSAGE_HOLD5S");
@@ -532,7 +537,7 @@ static void appPhyStateHandleMessage(Task task, MessageId id, Message message)
             break;
         case TOUCH_MESSAGE_HOLD2SEND:
             DEBUG_LOG("TOUCH_MESSAGE_HOLD2SEND");
-            appPhyStateHold2sEnd(); 
+            appPhyStateHold2sEnd();
             break;
         case TOUCH_MESSAGE_HOLD5SEND:
             DEBUG_LOG("TOUCH_MESSAGE_HOLD5SEND");
@@ -584,6 +589,7 @@ void appPhyStateUnregisterClient(Task client_task)
 
 bool appPhyStateInit(Task init_task)
 {
+    uint16 ps_len;
     phyStateTaskData* phy_state = PhyStateGetTaskData();
     DEBUG_LOG("appPhyStateInit");
 
@@ -658,7 +664,9 @@ will be received. This means the in-case state can never be entered */
     MessageSendConditionally(init_task, PHY_STATE_INIT_CFM, NULL, &phy_state->lock);
 
 #ifdef ENABLE_TYM_PLATFORM
-    appPhyStateMsgSendStateChangedInd(PHY_STATE_IN_CASE, phy_state_event_user_poweron);
+    ps_len = PsRetrieve(EARBUD_DFU_PERMITTED_RESET_KEY, NULL, 0);
+    DEBUG_LOG("EARBUD_DFU_PERMITTED_RESET_KEY pslen %d",ps_len);
+    appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_user_poweron);
     setSystemReady(TRUE);
     appPhySateAppConfiguration();
 #endif
@@ -668,8 +676,8 @@ will be received. This means the in-case state can never be entered */
 void appPhyStatePrepareToEnterDormant(void)
 {
 #ifdef ENABLE_TYM_PLATFORM
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
     DEBUG_LOG("appPhyStatePrepareToEnterDormant");
- 
     if(getFactoryModeTopEnable() == TRUE)
     {
         DEBUG_LOG("ByPass Prox/anc register");
@@ -686,9 +694,12 @@ void appPhyStatePrepareToEnterDormant(void)
     //appTouchClientUnregister(&phy_state->task);
     setPSPresetEQ();
     tymCleanOTAFLAG();
+    if(phy_state->sm_regphy == FALSE)
+    {
+        appAbortDfuReboot();
+    }
     if((getFactoryModeEnable() == TRUE) || (getFactoryModeTopEnable() == TRUE))
         setFactoryModeStatus(factory_disable);
-
 #else
     phyStateTaskData* phy_state = PhyStateGetTaskData();
     DEBUG_LOG("appPhyStatePrepareToEnterDormant");
@@ -756,7 +767,7 @@ void appPhyStateSetState(phyStateTaskData* phy_state, phyState new_state)
        PHY_STATE_IN_EAR
         - Otherwise we were in PHY_STATE_IN_CASE, PHY_STATE_IN_EAR or PHY_STATE_OUT_OF_EAR_AT_REST
           and are now either in PHY_STATE_OUT_OF_EAR or a different one of those 3 but
-          having passed through PHY_STATE_OUT_OF_EAR, either way that is the next 
+          having passed through PHY_STATE_OUT_OF_EAR, either way that is the next
           reported state. */
     if ((phy_state->reported_state == PHY_STATE_UNKNOWN) || (phy_state->reported_state == PHY_STATE_OUT_OF_EAR))
     {
@@ -796,7 +807,13 @@ phyState appPhyStateGetState(void)
     phyStateTaskData* phy_state = PhyStateGetTaskData();
     return phy_state->state;
 }
-
+#ifdef ENABLE_TYM_PLATFORM
+void appPhyRegisterSM(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    phy_state->sm_regphy = TRUE;
+}
+#endif
 /*! \brief Check whether in/out of ear detection is supported.
     \return bool TRUE if in/out of ear detection is supported. */
 bool appPhyStateIsInEarDetectionSupported(void)
@@ -928,11 +945,11 @@ void appPhySateAppConfiguration(void)
         app_set->custom_ui[uiseq_left_tapx1] = uifunc_play_pause;
         app_set->custom_ui[uiseq_right_tapx1] = uifunc_play_pause;
         app_set->custom_ui[uiseq_left_tapx2] = uifunc_anc_amb;
-#ifdef INCLUDE_GAA        
+#ifdef INCLUDE_GAA
         app_set->custom_ui[uiseq_right_tapx2] = uifunc_google_notification;
 #else
         app_set->custom_ui[uiseq_right_tapx2] = uifunc_anc_amb;
-#endif        
+#endif
         app_set->custom_ui[uiseq_left_tapx3] = uifunc_disable;
         app_set->custom_ui[uiseq_right_tapx3] = uifunc_disable;
         PsStore(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
@@ -990,14 +1007,14 @@ void appPhyStatePowerOffEvent(void)
     appPhyStateCancelTriggerSleepMode();
     appPhyStateCancelTriggerStandbyMode();
     if(appSmIsPrimary())
-    {    
+    {
         appExitHandsetPairing();
         tymSyncdata(btStatusCmd,btConnectable);   //power off sync bt status connectable
     }
     else
     {
         reportBtStatus(btConnectable); /*power off maybe can't receive btConnectable , force clear bt status*/
-    }    
+    }
     appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_user_poweroff);
     if(getFactoryModeEnable() == TRUE)
     {
@@ -1048,7 +1065,7 @@ void appPhyStateAncCalibration(void)
 static void appPhyTapANCEvent(void)
 {
     //check hfp from audio_curation
-    MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);       
+    MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
 }
 
 /*! \brief based on action (left/right) tapx1,tapx2,tapx3,swipeL,swipeR get custom ui functin id*/
@@ -1071,9 +1088,9 @@ void appPhyStateCustomIdTapx1(uint8 act)
     uint8 id = appPhyStateGetCustomUiId(act);
     if(id == uifunc_play_pause_with_amb)
     {
-#ifdef INCLUDE_GAA        
+#ifdef INCLUDE_GAA
         if(app_set->smartassistant == smartasst_bisto)
-        {    
+        {
             LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel_ambient);
         }
         else
@@ -1083,22 +1100,22 @@ void appPhyStateCustomIdTapx1(uint8 act)
                 LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_hfp_voice_dial_cancel);
             }
             else
-            {        
+            {
                 LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_pp_ambient);//first ambient check,play ->ambient
-                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);  
+                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);
             }
-        }    
-                
+        }
+
 #else
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_pp_ambient);//first ambient check,play ->ambient
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);
-#endif        
+#endif
     }
     else if(id == uifunc_play_pause)
     {
-#ifdef INCLUDE_GAA    
+#ifdef INCLUDE_GAA
         if(app_set->smartassistant == smartasst_bisto)
-        {    
+        {
             LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_cancel);
         }
         else
@@ -1107,14 +1124,14 @@ void appPhyStateCustomIdTapx1(uint8 act)
             {
                 LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_hfp_voice_dial_cancel);
             }
-            else      
+            else
             {
                 LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);
             }
         }
 #else
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);
-#endif        
+#endif
     }
 }
 
@@ -1147,7 +1164,7 @@ void appPhyStateTapx1(void)
 /*! \brief tapx2 for cutom UI id */
 void appPhyStateCustomIdTapx2(uint8 act)
 {
-    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();    
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
     uint8 id = appPhyStateGetCustomUiId(act);
     if(id == uifunc_anc_amb) /* switch between ambient and ANC */
     {
@@ -1157,7 +1174,7 @@ void appPhyStateCustomIdTapx2(uint8 act)
     else if(id == uifunc_google_notification) /* google bisto notification */
     {
         if(app_set->smartassistant == smartasst_bisto)
-        {    
+        {
             MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_BISTO, NULL);
         }
     }
@@ -1168,7 +1185,7 @@ void appPhyStateCustomIdTapx2(uint8 act)
     else if(id == uifunc_vol)
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_UP, NULL);
-    }    
+    }
 }
 
 /*! \brief tapx2 ui*/
@@ -1217,13 +1234,13 @@ void appPhyStateTapx3(void)
     else if(id == uifunc_vol)
     {
         MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_VOLUME_DOWN, NULL);
-    }    
+    }
 }
 /*! \brief hold2s ui*/
 void appPhyStateHold2s(void)
 {
-    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();     
-    uint8 touchPadMode = tymGetTouchPadMode();    
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    uint8 touchPadMode = tymGetTouchPadMode();
     phyStateTaskData* phy_state = PhyStateGetTaskData();
     bool playing = (appAvPlayStatus() == avrcp_play_status_playing);
     DEBUG_LOG("TOUCH_MESSAGE_HOLD2S,appHfpIsCallIncoming %d,ScoFwdIsCallIncoming %d",appHfpIsCallIncoming(),ScoFwdIsCallIncoming());
@@ -1232,7 +1249,7 @@ void appPhyStateHold2s(void)
     {
         appUserPowerOn();
         return;
-    }   
+    }
     else if((appHfpIsCallIncoming() == TRUE)|| (ScoFwdIsCallIncoming() == TRUE))
     {
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_voice_call_reject);
@@ -1243,7 +1260,7 @@ void appPhyStateHold2s(void)
         //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAPX2, NULL);
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_voice_call_hang_up);
         DEBUG_LOG("call ui_input_voice_call_hang_up");
-    }    
+    }
     else if(Multidevice_IsLeft() == TRUE)
     {
         phy_state->quickattention_enable = TRUE;
@@ -1251,19 +1268,19 @@ void appPhyStateHold2s(void)
         {
             phy_state->quickattention_play = TRUE;
             Ui_InjectUiInput(ui_input_pause);
-        }            
+        }
         LogicalInputSwitch_SendPassthroughLogicalInputWithDelay(ui_input_bell_ui_quick_attention_on, 200);
     }
     else if(app_set->smartassistant == smartasst_bisto)
-    {            
+    {
         phy_state->va_holdenable = TRUE;
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_presshold);
-    }    
-    else    
+    }
+    else
     {
         /*trigger handset build-in va*/
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_hfp_voice_dial);
-    }        
+    }
 }
 
 /*! \brief hold2s end ui */
@@ -1272,20 +1289,20 @@ void appPhyStateHold2sEnd(void)
      phyStateTaskData* phy_state = PhyStateGetTaskData();
       /*va release*/
      if(phy_state->va_holdenable == TRUE)
-     {   
+     {
         phy_state->va_holdenable = FALSE;
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_va_6);
     }
-	else if(phy_state->quickattention_enable == TRUE)
+    else if(phy_state->quickattention_enable == TRUE)
     {
         phy_state->quickattention_enable = FALSE;
-        LogicalInputSwitch_SendPassthroughLogicalInputWithDelay(ui_input_bell_ui_quick_attention_off, 100);       
+        LogicalInputSwitch_SendPassthroughLogicalInputWithDelay(ui_input_bell_ui_quick_attention_off, 100);
         if(phy_state->quickattention_play)
         {
-            phy_state->quickattention_play = FALSE;  
+            phy_state->quickattention_play = FALSE;
             LogicalInputSwitch_SendPassthroughLogicalInputWithDelay(ui_input_play, 200);
-        }    
-    }    
+        }
+    }
 }
 
 /*! \brief swipe left ui */
@@ -1416,7 +1433,7 @@ void appPhyStateTriggerStandbyModeInCase(void)
         phy_state->trigger_standbymode = TRUE;
         phy_state->trigger_standbymodeincase = TRUE;
         MessageSendLater(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE, NULL, D_MIN(10));
-        //MessageSendLater(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE, NULL, D_MIN(1));        
+        //MessageSendLater(PhyStateGetTask(),PHY_STATE_INTERNAL_TIMEOUT_STANDBYMODE, NULL, D_MIN(1));
     }
 }
 
@@ -1438,16 +1455,16 @@ void appPhyUpdateSleepStandbyMode(void)
     bool inEar = StateProxy_IsInEar();
     bool peerInEar = StateProxy_IsPeerInEar();
     bool peerInCase = StateProxy_IsPeerInCase();
-    bool inCase = StateProxy_IsInCase();    
+    bool inCase = StateProxy_IsInCase();
     bool sleepMode = StateProxy_IsSleepMode();
     bool standbyMode = StateProxy_IsStandbyMode();
     bool record_peerincase = phy_state->record_peerincase;
-    bool record_incase = phy_state->record_incase; 
-    
+    bool record_incase = phy_state->record_incase;
+
     bool poweron = StateProxy_IsPowerOn();
     bool primary = appSmIsPrimary();
     uint8 btstatus = tymGetBTStatus();
-    
+
     phy_state->record_incase = inCase;
     phy_state->record_peerincase = peerInCase;
 
@@ -1456,7 +1473,7 @@ void appPhyUpdateSleepStandbyMode(void)
     if(poweron == FALSE)
         return; /*power off don't check mode*/
     if(btstatus == startOTA)
-        return; /* OTA start don't check mode*/    
+        return; /* OTA start don't check mode*/
     /*two bud in case trigger standby mode 10 min*/
     if(standbyMode == FALSE) //not standby
     {
@@ -1464,11 +1481,11 @@ void appPhyUpdateSleepStandbyMode(void)
         {
             //cancel sleep/standby counter, re-counter 10min
             if(phy_state->trigger_standbymodeincase == FALSE)
-            {    
+            {
                 if(sleepMode)
                 {
-                    tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode);   
-                }    
+                    tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode);
+                }
                 appPhyStateCancelTriggerSleepMode();
                 appPhyStateCancelTriggerStandbyMode();
                 appPhyStateTriggerStandbyModeInCase();
@@ -1480,14 +1497,14 @@ void appPhyUpdateSleepStandbyMode(void)
             {
                 if(peerInCase || inCase)
                 {
-                    //leave sleep mode when insert one of buds to charging case              
-                    tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode); 
-                }    
-            } 
+                    //leave sleep mode when insert one of buds to charging case
+                    tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode);
+                }
+            }
             else if(inEar || peerInEar)
             {
-                tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode); 
-            }    
+                tymSyncdata(sleepStandbyModeCmd, phy_state_event_leave_sleepmode);
+            }
         }
         else if(inEar || peerInEar)
         {
@@ -1497,7 +1514,7 @@ void appPhyUpdateSleepStandbyMode(void)
         else
         {
             if((sleepMode == FALSE) && (standbyMode == FALSE))
-            {                
+            {
                 //appPhyStateTriggerSleepMode();
                 //appPhyStateCancelTriggerStandbyMode();
                 /*for customer new specification, remove sleep mode, start trigger standby mode*/
@@ -1506,8 +1523,8 @@ void appPhyUpdateSleepStandbyMode(void)
                     appPhyStateCancelTriggerStandbyMode();//for re-counter in case standby
                 appPhyStateTriggerStandbyMode();
             }
-        }                
-    }        
+        }
+    }
 }
 
 void appPhyChangeSleepStandbyMode(phy_state_event phyState)

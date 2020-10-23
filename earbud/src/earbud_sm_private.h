@@ -38,6 +38,7 @@ enum sm_internal_message_ids
     SM_INTERNAL_TIMEOUT_IN_EAR_A2DP_START,         /*!< Timeout within which restart audio if earbud put back in ear. */
     SM_INTERNAL_TIMEOUT_IDLE,                      /*!< Timeout when idle. */
     SM_INTERNAL_TIMEOUT_ADDR_SWITCH_RETRY,         /*!< Timeout to retry address switch again. */
+    SM_INTERNAL_TIMEOUT_DFU_CLEANUP,               /*!< Timeout to cleanup DFU if primary put in case during DFU */
 };
 
 /*! \brief Actions that may be performed after a link disconnect has completed */

@@ -8,7 +8,9 @@
 
 #ifndef EARBUD_SM_CONFIG_H_
 #define EARBUD_SM_CONFIG_H_
-
+//add for Qualcomm patch for abnormalOTA
+/*! Timeout for DFU cleanup after handover begins */
+#define appConfigDfuTimeoutCleanupPostHandoverMs()  (D_SEC(5))
 
 /*! Timeout for entering the case after selecting DFU from the user
     interface */

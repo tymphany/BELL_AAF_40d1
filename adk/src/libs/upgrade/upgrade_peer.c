@@ -12,7 +12,7 @@ DESCRIPTION
 NOTES
 
 */
-
+/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #include "upgrade_peer_private.h"
 #include "upgrade_msg_host.h"
 #include "upgrade.h"
@@ -54,6 +54,7 @@ static UPGRADE_PEER_CTX_T *UpgradePeerCtxGet(void);
 static void UpgradePeerCtxInit(void);
 static void StopUpgrade(void);
 static void SavePSKeys(void);
+static void UpgradePeerLoadPSStore(uint16 dataPskey,uint16 dataPskeyStart);
 
 /**
  * Set resume point as provided by Secondary device.
@@ -223,6 +224,34 @@ static void UpgradePeerCtxDestroy(void)
         }
     }
 }
+/*added by Qualcomm patch - 04838455 abort dfu out of case */
+void UpgradePeerPSClearStore(void)
+{
+    if (upgradePeerInfo == NULL) {
+        UPGRADE_PEER_INFO_T *peerInfo;
+        peerInfo = (UPGRADE_PEER_INFO_T *) PanicUnlessMalloc(sizeof(*peerInfo));
+        memset(peerInfo, 0, sizeof(*peerInfo));
+
+        upgradePeerInfo = peerInfo;
+
+        UpgradePeerLoadPSStore(EARBUD_UPGRADE_CONTEXT_KEY, EARBUD_UPGRADE_PEER_CONTEXT_OFFSET);
+        upgradePeerInfo->UpgradePSKeys.is_dfu_mode = 0;
+        upgradePeerInfo->UpgradePSKeys.currentState = 0;
+        upgradePeerInfo->UpgradePSKeys.upgradeResumePoint = 0;
+        SavePSKeys();
+
+        free(upgradePeerInfo);
+        upgradePeerInfo = NULL;
+    }
+    else {
+        upgradePeerInfo->UpgradePSKeys.is_dfu_mode = 0;
+        upgradePeerInfo->UpgradePSKeys.currentState = 0;
+        upgradePeerInfo->UpgradePSKeys.upgradeResumePoint = 0;
+        SavePSKeys();
+    }
+
+    DEBUG_LOG_INFO("UpgradePeerPSClearStore");
+}
 
 /**
  * To stop the upgrade process.
@@ -233,7 +262,7 @@ static void StopUpgrade(void)
     MessageSend(upgradePeerInfo->appTask, UPGRADE_PEER_DISCONNECT_REQ, NULL);
     /* Clear Pskey to start next upgrade from fresh */
     memset(&upgradePeerInfo->UpgradePSKeys,0x0000,
-               sizeof(&upgradePeerInfo->UpgradePSKeys) * sizeof(uint16));
+               sizeof(UPGRADE_PEER_LIB_PSKEY));
     SavePSKeys();
     UpgradePeerCtxDestroy();
 }
@@ -246,8 +275,20 @@ static void CleanUpgradePeerCtx(void)
     upgradePeerInfo->SmCtx->isUpgrading = FALSE;
     /* Clear Pskey to start next upgrade from fresh */
     memset(&upgradePeerInfo->UpgradePSKeys,0x0000,
-               sizeof(&upgradePeerInfo->UpgradePSKeys) * sizeof(uint16));
+               sizeof(UPGRADE_PEER_LIB_PSKEY));
     SavePSKeys();
+    UpgradePeerCtxDestroy();
+}
+
+/*added by Qualcomm patch - 04838455 abort dfu out of case */
+/**
+ * To stop the upgrade process: public.
+ */
+void UpgradePeerStopUpgrade(void)
+{
+    upgradePeerInfo->SmCtx->isUpgrading = FALSE;
+    MessageSend(upgradePeerInfo->appTask, UPGRADE_PEER_DISCONNECT_REQ, NULL);
+    UpgradePeerPSClearStore();
     UpgradePeerCtxDestroy();
 }
 
@@ -950,7 +991,7 @@ static void UpgradePeerLoadPSStore(uint16 dataPskey,uint16 dataPskeyStart)
     else
     {
         memset(&upgradePeerInfo->UpgradePSKeys,0x0000,
-               sizeof(&upgradePeerInfo->UpgradePSKeys) * sizeof(uint16));
+               sizeof(UPGRADE_PEER_LIB_PSKEY));
     }
 }
 
@@ -1274,7 +1315,7 @@ DESCRIPTION
 */
 bool UpgradePeerIsStarted(void)
 {
-    return (upgradePeerInfo->SmCtx != NULL);
+    return (upgradePeerInfo != NULL && upgradePeerInfo->SmCtx != NULL);
 }
 
 /****************************************************************************

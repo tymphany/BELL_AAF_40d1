@@ -29,6 +29,7 @@ DESCRIPTION
 
 
 */
+/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #ifndef UPGRADE_PARTITIONS_H_
 #define UPGRADE_PARTITIONS_H_
 
@@ -156,7 +157,7 @@ void UpgradePartitionsMarkUpgrading(uint16 logicalPartition);
     @returns UPGRADE_PARTITIONS_ERASED if all partitions erased
              UPGRADE_PARTITIONS_ERROR if an error was received
 */
-UpgradePartitionsState UpgradePartitionsEraseAllManaged(void);
+UpgradePartitionsState UpgradePartitionsEraseAllManaged(bool do_erase);
 
 
 #endif /* UPGRADE_PARTITIONS_H_ */

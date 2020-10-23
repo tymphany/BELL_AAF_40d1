@@ -7,7 +7,7 @@
 \ingroup    topologies       
 \brief      TWS topology public interface.
 */
-
+/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #ifndef TWS_TOPOLOGY_H_
 #define TWS_TOPOLOGY_H_
 
@@ -205,5 +205,5 @@ void TwsTopology_ProhibitHandsetConnection(bool prohibit);
 #ifdef ENABLE_TYM_PLATFORM
 void TwsTopology_DfuStartInCase(void);
 #endif
-
+void TwsTopology_EndDfuRole_IfNeeded(void);
 #endif /* TWS_TOPOLOGY_H_ */

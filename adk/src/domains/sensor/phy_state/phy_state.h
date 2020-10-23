@@ -128,6 +128,7 @@ typedef struct
     bool va_holdenable;
     bool quickattention_enable;
     bool quickattention_play;
+    bool sm_regphy;
 #endif
     /*! Lock used to conditionalise sending of PHY_STATE_INIT_CFM. */
     uint16 lock;
@@ -260,6 +261,7 @@ void appPhyStateTriggerStandbyModeInCase(void);
 bool appPhyStandbyModeIsTriggerCount(void);
 bool appPhySleepModeIsTriggerCount(void);
 bool appPhyStandbyModeInCaseIsTriggerCount(void);
+void appPhyRegisterSM(void);
 #endif/*ENABLE_TYM_PLATFORM*/
 #endif /* PHY_STATE_H */
 
