@@ -544,9 +544,11 @@ static void twsTopology_HandlePhyStateChangedInd(PHY_STATE_CHANGED_IND_T* ind)
             break;
        case phy_state_event_in_case:
             if(TwsTopologyGetTaskData()->role == tws_topology_role_dfu)
-            {                                
-                twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
-                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);                 
+            {       
+                twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);                                                     
+                //twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+                //twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);                 
             }
             break;           
 #else

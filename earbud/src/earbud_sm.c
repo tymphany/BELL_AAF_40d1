@@ -1532,7 +1532,9 @@ static void appSmHandlePhyStateInCaseEvent(void)
 
         if (BtDevice_IsMyAddressPrimary()) {
             gaiaFrameworkInternal_AllowNewConnections(FALSE);
-            MessageSendLater(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP, NULL, appConfigDfuTimeoutCleanupPostHandoverMs());
+            MessageSendLater(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP, NULL, 100);
+            appSmHandleAbortDfu(FALSE);
+            //MessageSendLater(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP, NULL, appConfigDfuTimeoutCleanupPostHandoverMs());
         }
         else {
             /* abort but fall back to secondary role, even if no-role-idle will begin soon */
