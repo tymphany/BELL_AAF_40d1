@@ -651,7 +651,10 @@ static void gaa_OtaHandleUpgradeHostErrorWarnInd(uint16 size_data, uint8 *data)
             case GAA_OTA_STATE_REBOOT_SYNC:
             case GAA_OTA_STATE_REBOOT_START:
             case GAA_OTA_STATE_REBOOT_COMMIT:
-                gaa_OtaSetState(GAA_OTA_STATE_READY);
+                //add case 04866605 patch
+                //gaa_OtaSetState(GAA_OTA_STATE_READY);                
+                gaa_OtaSetState(GAA_OTA_STATE_ABORT);
+                DEBUG_LOG("Setting OTA state to GAA_OTA_STATE_ABORT");
                 break;
 
             default:
@@ -693,6 +696,8 @@ static void gaa_OtaHandleUpgradeHostErrorWarnInd(uint16 size_data, uint8 *data)
         }
 #endif
         gaa_OtaSendUpgradeHostErrorWarnRsp(msg->errorCode);
+        //add case 04866605 patch
+        gaa_OtaSendShortMessage(UPGRADE_HOST_ABORT_REQ);
         free(msg);
     }
 }
