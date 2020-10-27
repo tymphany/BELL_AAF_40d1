@@ -1532,9 +1532,10 @@ static void appSmHandlePhyStateInCaseEvent(void)
 
         if (BtDevice_IsMyAddressPrimary()) {
             gaiaFrameworkInternal_AllowNewConnections(FALSE);
-            MessageSendLater(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP, NULL, 100);
+#ifdef ENABLE_TYM_PLATFORM  /*for bisto abort*/
             appSmHandleAbortDfu(FALSE);
-            //MessageSendLater(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP, NULL, appConfigDfuTimeoutCleanupPostHandoverMs());
+#endif            
+            MessageSendLater(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP, NULL, appConfigDfuTimeoutCleanupPostHandoverMs());
         }
         else {
             /* abort but fall back to secondary role, even if no-role-idle will begin soon */
@@ -1565,6 +1566,9 @@ static void appSmHandlePhyStatePowerOffEvent(void)
 
         if (BtDevice_IsMyAddressPrimary()) {
             gaiaFrameworkInternal_AllowNewConnections(FALSE);
+#ifdef ENABLE_TYM_PLATFORM  /*for bisto abort*/
+            appSmHandleAbortDfu(FALSE);
+#endif              
             MessageSendLater(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP, NULL, appConfigDfuTimeoutCleanupPostHandoverMs());
         }
         else {
@@ -2171,8 +2175,11 @@ static void appSmHandleAvA2dpDisconnectedInd(const AV_A2DP_DISCONNECTED_IND_T *i
             if (appDeviceIsHandset(&ind->bd_addr))
             {
 #ifdef ENABLE_TYM_PLATFORM
-                if(ind->reason != AV_A2DP_INVALID_REASON)
-                    tymSyncdata(btStatusCmd,btDisconnect);
+                if (TwsTopology_GetRole() != tws_topology_role_dfu)
+                {    
+                    if(ind->reason != AV_A2DP_INVALID_REASON)
+                        tymSyncdata(btStatusCmd,btDisconnect);
+                }
 #endif
                 /* Clear connected and set disconnected events */
                 appSmRulesResetEvent(RULE_EVENT_HANDSET_A2DP_CONNECTED);
@@ -2643,8 +2650,8 @@ static void appSmHandleUpgradeDisconnected(void)
         appSmHandleAbortDfu(FALSE);
         return;
     }
-/*#ifdef ENABLE_TYM_PLATFORM
-    else if ((appPhyStateGetPowerState() == FALSE) && !MessagePendingFirst(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP, NULL)) {
+#ifdef ENABLE_TYM_PLATFORM
+    else if ((appUpgradeIsAppInCaseDFUState()) &&(sm->dfu_in_progress == TRUE) ) {
         //add for Qualcomm patch for abnormalOTA 
         DEBUG_LOG_DEBUG("appSmHandleUpgradeDisconnected aborting DFU");
 
