@@ -400,7 +400,10 @@ void reportBtStatus(uint8 status)
         DEBUG_LOG("tym send happenErr"); 
         _sendStatusCmd(statusErr);
     }        
-    procCmd.btStatus = status; 
+    if(status == btDisconnect)
+        procCmd.btStatus = btConnectable; //disconnect is temporary information
+    else                    
+        procCmd.btStatus = status; 
     //update touch pad
     updateTouchPadMode();                   
 }
