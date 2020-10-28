@@ -12,5 +12,7 @@
 #define PSID_IRCONFIG  (PSID_CUSTOMER0 + 6)
 // kings
 #define PSID_PRESET_EQ (PSID_CUSTOMER0 + 7)
+// added store anc level
+#define PSID_ANC_LEVEL (PSID_CUSTOMER0 + 8)
 
 #endif /*__EARBUD_TYM_PSID_H__*/

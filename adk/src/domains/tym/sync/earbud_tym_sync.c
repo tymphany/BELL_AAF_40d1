@@ -25,6 +25,7 @@
 #include "ui_prompts.h"
 #include "hfp_profile.h"
 #include "earbud_sm.h"
+#include "earbud_tym_util.h"
 
 /* ------------------------ Defines ------------------------ */
 
@@ -144,6 +145,7 @@ static void moditifyAmbientLevel(uint8 context)
 {
     tymAncTaskData *tymAnc = TymAncGetTaskData();
     tymAnc->ambientLevel = context;    
+    storeANCLevelConfigData();
 }
 
 /*! modify speech level */
@@ -151,6 +153,7 @@ static void moditifySpeechLevel(uint8 context)
 {
     tymAncTaskData *tymAnc = TymAncGetTaskData();
     tymAnc->speechLevel = context;      
+    storeANCLevelConfigData();
 }
 
 /*! handle earbud sync app configuration. */
@@ -162,7 +165,7 @@ static void handleSync_AppConfig(tym_sync_app_configuration_t* tym_app_configura
     {
         DEBUG_LOG("Ui custom %d %d %d %d",tym_app_configuration->custom_ui[0],tym_app_configuration->custom_ui[1],tym_app_configuration->custom_ui[2],tym_app_configuration->custom_ui[3]);
         memcpy(app_set, tym_app_configuration, sizeof(tym_sync_app_configuration_t));
-        PsStore(PSID_APPCONFIG, tym_app_configuration, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
+        storeAppConfigData();
     }
 }
 

@@ -565,7 +565,9 @@ bool AudioCuration_Init(Task init_task)
     AecLeakthrough_PostInitSetup();
 
     UNUSED(init_task);
-    
+#ifdef ENABLE_TYM_PLATFORM
+    setupAmbientLevel(); /*for re-boot init ambient level*/
+#endif    
     return TRUE;
 }
 

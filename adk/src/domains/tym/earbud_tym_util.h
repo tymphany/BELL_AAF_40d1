@@ -37,6 +37,10 @@ void setPSPresetEQ(void);
 void getPSPresetEQ(void);
 void UpdateAudioPSKey(void);
 void configTYMRestoreDefault(void);
+void storeAppConfigData(void);
+void retrieveAppConfigData(void);
+void storeANCLevelConfigData(void);
+void retrieveANCLevelConfigData(void);
 #endif
 
 

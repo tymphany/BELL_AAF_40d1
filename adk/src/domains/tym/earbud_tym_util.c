@@ -17,7 +17,8 @@
 #include "earbud_tym_psid.h"
 #include "earbud_tym_util.h"
 #include "earbud_tym_acoustic_data.h"
-
+#include "earbud_tym_sync.h"
+#include "tym_anc.h"
 /* ------------------------ Defines ------------------------ */
 #define FACTORY_SAMPLE_RATE         44100
 
@@ -175,4 +176,47 @@ void configTYMRestoreDefault(void)
     /*clear PSKey*/
     PsStore(PSID_BTNAME, 0, 0);
     PsStore(PSID_APPCONFIG, 0, 0);
+    PsStore(PSID_ANC_LEVEL, 0, 0);
+}
+
+void storeAppConfigData(void)
+{
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    int pslen = PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t));
+    uint16 appUiData[pslen]; 
+    memcpy(appUiData, app_set, sizeof(tym_sync_app_configuration_t));  
+    PsStore(PSID_APPCONFIG, appUiData, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t))); 
+}
+
+void retrieveAppConfigData(void)
+{
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    int pslen = PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t));
+    uint16 appUiData[pslen];  
+    if(PsRetrieve(PSID_APPCONFIG, 0, 0) != 0)
+    {    
+        PsRetrieve(PSID_APPCONFIG, appUiData, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
+        memcpy(app_set, appUiData, sizeof(tym_sync_app_configuration_t)); 
+    }
+}
+
+void storeANCLevelConfigData(void)
+{
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
+    uint16 psdata[1];
+    psdata[0] = (tymAnc->speechLevel) | (tymAnc->ambientLevel << 8); 
+    PsStore(PSID_ANC_LEVEL, psdata, PS_SIZE_ADJ(sizeof(psdata)));  
+}
+
+void retrieveANCLevelConfigData(void)
+{
+    tymAncTaskData *tymAnc = TymAncGetTaskData();
+    uint16 psdata[1];
+    if(PsRetrieve(PSID_ANC_LEVEL, 0, 0) != 0)
+    {  
+        PsRetrieve(PSID_ANC_LEVEL, psdata, PS_SIZE_ADJ(sizeof(psdata)));
+        tymAnc->speechLevel = (psdata[0] & 0xff);
+        tymAnc->ambientLevel = (psdata[0] >> 8)& 0xff;
+    }
+    DEBUG_LOG("amb level %d,speech level %d",tymAnc->ambientLevel,tymAnc->speechLevel);    
 }

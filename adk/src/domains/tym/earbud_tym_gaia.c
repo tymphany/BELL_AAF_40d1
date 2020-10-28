@@ -32,6 +32,7 @@
 #include "logical_input_switch.h"
 #include "1_button.h"
 #include "ui_prompts.h"
+#include "earbud_tym_util.h"
 /* Todo
 #include "sink_tym_anc.h"
 #include "sink_tym_main.h"
@@ -444,7 +445,7 @@ void bell_gaia_set_earbudcustom(GAIA_UNHANDLED_COMMAND_IND_T *command)
             app_set->custom_ui[uiseq_right_tapx3] = uifunc_vol;        
         else
             app_set->custom_ui[uiseq_right_tapx3] = uifunc_disable;
-        PsStore(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
+        storeAppConfigData();
         tymSyncAppConfiguration(app_set);
 
         tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
@@ -486,7 +487,7 @@ void bell_gaia_set_smartassistant(GAIA_UNHANDLED_COMMAND_IND_T *command)
         else if((command->payload[0] == 0x0) ||(command->payload[0] == 0x1))
         {
             app_set->smartassistant = command->payload[0];
-            PsStore(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
+            storeAppConfigData();
             tymSyncAppConfiguration(app_set);
             /* send response */
             tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
@@ -600,7 +601,7 @@ void bell_gaia_set_autowear(GAIA_UNHANDLED_COMMAND_IND_T *command)
         {
             app_set->enable_auto_wear = (gaia_data & 0x01);
             app_set->enable_auto_play = ((gaia_data >> 1)& 0x01);
-            PsStore(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
+            storeAppConfigData();
             tymSyncAppConfiguration(app_set);
             /* send response */
             tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
@@ -844,7 +845,7 @@ void bell_gaia_set_auto_play(GAIA_UNHANDLED_COMMAND_IND_T *command)
         if((command->payload[0] == 0x0) || (command->payload[0] == 0x01))
         {
             app_set->enable_auto_play = command->payload[0];
-            PsStore(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
+            storeAppConfigData();
             tymSyncAppConfiguration(app_set);
             /* send response */
             tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
@@ -883,7 +884,7 @@ void bell_gaia_set_ambient_ext_anc(GAIA_UNHANDLED_COMMAND_IND_T *command)
         if((command->payload[0] == 0x0) || (command->payload[0] == 0x01))
         {
             app_set->ambient_ext_anc = command->payload[0];
-            PsStore(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
+            storeAppConfigData();
             tymSyncAppConfiguration(app_set);
             /* send response */
             tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
