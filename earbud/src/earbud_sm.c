@@ -2659,7 +2659,7 @@ static void appSmHandleUpgradeDisconnected(void)
         appSmHandleAbortDfu(FALSE);
         return;
     }
-#endif*/
+#endif
 
     /* Abort the upgrade of Initiator and Peer device if GAIA app disconnection
      * indication comes */
