@@ -19,6 +19,8 @@
 #include "handset_service_protected.h"
 #include "handset_service_sm.h"
 #ifdef ENABLE_TYM_PLATFORM
+#include "tws_topology.h"
+#include "earbud_tym_sync.h"
 #include "earbud_tym_cc_communication.h"
 #include "state_proxy.h"
 #include "ui_prompts.h"
@@ -214,11 +216,20 @@ static void handsetServiceSm_EnterDisconnected(handset_service_state_machine_t *
         HS_LOG("handsetServiceSm_EnterDisconnected destroying sm for dev 0x%x", sm->handset_device);
 #ifdef ENABLE_TYM_PLATFORM
         Prompts_SetConnectedStatus(0); //prompt know disconnect status.
-        HS_LOG("sm pairing %d",sm->disconnect_pairing);    
-        if((sm->disconnect_pairing == FALSE) && (linkloss_disconnect == FALSE))
-        {  
-            if (!BdaddrIsZero(&sm->handset_addr))/*BT address isn't zero, assume BT not BLE*/
-                Ui_InjectUiInput(ui_input_prompt_disconnected);
+        HS_LOG("sm pairing %d",sm->disconnect_pairing);   
+        if(sm->old_state == HANDSET_SERVICE_STATE_CONNECTED_BREDR)
+        {     
+            if((sm->disconnect_pairing == FALSE) && (linkloss_disconnect == FALSE))
+            {  
+                if (!BdaddrIsZero(&sm->handset_addr))/*BT address isn't zero, assume BT not BLE*/
+                {    
+                    Ui_InjectUiInput(ui_input_prompt_disconnected);
+                    if (TwsTopology_GetRole() != tws_topology_role_dfu)
+                    {    
+                        tymSyncdata(btStatusCmd, btDisconnect);
+                    }
+                }
+            }
         }
 #endif        
         HandsetServiceSm_DeInit(sm);
@@ -476,7 +487,9 @@ void HandsetServiceSm_SetState(handset_service_state_machine_t *sm, handset_serv
     /* Check for a exit transition from the CONNECTING pseudo-state */
     if (handsetServiceSm_IsConnectingBredrState(old_state) && !handsetServiceSm_IsConnectingBredrState(state))
         handsetServiceSm_ExitConnectingBredr(sm);
-
+#ifdef ENABLE_TYM_PLATFORM
+    sm->old_state = old_state;
+#endif
     /* Set new state */
     sm->state = state;
 

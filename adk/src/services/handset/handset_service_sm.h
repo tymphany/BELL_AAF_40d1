@@ -116,6 +116,8 @@ typedef struct
 #ifdef ENABLE_TYM_PLATFORM
     bool disconnect_pairing;
     bool linkloss_state;
+    /*! old state */
+    handset_service_state_t old_state;//for filter peer connected try connect handset happen disconnect prompt
 #endif    
 } handset_service_state_machine_t;
 

@@ -2174,13 +2174,6 @@ static void appSmHandleAvA2dpDisconnectedInd(const AV_A2DP_DISCONNECTED_IND_T *i
         {
             if (appDeviceIsHandset(&ind->bd_addr))
             {
-#ifdef ENABLE_TYM_PLATFORM
-                if (TwsTopology_GetRole() != tws_topology_role_dfu)
-                {    
-                    if(ind->reason != AV_A2DP_INVALID_REASON)
-                        tymSyncdata(btStatusCmd,btDisconnect);
-                }
-#endif
                 /* Clear connected and set disconnected events */
                 appSmRulesResetEvent(RULE_EVENT_HANDSET_A2DP_CONNECTED);
                 appSmRulesSetEvent(RULE_EVENT_HANDSET_A2DP_DISCONNECTED);
