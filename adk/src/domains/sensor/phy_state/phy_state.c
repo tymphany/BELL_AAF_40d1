@@ -934,6 +934,7 @@ void appPhySateAppConfiguration(void)
     tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
     if(PsRetrieve(PSID_APPCONFIG, 0, 0) == 0) //no data run initial information
     {
+        DEBUG_LOG("**!!!!!PSID_APPCONFIG NULL data!!!!!****");        
         app_set->auto_power_off_cmd = 0x01;//app power off configure 10 min
         app_set->auto_power_off_timer = 10;//30 min;
         app_set->enable_auto_wear = 1; //default no wear pause
@@ -952,11 +953,12 @@ void appPhySateAppConfiguration(void)
 #endif
         app_set->custom_ui[uiseq_left_tapx3] = uifunc_disable;
         app_set->custom_ui[uiseq_right_tapx3] = uifunc_disable;
-        PsStore(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
+        storeAppConfigData();
     }
     else
     {
-        PsRetrieve(PSID_APPCONFIG, app_set, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
+        DEBUG_LOG("**!!!!!PSID_APPCONFIG have data!!!!!****");
+        retrieveAppConfigData(); 
     }
 }
 
