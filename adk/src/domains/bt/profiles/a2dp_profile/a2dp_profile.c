@@ -206,8 +206,8 @@ uint8 A2dpProfile_GetDefaultVolume(void)
     /* Set default volume as set in configuration */
     const int rangeDb = appConfigMaxVolumedB() - appConfigMinVolumedB();
 #ifdef ENABLE_TYM_PLATFORM
-    /*set half volume for default volume*/
-    return (uint8)((appConfigDefaultVolumedB() - appConfigMinVolumedB()) * (VOLUME_MAX/2) / rangeDb);    
+    /*set iOS level 12 volume for default volume*/
+    return (uint8)((appConfigDefaultVolumedB() - appConfigMinVolumedB()) * (VOLUME_MAX*(0.75)) / rangeDb);    
 #else    
     return (uint8)((appConfigDefaultVolumedB() - appConfigMinVolumedB()) * VOLUME_MAX / rangeDb);
 #endif    
