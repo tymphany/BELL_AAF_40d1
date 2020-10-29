@@ -1101,13 +1101,13 @@ void appPhyStateCustomIdTapx1(uint8 act)
             }
             else
             {
-                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_pp_ambient);//first ambient check,play ->ambient
+                //LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_pp_ambient);//first ambient check,play ->ambient
                 LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);
             }
         }
 
 #else
-        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_pp_ambient);//first ambient check,play ->ambient
+        //LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_bell_ui_pp_ambient);//first ambient check,play ->ambient
         LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_toggle_play_pause);
 #endif
     }
