@@ -934,23 +934,31 @@ void appPhySateAppConfiguration(void)
     tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
     if(PsRetrieve(PSID_APPCONFIG, 0, 0) == 0) //no data run initial information
     {
-        DEBUG_LOG("**!!!!!PSID_APPCONFIG NULL data!!!!!****");        
+        DEBUG_LOG("**!!!!!PSID_APPCONFIG NULL data!!!!!****");
         app_set->auto_power_off_cmd = 0x01;//app power off configure 10 min
         app_set->auto_power_off_timer = 10;//30 min;
         app_set->enable_auto_wear = 1; //default no wear pause
         app_set->enable_auto_play = 0; //add default value auto play is zero
         app_set->ambient_ext_anc = 1;//default ambient set stanc3 on
+#ifdef DISABLE_BISTO        
+        app_set->smartassistant = smartasst_disable;//smartasst_bisto;//smartasst_bisto;//default bisto
+        app_set->custom_ui[uiseq_left_swipe] = uifunc_track;
+        app_set->custom_ui[uiseq_right_swipe] = uifunc_vol;
+        app_set->custom_ui[uiseq_left_tapx1] = uifunc_play_pause;
+        app_set->custom_ui[uiseq_right_tapx1] = uifunc_play_pause;
+        app_set->custom_ui[uiseq_left_tapx2] = uifunc_anc_amb;
+        app_set->custom_ui[uiseq_right_tapx2] = uifunc_anc_amb;//uifunc_google_notification;
+
+#else  /*DISABLE_BISTO*/
         app_set->smartassistant = smartasst_bisto;//smartasst_bisto;//default bisto
         app_set->custom_ui[uiseq_left_swipe] = uifunc_track;
         app_set->custom_ui[uiseq_right_swipe] = uifunc_vol;
         app_set->custom_ui[uiseq_left_tapx1] = uifunc_play_pause;
         app_set->custom_ui[uiseq_right_tapx1] = uifunc_play_pause;
         app_set->custom_ui[uiseq_left_tapx2] = uifunc_anc_amb;
-#ifdef INCLUDE_GAA
         app_set->custom_ui[uiseq_right_tapx2] = uifunc_google_notification;
-#else
-        app_set->custom_ui[uiseq_right_tapx2] = uifunc_anc_amb;
-#endif
+
+#endif /*DISABLE_BISTO*/
         app_set->custom_ui[uiseq_left_tapx3] = uifunc_disable;
         app_set->custom_ui[uiseq_right_tapx3] = uifunc_disable;
         storeAppConfigData();
@@ -958,7 +966,7 @@ void appPhySateAppConfiguration(void)
     else
     {
         DEBUG_LOG("**!!!!!PSID_APPCONFIG have data!!!!!****");
-        retrieveAppConfigData(); 
+        retrieveAppConfigData();       
     }
 }
 

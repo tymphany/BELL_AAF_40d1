@@ -37,7 +37,7 @@
 #include <rtime.h>
 
 #define BAD_CONTEXT 0xFF
-
+//#define DISABLE_BISTO  1
 /*\{*/
 
 /*! External messages */

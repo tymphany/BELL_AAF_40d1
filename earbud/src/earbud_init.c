@@ -728,7 +728,9 @@ static const init_table_entry_t appInitTable[] =
 
 #ifdef INCLUDE_FAST_PAIR
     {appTxPowerInit, 0 , NULL},
+#ifndef DISABLE_BISTO    
     {FastPair_Init,         0, NULL},
+#endif /*DISABLE_BISTO */
 #endif
 
 #ifdef INCLUDE_GATT_SERVICE_DISCOVERY
@@ -738,7 +740,9 @@ static const init_table_entry_t appInitTable[] =
     {GattConnect_ServerInitComplete, GATT_CONNECT_SERVER_INIT_COMPLETE_CFM, NULL},
 
 #ifdef INCLUDE_GAA
+#ifndef DISABLE_BISTO    
     {Gaa_Init, 0, NULL},
+#endif /*DISABLE_BISTO*/    
 #endif
 
 #ifdef INCLUDE_DEVICE_TEST_SERVICE

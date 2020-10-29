@@ -430,6 +430,13 @@ void bell_gaia_set_earbudcustom(GAIA_UNHANDLED_COMMAND_IND_T *command)
         {
             if(command->payload[seq] == uifunc_dont_change)
                 continue;
+#ifdef DISABLE_BISTO                  
+            if(command->payload[seq] == uifunc_google_notification)    
+            {
+                tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_INVALID_PARAMETER);
+                return;
+            }    
+#endif            
             app_set->custom_ui[seq] = command->payload[seq];
         }
         if(app_set->custom_ui[uiseq_left_tapx2] == uifunc_track)
@@ -486,6 +493,13 @@ void bell_gaia_set_smartassistant(GAIA_UNHANDLED_COMMAND_IND_T *command)
         }
         else if((command->payload[0] == 0x0) ||(command->payload[0] == 0x1))
         {
+#ifdef DISABLE_BISTO               
+            if(command->payload[0] == 0x1)
+            {
+                tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_NOT_SUPPORTED);
+                return;
+            }    
+#endif            
             app_set->smartassistant = command->payload[0];
             storeAppConfigData();
             tymSyncAppConfiguration(app_set);
