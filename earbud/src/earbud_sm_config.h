@@ -22,9 +22,12 @@
 /*! Timeout for starting DFU mode after a restart caused by an
     upgrade completing. The timeout will only apply if the device
     is out of the case.
-
     The timeout can be set to 0, in which case there is no limit. */
+#ifdef ENABLE_TYM_PLATFORM
+#define appConfigDfuTimeoutToStartAfterRestartMs()  (D_SEC(45))
+#else    
 #define appConfigDfuTimeoutToStartAfterRestartMs()  (D_SEC(30))
+#endif
 
 /*! Timeout for DFU mode, entered after a reboot in DFU mode.
 
