@@ -22,7 +22,7 @@ NOTES
             to be called that frequently it makes sense to access the keys
             we need when we need them.
 */
-/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -193,14 +193,4 @@ bool UpgradePSClearStore(void)
     }
     return FALSE;
 }
-/*added by Qualcomm patch - 04838455 abort dfu out of case */
-bool UpgradePSClearStoreNoDelete(void)
-{
-    if (UpgradeIsInitialised())
-    {
-        memset(UpgradeCtxGetPSKeys(),0x0000,sizeof(UPGRADE_LIB_PSKEY));
-        UpgradeSavePSKeys();
-        return TRUE;
-    }
-    return FALSE;
-}
+

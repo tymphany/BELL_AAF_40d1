@@ -6,7 +6,7 @@
 \file       
 \brief      Initialisation functions for the Peer Pairing over LE service
 */
-/*added for Qualcomm patch, qcc512x_qcc302x_r49.1_abcu9334_v2 */
+
 #include <bdaddr.h>
 #include <connection.h>
 #include <limits.h>
@@ -498,8 +498,6 @@ static void peer_pair_le_handle_server_keys_written(const GATT_ROOT_KEY_SERVER_K
     peer_pair_le_convert_grks_key_to_key(root_keys.ir, &written->ir);
     peer_pair_le_convert_grks_key_to_key(root_keys.er, &written->er);
     PanicFalse(ConnectionSetRootKeys(&root_keys));
-	
-	LocalAddr_ReconfigureBleGeneration();
 
     ConnectionSmGetLocalIrk(&irk);
     DEBUG_LOG("Local IRK :%04x %04x %04x %04x",irk.irk[0],irk.irk[1],irk.irk[2],irk.irk[3]);
@@ -736,34 +734,30 @@ static void peer_pair_le_GattConnect(uint16 cid)
     
     PEER_PAIR_LE_STATE state = peer_pair_le_get_state();
 
-    DEBUG_LOG_FN_ENTRY("peer_pair_le_GattConnect. state 0x%x cid:0x%x", state, cid);
+    DEBUG_LOG("peer_pair_le_GattConnect. state 0x%x cid:0x%x", state, cid);
 
     switch(state)
     {
         case PEER_PAIR_LE_STATE_SELECTING:
         case PEER_PAIR_LE_STATE_DISCOVERY:
         case PEER_PAIR_LE_STATE_PAIRING_AS_SERVER:
-            if (VmGetBdAddrtFromCid(cid, &tpaddr))
+            DEBUG_LOG("peer_pair_le_GattConnect. cid:0x%x", cid);
+
+            ppl->gatt_cid = cid;
+            PanicFalse(VmGetBdAddrtFromCid(cid, &tpaddr));
+            
+            if (!BtDevice_BdaddrTypedIsSame(&tpaddr.taddr, &ppl->peer))
             {
-                ppl->gatt_cid = cid;
-
-                if (!BtDevice_BdaddrTypedIsSame(&tpaddr.taddr, &ppl->peer))
-                {
-                    DEBUG_LOG_INFO("peer_pair_le_GattConnect: %04x %02x %06x != %04x %02x %06x",
-                        ppl->peer.addr.nap, ppl->peer.addr.uap, ppl->peer.addr.lap,
-                        tpaddr.taddr.addr.nap, tpaddr.taddr.addr.uap, tpaddr.taddr.addr.lap);
-                        
-                    Panic();
-                }
-
-                if (PEER_PAIR_LE_STATE_PAIRING_AS_SERVER != state)
-                {
-                    peer_pair_le_set_state(PEER_PAIR_LE_STATE_PAIRING_AS_SERVER);
-                }
+                DEBUG_LOG("peer_pair_le_GattConnect: %04x %02x %06x != %04x %02x %06x",
+                    ppl->peer.addr.nap, ppl->peer.addr.uap, ppl->peer.addr.lap,
+                    tpaddr.taddr.addr.nap, tpaddr.taddr.addr.uap, tpaddr.taddr.addr.lap);
+                    
+                Panic();
             }
-            else
+
+            if (PEER_PAIR_LE_STATE_PAIRING_AS_SERVER != state)
             {
-                DEBUG_LOG_WARN("peer_pair_le_GattConnect. Gatt 'gone' by time received GattConnect.");
+                peer_pair_le_set_state(PEER_PAIR_LE_STATE_PAIRING_AS_SERVER);
             }
             break;
 
@@ -773,7 +767,7 @@ static void peer_pair_le_GattConnect(uint16 cid)
             break;
 
         default:
-            DEBUG_LOG_WARN("peer_pair_le_GattConnect. cid:0x%x. Not in correct state:%d", cid, state);
+            DEBUG_LOG("peer_pair_le_GattConnect. cid:0x%x. Not in correct state:%d", cid, state);
             break;
     }
 }

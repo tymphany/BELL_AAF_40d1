@@ -12,7 +12,7 @@ the \b upgrade and \b gaia VM libraries.
 
 This is a minimal implementation of upgrade.
 */
-/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
+
 #ifdef INCLUDE_DFU
 
 #include "device_upgrade.h"
@@ -22,11 +22,6 @@ This is a minimal implementation of upgrade.
 #include "phy_state.h"
 
 #include <charger_monitor.h>
-//add for Qualcomm patch for abnormalOTA
-/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
-#include <connection_manager.h>
-#include <bt_device.h>
-#include <earbud_sm.h>
 
 #include <vmal.h>
 #include <panic.h>
@@ -378,17 +373,6 @@ static void appUpgradeMessageHandler(Task task, MessageId id, Message message)
 
             /* Message sent to application to request any audio to get shut */
         case UPGRADE_SHUT_AUDIO:
-			//add for Qualcomm patch for abnormalOTA
-            /*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
-			DEBUG_LOG("appUpgradeMessageHandler. UPGRADE_SHUT_AUDIO");
-
-            bdaddr peer_addr;
-            if (appDeviceGetPeerBdAddr(&peer_addr) && ConManagerIsConnected(&peer_addr)) {
-                DEBUG_LOG("appUpgradeMessageHandler, peer ACL exists, so disconnect cleanly before reboot");
-                ConManagerSendCloseAclRequest(&peer_addr, TRUE);
-                MessageSendLater(UpgradeGetTask(), UPGRADE_SHUT_AUDIO, NULL, appUpgradeAclCloseTimeoutMs());
-                break;
-            }
             appUpgradeHandleUpgradeShutAudio();
             break;
 

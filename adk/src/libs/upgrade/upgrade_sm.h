@@ -9,7 +9,6 @@ DESCRIPTION
     Interface to the state machine module of the upgrade library.
 
 */
-/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #ifndef UPGRADE_SM_H_
 #define UPGRADE_SM_H_
 
@@ -23,10 +22,6 @@ DESCRIPTION
     upgrade automatically.
  */
 #define UPGRADE_WAIT_FOR_RECONNECTION_TIME_SEC 60
-
-/* uncomment this to allow post-upgrade erase,
- * leave it commented out to allow for quicker post-upgrade cleanup */
-//#define UPGRADE_ALLOW_ERASE_AFTER_UPGRADE
 
 /*!
     @brief Enumeration of the states in the machine.

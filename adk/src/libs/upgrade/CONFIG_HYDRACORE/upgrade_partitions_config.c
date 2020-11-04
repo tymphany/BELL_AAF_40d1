@@ -36,10 +36,10 @@ NAME
 DESCRIPTION
     For the CONFIG_HYDRACORE version this just calls ImageUpgradeErase
 */
-UpgradePartitionsState UpgradePartitionsEraseAllManaged(bool do_erase)
+UpgradePartitionsState UpgradePartitionsEraseAllManaged(void)
 {
     PRINT(("UpgradePartitionsEraseAllManaged()\n"));
-    if (do_erase && UPGRADE_RESUME_POINT_ERASE != UpgradeCtxGetPSKeys()->upgrade_in_progress_key)
+    if (UPGRADE_RESUME_POINT_ERASE != UpgradeCtxGetPSKeys()->upgrade_in_progress_key)
     {
         PRINT(("ImageUpgradeErase()\n"));
         ImageUpgradeErase();

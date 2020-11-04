@@ -62,8 +62,6 @@
 #include <ps.h>
 #include <boot.h>
 #include <message.h>
-//add for Qualcomm patch for abnormalOTA
-#include <tws_topology_goals.h>
 
 #ifdef ENABLE_TYM_PLATFORM
 #include "earbud_tym_factory.h"
@@ -122,24 +120,10 @@ static void appSmNotifyUpgradeStarted(void);
 static void appSmSetPeerDfuFlag(bool flag);
 static void appSmStartDfuTimer(void);
 #endif /* INCLUDE_DFU */
-//add for Qualcomm patch for abnormalOTA
-static void appSmHandleAbortDfu(bool cleanStart);
-static bool appSmDfuCheckIfResetPermitted(void);
 
 static void appSmHandleDfuEnded(bool error);
 static unsigned earbudSm_GetCurrentApplicationContext(void);
 
-/*added by Qualcomm patch - 04838455 abort dfu out of case */
-extern void appAbortDfuReboot(void)
-{
-    DEBUG_LOG_DEBUG("RP:appUgradeIsAppInCaseDFUState=%x",appUpgradeIsAppInCaseDFUState());
-    if(appUpgradeIsAppInCaseDFUState())
-    {
-        DEBUG_LOG_DEBUG("RP : CallingUpgradeHandleAbortDuringUpgrade");
-        UpgradeForceAbortAndCleanup();
-        appSmReboot();
-    }    
-}
 /*****************************************************************************
  * SM utility functions
  *****************************************************************************/
@@ -345,9 +329,7 @@ static void appSmSetInitialCoreState(void)
     /* Register with physical state manager to get notification of state
      * changes such as 'in-case', 'in-ear' etc */
     appPhyStateRegisterClient(&sm->task);
-#ifdef ENABLE_TYM_PLATFORM
-    appPhyRegisterSM();
-#endif
+
     /* Get latest physical state */
     sm->phy_state = appPhyStateGetState();
 
@@ -773,12 +755,6 @@ static void appExitInCaseDfu(void)
     {
         UpgradePeerSetDFUMode(FALSE);
     }
-    /*added by Qualcomm patch - 04838455 abort dfu out of case */
-    //temp remove cause outcase abort
-    /*if(appPhyStateIsOutOfCase())
-    {
-        appAbortDfuReboot();
-    }*/     
 }
 
 /*! \brief Enter
@@ -1263,42 +1239,6 @@ static void appSmUpdateDisconnectingLinks(void)
         }
     }
 }
-//add for Qualcomm patch for abnormalOTA
-static void appSmHandleAbortDfu(bool cleanStart)
-{
-    DEBUG_LOG_DEBUG("appSmHandleAbortDfu, started %u", VmGetClock());
-    UpgradeForceAbortAndCleanup();
-
-    appSmCancelDfuTimers();
-    if (cleanStart) {
-        DEBUG_LOG_DEBUG("appSmHandleAbortDfu, should trigger a clean start");
-        TwsTopology_EndDfuRole();
-    }
-    else {
-        DEBUG_LOG_DEBUG("appSmHandleAbortDfu, not a clean start");
-        TwsTopology_EndDfuRole_IfNeeded();
-    }
-
-    DEBUG_LOG_DEBUG("appSmHandleAbortDfu, finished %u, role %u", VmGetClock(), TwsTopology_GetRole());
-}
-
-static bool appSmDfuCheckIfResetPermitted(void)
-{  
-#ifdef ENABLE_TYM_PLATFORM
-    smTaskData *sm = SmGetTaskData();
-#endif    
-    if (!PsRetrieve(EARBUD_DFU_PERMITTED_RESET_KEY, NULL, 0)) {
-        DEBUG_LOG("appSmDfuResetWasPermitted, abrupt reset, so abort");     
-        sm->otaerr = TRUE;
-        appSmHandleDfuEnded(TRUE);
-        UpgradePeerPSClearStore();
-        return FALSE;
-    }
-
-    DEBUG_LOG("appSmDfuResetWasPermitted, permitted reset");
-    PsStore(EARBUD_DFU_PERMITTED_RESET_KEY, NULL, 0);
-    return TRUE;
-}
 
 /*! \brief Handle notification of (dis)connections. */
 static void appSmHandleConManagerConnectionInd(CON_MANAGER_CONNECTION_IND_T* ind)
@@ -1345,20 +1285,6 @@ static void appSmHandleConManagerConnectionInd(CON_MANAGER_CONNECTION_IND_T* ind
     if (ind->ble)
     {
         DEBUG_LOG_DEBUG("appSmHandleConManagerConnectionInd BLE link");
-        //add for Qualcomm patch for abnormalOTA
-        /* Assume that the Upgrade host app owns this BLE ACL */
-        if (!ind->connected && !appDeviceIsPeer(&ind->bd_addr) && UpgradeIsOutCaseDFU()) {
-            DEBUG_LOG_DEBUG("appSmHandleConManagerConnectionInd aborting DFU, UpgradeIsOutCase");
-            earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_dfu_abort_t));
-            appSmHandleAbortDfu(FALSE);
-        }
-/*#ifdef ENABLE_TYM_PLATFORM                
-        if (!ind->connected && !appDeviceIsPeer(&ind->bd_addr) && (appPhyStateGetPowerState() == FALSE)) {
-            DEBUG_LOG_DEBUG("appSmHandleConManagerConnectionInd aborting DFU, Power State = FALSE");
-            earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_dfu_abort_t));
-            appSmHandleAbortDfu(FALSE);
-        }        
-#endif*/        
         return;
     }
 
@@ -1383,16 +1309,6 @@ static void appSmHandleConManagerConnectionInd(CON_MANAGER_CONNECTION_IND_T* ind
         if (appDeviceIsPeer(&ind->bd_addr))
         {
             DEBUG_LOG_DEBUG("appSmHandleConManagerConnectionInd, peer link loss");
-			//add for Qualcomm patch for abnormalOTA
-			/* Abort DFU on peer link loss, with a clean start */
-            if (UpgradeIsInitialised() && UpgradeIsOutCaseDFU()) {
-                appSmHandleAbortDfu(TRUE);
-            }
-/*#ifdef ENABLE_TYM_PLATFORM            
-            if (UpgradeIsInitialised() && (appPhyStateGetPowerState() == FALSE)) {
-                appSmHandleAbortDfu(TRUE);
-            }            
-#endif*/
             appSmRulesSetEvent(RULE_EVENT_PEER_LINK_LOSS);
         }
         else if (appDeviceIsHandset(&ind->bd_addr))
@@ -1490,27 +1406,8 @@ static void appSmHandlePhyStateInEarEvent(void)
 
     if (appSmIsCoreState())
         appSmSetCoreState();
-	//add for Qualcomm patch for abnormalOTA        
-    if (MessageCancelAll(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP)) {
-        DEBUG_LOG_DEBUG("appSmHandlePhyStateInEarEvent, cleaning up DFU");
-        appSmHandleDfuEnded(TRUE);
-        gaiaFrameworkInternal_AllowNewConnections(TRUE);
-    }
 }
-#ifdef ENABLE_TYM_PLATFORM
-/*! \brief Handle state machine transitions when earbud is put in the ear. */
-static void appSmHandlePhyStatePowerOnEvent(void)
-{
-    DEBUG_LOG_DEBUG("appSmHandlePhyStatePowerOnEvent state=0x%x", appSmGetState());
 
-	//add for Qualcomm patch for abnormalOTA        
-    if (MessageCancelAll(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP)) {
-        DEBUG_LOG_DEBUG("appSmHandlePhyStateInEarEvent, cleaning up DFU");
-        appSmHandleDfuEnded(TRUE);
-        gaiaFrameworkInternal_AllowNewConnections(TRUE);
-    }
-}
-#endif
 /*! \brief Handle state machine transitions when earbud is put in the case. */
 static void appSmHandlePhyStateInCaseEvent(void)
 {
@@ -1523,66 +1420,11 @@ static void appSmHandlePhyStateInCaseEvent(void)
     {
         appSmSetCoreState();
     }
-   
-	//add for Qualcomm patch for abnormalOTA  
-    if (UpgradeIsInitialised() && UpgradeIsOutCaseDFU()) {      
-        /* notify the peer that we're now in-case during DFU */
-        DEBUG_LOG("appSmHandlePhyStateInCaseEvent, ongoing B-DFU, peerSig = %u", appPeerSigIsConnected());
-        earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_abort_dfu_if_phy_changed_t));
-
-        if (BtDevice_IsMyAddressPrimary()) {
-            gaiaFrameworkInternal_AllowNewConnections(FALSE);
-#ifdef ENABLE_TYM_PLATFORM  /*for bisto abort*/
-            appSmHandleAbortDfu(FALSE);
-#endif            
-            MessageSendLater(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP, NULL, appConfigDfuTimeoutCleanupPostHandoverMs());
-        }
-        else {
-            /* abort but fall back to secondary role, even if no-role-idle will begin soon */
-            appSmHandleAbortDfu(FALSE);
-        }
-    }
 
     /* Inject an event to the rules engine to make sure DFU is enabled */
     appSmRulesSetEvent(RULE_EVENT_CHECK_DFU);
 }
-#ifdef ENABLE_TYM_PLATFORM
-/*! \brief Handle state machine transitions when earbud is put in the case. */
-static void appSmHandlePhyStatePowerOffEvent(void)
-{
-    DEBUG_LOG_DEBUG("appSmHandlePhyStatePowerOffEvent state=0x%x", appSmGetState());
-    /*power off abort DFU*/
-    if(SmGetTaskData()->dfu_in_progress)
-    {
-        if (BtDevice_IsMyAddressPrimary())
-            MessageSend(SmGetTask(), CONN_RULES_DFU_ABORT, NULL);
-    }  
-	//add for Qualcomm patch for abnormalOTA  
-    if(appUpgradeIsAppInCaseDFUState())
-    {    
-        /* notify the peer that we're now in-case during DFU */
-        DEBUG_LOG("appSmHandlePhyStateInCaseEvent, ongoing B-DFU, peerSig = %u", appPeerSigIsConnected());
-        earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_abort_dfu_if_phy_changed_t));
 
-        if (BtDevice_IsMyAddressPrimary()) {
-            gaiaFrameworkInternal_AllowNewConnections(FALSE);
-#ifdef ENABLE_TYM_PLATFORM  /*for bisto abort*/
-            appSmHandleAbortDfu(FALSE);
-#endif              
-            MessageSendLater(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP, NULL, appConfigDfuTimeoutCleanupPostHandoverMs());
-        }
-        else {
-            /* abort but fall back to secondary role, even if no-role-idle will begin soon */
-            appSmHandleAbortDfu(FALSE);
-        }
-        /*added by Qualcomm patch - 04838455 abort dfu out of case , no in/out case only power off */
-        MessageSendLater(SmGetTask(), CONN_RULES_DFU_ABORT_REBOOT, NULL, 100);
-    }   
- 
-    /* Inject an event to the rules engine to make sure DFU is enabled */
-    appSmRulesSetEvent(RULE_EVENT_CHECK_DFU);
-}
-#endif
 /*! \brief Handle changes in physical state of the earbud. */
 static void appSmHandlePhyStateChangedInd(smTaskData* sm, PHY_STATE_CHANGED_IND_T *ind)
 {
@@ -1591,18 +1433,7 @@ static void appSmHandlePhyStateChangedInd(smTaskData* sm, PHY_STATE_CHANGED_IND_
     DEBUG_LOG_DEBUG("appSmHandlePhyStateChangedInd new phy state %d", ind->new_state);
 
     sm->phy_state = ind->new_state;
-#ifdef ENABLE_TYM_PLATFORM
-    if(ind->event == phy_state_event_user_poweron)
-    {    
-        //follow In-ear 
-        appSmHandlePhyStatePowerOnEvent();
-    }
-    else if(ind->event == phy_state_event_user_poweroff)
-    {
-        //follow In-case power-off flow.
-        appSmHandlePhyStatePowerOffEvent();
-    }    
-#endif  
+
     switch (ind->new_state)
     {
         case PHY_STATE_IN_CASE:
@@ -1620,7 +1451,6 @@ static void appSmHandlePhyStateChangedInd(smTaskData* sm, PHY_STATE_CHANGED_IND_
         default:
             break;
     }
-  
 }
 
 /*! \brief Take action following power's indication of imminent sleep.
@@ -1963,16 +1793,6 @@ static void appSmHandleConnRulesPeerScoControl(CONN_RULES_PEER_SCO_CONTROL_T* cr
 /*! \brief Handle confirmation of SM marhsalled msg TX, free the message memory. */
 static void appSm_HandleMarshalledMsgChannelTxCfm(const PEER_SIG_MARSHALLED_MSG_CHANNEL_TX_CFM_T* cfm)
 {
-	//add for Qualcomm patch for abnormalOTA  	
-    switch (cfm->type) {
-        case MARSHAL_TYPE(earbud_sm_req_abort_dfu_if_phy_changed_t):
-            DEBUG_LOG("earbud_sm_req_abort_dfu_if_phy_changed_t send cfm with status %u", cfm->status);
-            /* if it succeeded, can reboot now if you need to */
-            break;
-
-        default:
-            break;
-    }
     /* Handled Factory reset only */
     UNUSED(cfm);
 }
@@ -2092,21 +1912,6 @@ static void appSm_HandleMarshalledMsgChannelRxInd(PEER_SIG_MARSHALLED_MSG_CHANNE
         case MARSHAL_TYPE(earbud_sm_req_delete_handset_if_full_t):
             DEBUG_LOG_DEBUG("earbud_sm_req_delete_handset_if_full_t received from Peer");
             appSmHandlePeerDeleteHandsetWhenFull((earbud_sm_req_delete_handset_if_full_t*)ind->msg);
-            break;
-		//add for Qualcomm patch for abnormalOTA 
-        case MARSHAL_TYPE(earbud_sm_req_abort_dfu_if_phy_changed_t):
-            DEBUG_LOG_DEBUG("earbud_sm_req_abort_dfu_if_phy_changed_t received from Peer");
-            appSmHandleAbortDfu(FALSE);
-            break;
-
-        case MARSHAL_TYPE(earbud_sm_req_dfu_abort_t):
-            DEBUG_LOG_DEBUG("earbud_sm_req_dfu_abort_t ind received from Peer");
-            /*
-             * Host app has been killed or DFU aborted for some other
-             * unexpected reason, without following proper abort procedure.
-             * So make sure it happens here.
-             */
-            appSmHandleAbortDfu(FALSE);
             break;
 
         default:
@@ -2414,7 +2219,12 @@ static void appSmHandleInternalDeleteHandsets(void)
         case APP_STATE_IN_CASE_DFU:
         case APP_STATE_HANDSET_PAIRING:
 #endif
-        {           
+        {
+#ifdef ENABLE_TYM_PLATFORM
+            /*clean OTA flag*/
+            UpgradeSetIsOutCaseDFU(FALSE);
+            UpgradePeerSetDFUMode(FALSE);
+#endif            
             appSmInitiateLinkDisconnection(SM_DISCONNECT_HANDSET, appConfigLinkDisconnectionTimeoutTerminatingMs(),
                                                 POST_DISCONNECT_ACTION_DELETE_HANDSET_PAIRING);
             break;
@@ -2543,10 +2353,7 @@ static void appSmHandleDfuEnded(bool error)
     appUpgradeStoreAppInCaseDFUMode(FALSE);
 
     DEBUG_LOG_DEBUG("appSmHandleDfuEnded, Clear the is_out_case_dfu PSKEY value");
-    //add for Qualcomm patch for abnormalOTA 
-    UpgradePSClearStoreNoDelete();
-    UpgradePeerPSClearStore();
-    DEBUG_LOG_DEBUG("appSmHandleDfuEnded, in case dfu state: %u", appUpgradeIsAppInCaseDFUState());
+    UpgradeSetIsOutCaseDFU(FALSE);
     DEBUG_LOG_DEBUG("appSmHandleDfuEnded, Reset the reboot reason flag.");
     appSetUpgradeRebootReason(SM_UPGRADED_NONE);
 
@@ -2572,7 +2379,6 @@ static void appSmHandleDfuEnded(bool error)
     {
         DEBUG_LOG("$$$ TYM Upgrade Done DfuEnded");
         tymSyncdata(btStatusCmd,OTAFinish);
-        appSmReboot();
     }    
 #endif    
 }
@@ -2635,21 +2441,10 @@ static void appSmHandleUpgradeDisconnected(void)
 
         appSmStartDfuTimer();
     }
-    else if (UpgradeIsOutCaseDFU() && MessagePendingFirst(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP, NULL)) {
-        //add for Qualcomm patch for abnormalOTA 
-        DEBUG_LOG_DEBUG("appSmHandleUpgradeDisconnected aborting DFU");
-
-        earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_dfu_abort_t));
-        appSmHandleAbortDfu(FALSE);
-        return;
-    }
 #ifdef ENABLE_TYM_PLATFORM
     else if ((appUpgradeIsAppInCaseDFUState()) &&(sm->dfu_in_progress == TRUE) ) {
-        //add for Qualcomm patch for abnormalOTA 
+        //UpgradeDisconnected abort DFU
         DEBUG_LOG_DEBUG("appSmHandleUpgradeDisconnected aborting DFU");
-
-        earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_dfu_abort_t));
-        appSmHandleAbortDfu(FALSE);
         return;
     }
 #endif
@@ -3091,8 +2886,6 @@ static void appSmGeneratePhyStateRulesEvents(phy_state_event event)
             break;
         case phy_state_event_out_of_case:
             appSmRulesSetEvent(RULE_EVENT_PEER_OUT_CASE);
-            /*added by Qualcomm patch - 04838455 abort dfu out of case */
-            appAbortDfuReboot();
             break;
         case phy_state_event_in_ear:
             appSmRulesSetEvent(RULE_EVENT_PEER_IN_EAR);
@@ -3467,11 +3260,7 @@ void appSmHandleMessage(Task task, MessageId id, Message message)
         case CONN_RULES_DFU_ABORT:
             UpgradeHandleAbortDuringUpgrade();
             break;
-#ifdef ENABLE_TYM_PLATFORM
-        case CONN_RULES_DFU_ABORT_REBOOT:
-            appAbortDfuReboot();
-            break;
-#endif
+
         case CONN_RULES_DFU_ALLOW:
             appSmHandleDfuAllow((const CONN_RULES_DFU_ALLOW_T*)message);
             break;
@@ -3536,16 +3325,11 @@ void appSmHandleMessage(Task task, MessageId id, Message message)
         /* Messages from UPGRADE */
         case APP_UPGRADE_REQUESTED_TO_CONFIRM:
             appSetUpgradeRebootReason(SM_UPGRADED_DEFINED_REBOOT);
-			//add for Qualcomm patch for abnormalOTA
-			appSmDfuCheckIfResetPermitted(); 
             break;
 
         case APP_UPGRADE_REQUESTED_IN_PROGRESS:
-            //add for Qualcomm patch for abnormalOTA
+            appSmEnterDfuOnStartup(TRUE);
             appSetUpgradeRebootReason(SM_UPGRADED_ABRUPT_RESET);
-            if (appSmDfuCheckIfResetPermitted()) {
-                appSmEnterDfuOnStartup(TRUE);
-            }
             break;
 
         case APP_UPGRADE_ACTIVITY:
@@ -3642,12 +3426,6 @@ void appSmHandleMessage(Task task, MessageId id, Message message)
             DEBUG_LOG_DEBUG("appSmHandleMessage SM_INTERNAL_TIMEOUT_DFU_AWAIT_DISCONNECT");
             break;
 #endif
-//add for Qualcomm patch for abnormalOTA
-        case SM_INTERNAL_TIMEOUT_DFU_CLEANUP:
-            DEBUG_LOG_DEBUG("appSmHandleMessage SM_INTERNAL_TIMEOUT_DFU_CLEANUP");
-            appSmHandleDfuEnded(TRUE);
-            gaiaFrameworkInternal_AllowNewConnections(TRUE);
-            break;
 
         case SM_INTERNAL_NO_DFU:
             appSmHandleNoDfu();
@@ -3883,15 +3661,8 @@ static void appSmEnterDfuOnStartup(bool upgrade_reboot)
 static void appSmNotifyUpgradeStarted(void)
 {
 #ifdef ENABLE_TYM_PLATFORM
-    DEBUG_LOG("appSmNotify appPeerSigIsConnected %d",appPeerSigIsConnected());
     if(StateProxy_IsInCase() && StateProxy_IsPeerInCase())
     {
-        /*if(SmGetTaskData()->otaerr == TRUE)
-        {
-            SmGetTaskData()->otaerr = FALSE;
-            UpgradeHandleAbortDuringUpgrade();
-            return;
-        }*/    
         if(appSmGetState() != APP_STATE_IN_CASE_DFU)
         {      
             DEBUG_LOG_DEBUG("appSmNotifyUpgradeStarted - INCASE DFU");

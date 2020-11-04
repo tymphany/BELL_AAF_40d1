@@ -162,13 +162,6 @@ typedef struct
      */
     bool ImgUpgradeCopyStatus:1;
 
-    /*! ImageUpgradeErase() is completed
-     *  i.e. received MESSAGE_IMAGE_UPGRADE_ERASE_STATUS.
-     */
-    uint16 isImgUpgradeEraseDone;
-
-    upgrade_reconnect_recommendation_t reconnect_reason;
-
 } UpgradeCtx;
 
 void UpgradeCtxSet(UpgradeCtx *ctx);

@@ -4,7 +4,7 @@ Copyright (c) 2014 - 2015, 2020 Qualcomm Technologies International, Ltd.
 
 FILE NAME
     upgrade.h
-
+    
 DESCRIPTION
     Header file for the Upgrade library.
 */
@@ -30,21 +30,21 @@ integrates with applications.
 To make use of the upgrade library, all of the following are needed.
 
 Examples of all of these can be found in the example Sink application
-supplied with the ADK. See @ref sec_sinkapp for a summary of the upgrade
+supplied with the ADK. See @ref sec_sinkapp for a summary of the upgrade 
 library integration.
         @li @ref subsec_defparset
         @li @ref subsec_tranmech
         @li @ref subsec_libinit
         @li @ref subsec_libint
         @li @ref subsec_permit
-        @li @ref subsec_host
+        @li @ref subsec_host 
 
 @subsection subsec_defparset Partition set
 
 The library uses the concept of logical partitions to define what is being
-upgraded. Apart from a partition used for DFU operations these must be
+upgraded. Apart from a partition used for DFU operations these must be 
 paired, such that there is an active partition and a partition available for
-upgrade.
+upgrade. 
 
 The unused partitions will be kept erased.
 
@@ -56,12 +56,11 @@ The unused partitions will be kept erased.
 
 @section sec_sinkapp Supplied Sink application
 
-The Sink application supplied as an example makes use of the upgrade
+The Sink application supplied as an example makes use of the upgrade 
 library through the gaia library (gaia.h).
-
-
+        
+        
 */
-/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #ifndef UPGRADE_H_
 #define UPGRADE_H_
 
@@ -102,9 +101,6 @@ library through the gaia library (gaia.h).
    So reusing EARBUD_UPGRADE_CONTEXT_KEY by giving offset of 26 to avoid overlap.
  */
 #define EARBUD_UPGRADE_PEER_CONTEXT_OFFSET      26  /*!< Offset with that key to area for upgrade peer library */
-
-/* USR8 key in use here */
-#define EARBUD_DFU_PERMITTED_RESET_KEY          8
 
 /*!<
  * Upgrade data packet received into Source Buffer from Host is drained as an
@@ -150,7 +146,7 @@ typedef enum
     /*! Message sent in response to UpgradeInit(). */
     UPGRADE_INIT_CFM = UPGRADE_UPSTREAM_MESSAGE_BASE,
     /*! Message sent during initialisation of the upgrade library
-        to let the VM application know that a restart has occurred
+        to let the VM application know that a restart has occurred 
         and reconnection to a host may be required. */
     UPGRADE_RESTARTED_IND,
     /*! Message sent to application to request applying a downloaded upgrade.
@@ -177,7 +173,7 @@ typedef enum
     UPGRADE_START_DATA_IND,
     /*! Message sent to application to inform that the actual upgrade has ended */
     UPGRADE_END_DATA_IND,
-    /*! Message sent to application to inform that an upgrade is aborted
+    /*! Message sent to application to inform that an upgrade is aborted 
      * due to reset, so clean up DFU specific entities, so that next DFU can
      * be started cleanly.
      */
@@ -210,7 +206,7 @@ typedef enum
 
 
 /*!
-    @brief Types of permission that are given to the upgrade library.
+    @brief Types of permission that are given to the upgrade library. 
 
     A VM application must give permission for the VM upgrade library to both
     perform upgrade operations in general, and also for specific operations
@@ -292,7 +288,7 @@ typedef enum
 
     There are the possible states of power management.
 */
-typedef enum
+typedef enum 
 {
     /*! There is no power management in place (e.g. device is not battery powered) */
     upgrade_power_management_disabled,
@@ -308,42 +304,42 @@ typedef enum
 */
 typedef enum
 {
-    /*! Battery is above the low level threshold and upgrade is allowed.
+    /*! Battery is above the low level threshold and upgrade is allowed. 
         This state is set also when charger is removed and battery is ok */
     upgrade_battery_ok,
 
     /*! Battery is below the low level threshold and upgrade is no longer allowed.
-        This state is set also when charger is removed and battery still hasn't got enough charge */
+        This state is set also when charger is removed and battery still hasn't got enough charge */ 
     upgrade_battery_low,
 
     /*! Indicate that battery is charging */
     upgrade_charger_connected
-
+    
 } upgrade_power_state_t;
 
 /*!
     @brief Reasons for reconnection.
 
-    Gives the reason why the library is asking the application to trigger
+    Gives the reason why the library is asking the application to trigger 
     a host reconnection.
 */
 typedef enum
 {
     /*! reconnection not needed, no upgrade is in progress. */
-
+    
     upgrade_reconnect_not_required,
 
     /*! High priority request for reconnection.
 
     The upgrade is not yet confirmed and host action is required to accept or
     reject the upgrade */
-
+    
     upgrade_reconnect_required_for_confirm,
 
     /*! Low priority request for reconnection.
 
     An upgrade has completed and reconnecting to the host will allow the host
-    to report the success.
+    to report the success. 
 
     The upgrade cannot now be rolled back so reconnection is not mandatory. */
 
@@ -351,7 +347,7 @@ typedef enum
 
     /*! Optional request for reconnection.
 
-    An upgrade was in progress, but had not reached a critical state. The
+    An upgrade was in progress, but had not reached a critical state. The 
     application is best placed to decide if reconnecting to a host is a priority.
 
     For example, a sound bar - with an external power source, might choose
@@ -375,7 +371,7 @@ typedef enum
 } upgrade_peer_connect_state_t;
 
 /*!
-    @brief Enumeration of message IDs sent by application to Upgrade Peer
+    @brief Enumeration of message IDs sent by application to Upgrade Peer 
            library.
 */
 typedef enum
@@ -390,7 +386,7 @@ typedef enum
 } upgrade_peer_app_msg_t;
 
 /*!
-    @brief Enumeration of message IDs used by Upgrade Peer library when sending
+    @brief Enumeration of message IDs used by Upgrade Peer library when sending 
            messages to the application.
 */
 typedef enum
@@ -450,17 +446,17 @@ typedef struct
 
     The version refers to the current configuration as sent in
     an  upgrade file. This could combine an application version along
-    with any other partitions programmed in an external flash device,
+    with any other partitions programmed in an external flash device, 
     such as audio prompts.
 */
 typedef struct
 {
     /*! Nominally the major version of the current configuration programmed
-        on the device.
+        on the device. 
         Interpretation is left entirely to the application.*/
     uint16 major;
     /*! Nominally the minor version of the current configuration programmed
-        on the device.
+        on the device. 
         Interpretation is left to the application.
 
         The value of 0xFFFF is reserved.*/
@@ -470,7 +466,7 @@ typedef struct
 /*!
     @brief Definition of the message sent in response to UpgradeTransportConnectRequest().
 */
-typedef struct
+typedef struct 
 {
     /*! Status of the transport connection request. */
     upgrade_status_t     status;
@@ -525,7 +521,7 @@ typedef struct
     a host and that a host connection may be needed. It allows the application
     to trigger a reconnection state if appropriate.
 
-    The message may be sent at other times in future.
+    The message may be sent at other times in future. 
 */
 typedef struct
 {
@@ -559,7 +555,7 @@ typedef struct
 */
 typedef enum
 {
-    /*! Indicates a partition, that is not part of a pair, and that will always be
+    /*! Indicates a partition, that is not part of a pair, and that will always be 
         erased after an upgrade completes. */
     UPGRADE_LOGICAL_BANKING_SINGLE_KEEP_ERASED,
     /*! Partition used for DFU (synonym for #UPGRADE_LOGICAL_BANKING_SINGLE_KEEP_ERASED) */
@@ -568,12 +564,12 @@ typedef enum
         be of type raw serial */
     UPGRADE_LOGICAL_BANKING_DOUBLE_UNMOUNTED,
     /*! A partition pair that is used in a file system. These partitions will
-        be of type read only (although they can be upgraded). Following an upgrade
-        of these partitions the file system table will be updated so that
+        be of type read only (although they can be upgraded). Following an upgrade 
+        of these partitions the file system table will be updated so that 
         the newly updated partition is active. */
     UPGRADE_LOGICAL_BANKING_DOUBLE_MOUNTED,
-    /*! A partition, that is not part of a pair, and is not kept erased by the
-        upgrade library.
+    /*! A partition, that is not part of a pair, and is not kept erased by the 
+        upgrade library. 
 
         @note This type of partition is not supported at present. */
     UPGRADE_LOGICAL_BANKING_SINGLE_ERASE_TO_UPDATE
@@ -584,18 +580,18 @@ typedef enum
     @brief Element defining the physical partitions in flash that apply to
         this logical partition.
 
-    Each logical partition should be defined using the macro
+    Each logical partition should be defined using the macro 
     #UPGRADE_PARTITION_SINGLE or #UPGRADE_PARTITION_DOUBLE.
 
     The values for bank1 and bank2 should be the same as would be present in
-    an entry for @ref PSKEY_FSTAB. The order of bank1 and bank2 may be
-    important when the application is first run. If no information can be
-    derived from the flash device, the library will assume that the physical
+    an entry for @ref PSKEY_FSTAB. The order of bank1 and bank2 may be 
+    important when the application is first run. If no information can be 
+    derived from the flash device, the library will assume that the physical 
     partition referenced by bank1 is in use; and that the physical partition
     referenced by bank2 can be erased. */
 typedef struct
 {
-    /*! The first bank of logical partition group. If the bank is part of a
+    /*! The first bank of logical partition group. If the bank is part of a 
         pair (see #banking) then the upgrade library will assume this partition
         is in used when a device is started for the first time. */
     unsigned                    bank1:14;
@@ -605,31 +601,31 @@ typedef struct
         paired partitions, but CSR recommend setting the value to match #bank1 for
         non-paired partitions.
 
-        If the bank is part of a
+        If the bank is part of a 
         pair (see #banking) then the upgrade library will assume this partition
         is in used when a device is started for the first time. */
     unsigned                    bank2:14;
-    /*! The type for this logical partition.
+    /*! The type for this logical partition. 
 
-    @note #banking is actually of type #UPGRADE_LOGICAL_PARTITION_ARRANGEMENT,
+    @note #banking is actually of type #UPGRADE_LOGICAL_PARTITION_ARRANGEMENT, 
     but is set to unsigned for compatibility reasons.  */
     unsigned                    banking:2;
 } UPGRADE_UPGRADABLE_PARTITION_T;
 
 /*! @brief macro to be used when initialising an #UPGRADE_UPGRADABLE_PARTITION_T
-        entry.
+        entry. 
 
-        The macro is recommended as the supported bank types may change in future,
-        possibly requiring a layout change in the structure - or more complex
+        The macro is recommended as the supported bank types may change in future, 
+        possibly requiring a layout change in the structure - or more complex 
         initialisation.  */
 #define UPGRADE_PARTITION_SINGLE(bank,banktype) \
             { bank, 0, bank, UPGRADE_LOGICAL_BANKING_SINGLE_##banktype }
 
 /*! @brief macro to be used when initialising an #UPGRADE_UPGRADABLE_PARTITION_T
-        entry.
+        entry. 
 
-        The macro is recommended as the supported bank types may change in future,
-        possibly requiring a layout change in the structure - or more complex
+        The macro is recommended as the supported bank types may change in future, 
+        possibly requiring a layout change in the structure - or more complex 
         initialisation.  */
 #define UPGRADE_PARTITION_DOUBLE(first_bank,second_bank,banktype) \
             { first_bank, 0, second_bank, UPGRADE_LOGICAL_BANKING_DOUBLE_##banktype }
@@ -642,23 +638,23 @@ typedef struct
     is only considered initialised if the status field of the #UPGRADE_INIT_CFM_T
     message is #upgrade_status_success.
 
-    The initialisation informs the upgrade library of the partitions that
+    The initialisation informs the upgrade library of the partitions that 
     may be upgraded. Only partitions referenced here can be upgraded.
 
-    If your application uses upgradable raw serial (RS) partitions then you
+    If your application uses upgradable raw serial (RS) partitions then you 
     should not make any assumptions about the active partition, instead call
-    the function @ref UpgradeGetPartitionInUse to retrieve the currently
+    the function @ref UpgradeGetPartitionInUse to retrieve the currently 
     active partition ID.
 
     The upgrade library must be initialised with an "enabled" permission of
     either #upgrade_perm_assume_yes or #upgrade_perm_always_ask. If the
     application wishes to disable upgrades it must call #UpgradePermit() with
-    the #upgrade_perm_no parameter, after successful initalisation.
+    the #upgrade_perm_no parameter, after successful initalisation. 
     Note that this may be rejected if an upgrade is already in progress.
     The upgrade library will send an #UPGRADE_STATUS_IND message when an
     in progress upgrade has been completed, after which upgrades may be
     disabled.
-
+    
     @param appTask The application task to receive Upgrade library messages.
     @param dataPskey  Pskey the Upgrade library may use to store data.
     @param dataPskeyStart The word offset within the PSKey from which the upgrade
@@ -693,7 +689,7 @@ void UpgradeInit(Task appTask,
 /*!
     @brief Find out current physical partition for a logical partion
 
-    This function uses the array of logical partitions supplied during
+    This function uses the array of logical partitions supplied during 
     AppInit as well as the librarys knowledge of the state of
     partitions to return a reference to the physical partition that
     is active.
@@ -703,10 +699,10 @@ void UpgradeInit(Task appTask,
     typically mounted as file systems and the appropriate partition
     will already be active.
 
-    @param logicalPartition Index into the table of
+    @param logicalPartition Index into the table of 
             UPGRADE_UPGRADABLE_PARTITION_T supplied during @ref UpgradeInit
 
-    @return Definition of physical partition, 0 in case of error. The
+    @return Definition of physical partition, 0 in case of error. The 
             partition information matches the format used in @ref
             PSKEY_FSTAB
 */
@@ -728,15 +724,15 @@ void UpgradeHandleMsg(Task task, MessageId id, Message message);
     this must be either #upgrade_perm_assume_yes or #upgrade_perm_always_ask.
     The VM application may subsequently use this function to modify the type
     of permission as required.
-
+    
     The upgrade library may reject an attempt by the VM application to disable
-    upgrades, if an upgrade is already in progress and the platforms does not
+    upgrades, if an upgrade is already in progress and the platforms does not 
     support the resume feature. If rejected due to an upgrade already in
     progress, the upgrade library will send a #UPGRADE_STATUS_IND message to
     the VM application with a state of upgrade_state_done.
 
     There are two types of enabled permission, "assume yes" and "always ask".
-
+    
     The upgrade library can be enabled in an autonomous mode, using the
     #upgrade_perm_assume_yes permission type. During operation, the upgrade
     library will assume the answer at key decision points is yes and continue
@@ -750,7 +746,7 @@ void UpgradeHandleMsg(Task task, MessageId id, Message message);
     the upgrade library with #upgrade_perm_always_ask permission type. In
     this mode, the upgrade library will send #UPGRADE_APPLY_IND and
     #UPGRADE_BLOCKING_IND messages to the VM application.
-    The VM application must reply with #UpgradeApplyResponse() or
+    The VM application must reply with #UpgradeApplyResponse() or 
     #UpgradeBlockingResponse() respectively or the upgrade process will not
     succeed.
 
@@ -846,7 +842,7 @@ void UpgradeHashAllSectionsUpdateStatus(Message message);
 /*!
     @brief Control reboot of device in interactive mode.
 
-    The upgrade library needs to reboot the device to complete an upgrade. If
+    The upgrade library needs to reboot the device to complete an upgrade. If 
     the VM application configured the library with #upgrade_perm_always_ask,
     the application will receive #UPGRADE_APPLY_IND messages when the upgrade
     library needs to reboot.
@@ -862,7 +858,7 @@ void UpgradeHashAllSectionsUpdateStatus(Message message);
     If the application wants to postpone the action it can specify a delay
     in milliseconds to postpone. The upgrade library will resend the
     #UPGRADE_APPLY_IND message after that delay has elapsed.
-
+    
     @param postpone Time in milliseconds to postpone.
 */
 void UpgradeApplyResponse(uint32 postpone);
@@ -900,7 +896,7 @@ void UpgradeApplyAudioCopyFailed(void);
     an upgrade, and possibly at other times to clean up an incomplete upgrade.
 
     Serial flash erase operations are blocking, they block the entire system
-    for the duration of the erase, the period of the block is dependent upon
+    for the duration of the erase, the period of the block is dependent upon 
     the size of the serial flash partition being erased and the characteristics
     of the flash part used. Erase operations can disrupt streaming audio.
 
@@ -909,17 +905,17 @@ void UpgradeApplyAudioCopyFailed(void);
     library needs to block the system for partition erase.
 
     If the application configured the library with #upgrade_perm_assume_yes,
-    the application will not receive #UPGRADE_BLOCKING_IND messages and the
+    the application will not receive #UPGRADE_BLOCKING_IND messages and the 
     upgrade library will automatically erase flash partitions when required.
 
     The application must use this API to tell the upgrade library when it can
-    block the system. If the application wants to block immediately, it should
+    block the system. If the application wants to block immediately, it should 
     pass a postpone parameter of 0.
 
-    If the application wants to postpone the action it can specify a delay in
+    If the application wants to postpone the action it can specify a delay in 
     milliseconds to postpone. The upgrade library will resend the
     #UPGRADE_APPLY_IND message after that delay has elapsed.
-
+    
     @param postpone Time in milliseconds to postpone.
 */
 void UpgradeBlockingResponse(uint32 postpone);
@@ -937,7 +933,7 @@ upgrade_status_t UpgradePowerManagementSetState(upgrade_power_state_t state);
     @brief Query the upgrade library to see if we are part way through an upgrade.
 
     This is used by the application during early boot to check if the reason
-    for rebooting is because we have reached the
+    for rebooting is because we have reached the 
     UPGRADE_RESUME_POINT_POST_REBOOT point.
 
     Note: This is only to be called during the early init phase, before UpgradeInit
@@ -946,57 +942,57 @@ upgrade_status_t UpgradePowerManagementSetState(upgrade_power_state_t state);
 bool UpgradeRunningNewApplication(uint16 dataPskey, uint16 dataPskeyStart);
 /*!
     @brief Inform the Upgrade library of an application partition validation result.
-
+    
     The validation result of a call to ValidationInitiateExecutablePartition
     is sent to the main app task in a MESSAGE_EXE_FS_VALIDATION_STATUS
     message.
 
     The result must be passed on to the Upgrade library via this function.
-
+    
     @param pass TRUE if the validation passed, FALSE otherwise.
 */
 void UpgradeApplicationValidationStatus(bool pass);
 /*!
     @brief To check if the upgrade state is in Data transfer mode.
-
+        
     Returns TRUE if the Upgrade state is in Data transfer.
 */
 bool UpgradeIsDataTransferMode(void);
 /*!
     @brief To fetch the partition size when in UPGRADE_PARTITION_DATA_STATE_DATA
-
+        
     Returns 32byte size of the partition.
 */
 uint32 UpgradeGetPartitionSizeInPartitionDataState(void);
 /*!
     @brief To check if the upgrade lib is in UPGRADE_PARTITION_DATA_STATE_DATA
-
+        
     Returns TRUE if in UPGRADE_PARTITION_DATA_STATE_DATA
 */
 bool  UpgradeIsPartitionDataState(void);
 /*!
     @brief To set the partition data block size which the upgrade lib could expect from its transport
-
+        
     Returns None
 */
 void UpgradeSetPartitionDataBlockSize(uint32 size);
 
 /*!
     @brief To inform vm app that downloading of upgrade data from host app has begun.
-
+        
     Returns None
 */
 void UpgradeSendStartUpgradeDataInd(void);
 /*!
     @brief To inform vm app that downloading of upgrade data from host app has ended.
-
+        
     Returns None
 */
 void UpgradeSendEndUpgradeDataInd(upgrade_end_state_t state);
 
 /*!
     @brief To inform Upgrade library to reset the chip and swap to the Upgraded Image
-
+        
     Returns None
 */
 void UpgradeImageSwap(void);
@@ -1108,12 +1104,12 @@ void UpgradePeerDeInit(void);
 /*!
     @brief Check in Upgrade Peer is initialized or not.
 
-    @return TRUE if Upgrade Peer is initialised and this is the primary
+    @return TRUE if Upgrade Peer is initialised and this is the primary 
             device, FALSE otherwise
 */
 bool UpgradePeerIsSupported(void);
 
-/*! @brief Check if we are a secondary device in an upgrade
+/*! @brief Check if we are a secondary device in an upgrade 
 
     @return TRUE if Upgrade Peer is initialised and this is the secondary
             device, FALSE otherwise.
@@ -1131,13 +1127,13 @@ void UpgradePeerStoreMd5(uint32 md5);
 /*!
     @brief Applciation calls this API to declare that device role is primary.
     @param is_primary TRUE if device is primary otherwise FALSE.
-
+    
     Returns TRUE if the Device Role is set, otherwise FALSE
 */
 bool UpgradePeerSetDeviceRolePrimary(bool is_primary);
 
 /*!
-
+    
     @brief Applciation calls this API to set/reset DFU mode on device.
 
     This API is used only for secondary device. By setting DFU mode, it is made
@@ -1153,7 +1149,7 @@ void UpgradePeerSetDFUMode(bool is_dfu_mode);
 /*!
     @brief Abort the ongoing DFU due to disconnection between host and device.
     @param none.
-
+    
     Returns none
 */
 void UpgradeAbortDuringDeviceDisconnect(void);
@@ -1161,14 +1157,14 @@ void UpgradeAbortDuringDeviceDisconnect(void);
 /*!
     @brief Abort the ongoing DFU due to device coming out of case.
     @param none.
-
+    
     Returns none
 */
 void UpgradeHandleAbortDuringUpgrade(void);
 
 /*!
     @brief Return the abort status of Peer DFU
-
+        
     Returns TRUE if peer DFU is aborted, else FALSE
 */
 bool UpgradePeerIsPeerDFUAborted(void);
@@ -1200,7 +1196,7 @@ void UpgradeFlowOffProcessDataRequest(bool enable);
 bool UpgradeIsProcessDataRequestFlowedOff(void);
 
 /*!
-    @brief Queues an upgrade data packet received into the Source Buffer from
+    @brief Queues an upgrade data packet received into the Source Buffer from 
     the host and is pending to be processed.
 
     Returns TRUE if data is queued, else FALSE
@@ -1310,15 +1306,9 @@ void UpgradeSetPriRebootDone(bool val);
 
 /*!
     @brief Cancel the Peer DFU Start if image upgrade copy is not successful
-
+        
     Returns None
 */
 void UpgradePeerCancelDFU(void);
-/*added by Qualcomm patch - 04838455 abort dfu out of case */
-void UpgradeCleanupOnAbort(void);
-bool UpgradePSClearStoreNoDelete(void);
-void UpgradeForceAbortAndCleanup(void);
-void UpgradePeerPSClearStore(void);
-void UpgradePeerStopUpgrade(void);
 
 #endif /* UPGRADE_H_ */

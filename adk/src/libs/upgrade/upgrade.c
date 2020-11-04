@@ -8,7 +8,7 @@ FILE NAME
 DESCRIPTION
     Upgrade library API implementation.
 */
-/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
+
 #include <string.h>
 #include <stdlib.h>
 
@@ -28,9 +28,6 @@ DESCRIPTION
 #include "upgrade_msg_vm.h"
 #include "upgrade_msg_internal.h"
 #include "upgrade_host_if_data.h"
-//add for Qualcomm patch for abnormalOTA
-/*added by Qualcomm patch - 04838455 abort dfu out of case */
-#include "upgrade_peer.h"
 #ifdef HANDOVER_DFU_ABORT_WITHOUT_ERASE
 #include <imageupgrade.h>
 #endif
@@ -284,7 +281,7 @@ DESCRIPTION
 */
 void UpgradeTransportConnectRequest(Task transportTask, bool need_data_cfm, bool request_multiple_blocks)
 {
-    PRINT(("UPGRADE: UpgradeTransportConnect 0x%p, %d, %d\n",
+    PRINT(("UPGRADE: UpgradeTransportConnect 0x%p, %d, %d\n", 
         (void *)transportTask, need_data_cfm, request_multiple_blocks));
     UpgradeHostIFTransportConnect(transportTask, need_data_cfm, request_multiple_blocks);
 }
@@ -466,7 +463,7 @@ RETURNS
 */
 void UpgradeHashAllSectionsUpdateStatus(Message message)
 {
-
+    
     UNUSED(message);
     PRINT(("UpgradeHashAllSectionsUpdateStatus(%p)\n", message));
 #ifdef MESSAGE_IMAGE_UPGRADE_HASH_ALL_SECTIONS_UPDATE_STATUS
@@ -641,9 +638,9 @@ RETURNS
 void UpgradeSendEndUpgradeDataInd(upgrade_end_state_t state)
 {
     UPGRADE_END_DATA_IND_T *upgradeEndDataInd = (UPGRADE_END_DATA_IND_T *)PanicUnlessMalloc(sizeof(UPGRADE_END_DATA_IND_T));
-
+    
     upgradeEndDataInd->state = state;
-
+    
     PRINT(("UpgradeSendEndUpgradeDataInd state %d \n", state));
 
     MessageSend(UpgradeCtxGet()->mainTask, UPGRADE_END_DATA_IND, upgradeEndDataInd);
@@ -744,9 +741,6 @@ static void RequestApplicationReconnectIfNeeded(void)
         UPGRADE_RESTARTED_IND_T *restarted = (UPGRADE_RESTARTED_IND_T*)
                                                 PanicUnlessMalloc(sizeof(*restarted));
         restarted->reason = reconnect;
-        //add for Qualcomm patch for abnormalOTA
-        /*added by Qualcomm patch - 04838455 abort dfu out of case */
-        UpgradeCtxGet()->reconnect_reason = reconnect;
         MessageSend(UpgradeCtxGet()->mainTask, UPGRADE_RESTARTED_IND, restarted);
     }
 
@@ -788,13 +782,13 @@ bool UpgradeIsDataTransferMode(void)
         return FALSE;
 }
 
-
+   
 /****************************************************************************
 NAME
     UpgradeImageSwap
 
 DESCRIPTION
-     This function will eventually call the ImageUpgradeSwapTry() trap to initiate a full chip reset,
+     This function will eventually call the ImageUpgradeSwapTry() trap to initiate a full chip reset, 
       load and run images from the other image bank.
 
 RETURNS
@@ -1090,34 +1084,4 @@ void UpgradeSetPriRebootDone(bool val)
      */
     UpgradeCtxGet()->dfuPriRebootDone = !val;
     DEBUG_LOG("UpgradeSetPriRebootDone dfuPriRebootDone : %u", val);
-}
-/*added by Qualcomm patch - 04838455 abort dfu out of case */
-//add for Qualcomm patch for abnormalOTA
-void UpgradeForceAbortAndCleanup(void)
-{
-    bool is_primary_device;
-    UpgradePeerGetDFUInfo(&is_primary_device, NULL);
-
-    /* Tell GAIA and error has happened */
-    if (is_primary_device) {
-        FatalError(UPGRADE_HOST_ERROR_APP_NOT_READY);
-    }
-
-    /* grant permission for blocking ops here,
-     * even if an erase will never happen (as intended),
-     * so long as UPGRADE_ALLOW_ERASE_AFTER_UPGRADE is not defined */
-    UpgradePermit(upgrade_perm_assume_yes);
-    UpgradeSMAbort();
-    UpgradePermit(upgrade_perm_always_ask);
-
-    /* cleanup peer upgrade structures */
-    if (UPGRADE_PEER_IS_STARTED) {
-        UpgradePeerStopUpgrade();
-    }
-    else {
-        UpgradePeerPSClearStore();
-    }
-
-    /* Notify application to cleanup */
-    UpgradeCleanupOnAbort();
 }

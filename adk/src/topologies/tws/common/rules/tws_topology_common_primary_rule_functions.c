@@ -6,7 +6,7 @@
 \file       
 \brief      Common primary role TWS topology rule functions.
 */
-/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
+
 #include "tws_topology_common_primary_rule_functions.h"
 #include "tws_topology_primary_ruleset.h"
 #include "tws_topology_goals.h"
@@ -62,6 +62,11 @@ rule_action_t ruleTwsTopPriPeerPairedInCase(void)
         return rule_action_ignore;
     }
 #endif
+    if (TwsTopology_IsGoalActive(tws_topology_goal_no_role_find_role))
+    {
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerPairedInCase, ignore as already finding role");
+        return rule_action_ignore;
+    }
 
     TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerPairedInCase, run as peer paired and in the case");
     return rule_action_run;
@@ -389,10 +394,9 @@ rule_action_t ruleTwsTopPriEnableConnectableHandset(void)
         return rule_action_ignore;
     }
 
-    if (TwsTopology_IsGoalActive(tws_topology_goal_no_role_idle) ||
-            TwsTopology_IsGoalActive(tws_topology_goal_no_role_find_role))
+    if (TwsTopology_IsGoalActive(tws_topology_goal_no_role_idle))
     {
-        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriEnableConnectableHandset, ignore as no-role-idle/-find-role goal is active");
+        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriEnableConnectableHandset, ignore as no-role-idle goal is active");
         return rule_action_ignore;
     }
 
@@ -429,11 +433,6 @@ rule_action_t ruleTwsTopPriDisableConnectableHandset(void)
     {
         TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriDisableConnectableHandset, ignore as not connected with handset");
         return rule_action_ignore;
-    }
-
-    if (TwsTopology_IsGoalActive(tws_topology_goal_connect_handset)) {
-        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriDisableConnectableHandset, defer as profile connection still ongoing");
-        return rule_action_defer;
     }
 
     TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriDisableConnectableHandset, run as have connection to handset");
