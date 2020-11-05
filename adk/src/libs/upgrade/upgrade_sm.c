@@ -10,7 +10,7 @@ DESCRIPTION
 NOTES
 
 */
-
+/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #include <stdlib.h>
 
 #include <print.h>
@@ -77,8 +77,6 @@ static void UpgradeSMBlockingOpIsDone(void);
 static void PsFloodAndReboot(void);
 static void InformAppsCompleteGotoSync(void);
 static void UpgradeSendUpgradeStatusInd(Task task, upgrade_state_t state, uint32 delay);
-
-static void UpgradeCleanupOnAbort(void);
 
 static bool asynchronous_abort = FALSE;
 
@@ -159,6 +157,11 @@ void UpgradeSMHandleMsg(MessageId id, Message message)
     bool handled=FALSE;
 
     PRINT(("curr state 0x%x msg id 0x%x\n", GetState(), id));
+    /*added by Qualcomm patch - 04838455 abort dfu out of case */
+    if(id == UPGRADE_ABORT_REBOOT)
+    {
+        PsFloodAndReboot();
+    }    
 
     switch(GetState())
     {
@@ -495,6 +498,11 @@ bool HandleAborting(MessageId id, Message message)
 #endif
         {
             UpgradeSMAbort();
+#ifndef UPGRADE_ALLOW_ERASE_AFTER_UPGRADE
+            DEBUG_LOG("HandleAborting: sending UPGRADE_HOST_ABORT_CFM, erase skipped");
+            /* Send CFM as ABORT_REQ handling is skipped i.e. erase bypassed. */
+            UpgradeCtxGet()->funcs->SendShortMsg(UPGRADE_HOST_ABORT_CFM);
+#endif
         }
         break;
     case UPGRADE_HOST_SYNC_REQ:
@@ -517,6 +525,13 @@ bool HandleDataReady(MessageId id, Message message)
         {
             if (UpgradePartitionDataInit(&WaitForEraseComplete))
             {
+                /*
+                 * Notify application of UPGRADE_START_DATA_IND on erase
+                 * completion to prevent apps P1 being blocked owing to blocking
+                 * trap calls of PsStore used to store upgrade pskey info
+                 * (i.e. is_out_case_dfu, is_secondary_device and is_dfu_mode)
+                 */
+                UpgradeCtxGet()->isImgUpgradeEraseDone = (uint16)WaitForEraseComplete;
                 UpgradeSendStartUpgradeDataInd();
                 if (!WaitForEraseComplete)
                 {
@@ -1296,7 +1311,8 @@ static void upgradeSmDefaultHandlerHandleUpgradeHostSyncReq(const UPGRADE_HOST_S
 /* Send a message to Device upgrade to be sent to application for calling 
  * DFU specific routine for cleanup process
  */
-static void UpgradeCleanupOnAbort(void)
+/*added by Qualcomm patch - 04838455 abort dfu out of case */
+void UpgradeCleanupOnAbort(void)
 {
     DEBUG_LOG("UpgradeCleanupOnAbort()");
     MessageSend(UpgradeCtxGet()->mainTask, UPGRADE_CLEANUP_ON_ABORT, NULL);
@@ -1347,11 +1363,22 @@ bool DefaultHandler(MessageId id, Message message, bool handled)
             asynchronous_abort = UpgradeSMAbort();
             PRINT(("UPGRADE_HOST_ABORT_REQ: UpgradeSMAbort() returned %d\n", asynchronous_abort));
             DEBUG_LOG("DefaultHandler UPGRADE_HOST_ABORT_REQ recvd, UpgradeSMAbort() returned %d\n", asynchronous_abort);
+            /*added by Qualcomm patch - 04838455 abort dfu out of case */
+            DEBUG_LOG("RP : Going to reboot earbud in 5s");
+
+            MessageCancelAll(UpgradeGetUpgradeTask(), UPGRADE_ABORT_REBOOT);
+            MessageSendLater(UpgradeGetUpgradeTask(), UPGRADE_ABORT_REBOOT, NULL, 5000);
             if (!asynchronous_abort)
             {
                 PRINT(("UPGRADE_HOST_ABORT_REQ: sending UPGRADE_HOST_ABORT_CFM\n"));
                 UpgradeCtxGet()->funcs->SendShortMsg(UPGRADE_HOST_ABORT_CFM);
             }
+#ifndef UPGRADE_ALLOW_ERASE_AFTER_UPGRADE
+            else {
+                DEBUG_LOG("DefaultHandler: sending UPGRADE_HOST_ABORT_CFM, erase skipped");
+                UpgradeCtxGet()->funcs->SendShortMsg(UPGRADE_HOST_ABORT_CFM);
+            }
+#endif
             break;
 
         case UPGRADE_HOST_VERSION_REQ:
@@ -1466,9 +1493,14 @@ void UpgradeSMErase(void)
     }
 
     /* UpgradeSMErase any partitions that require it. */
-    UpgradeCtxGetPSKeys()->state_of_partitions = UpgradePartitionsEraseAllManaged();
+#ifdef UPGRADE_ALLOW_ERASE_AFTER_UPGRADE
+    UpgradeCtxGetPSKeys()->state_of_partitions = UpgradePartitionsEraseAllManaged(TRUE);
+#else
+    UpgradeCtxGetPSKeys()->state_of_partitions = UpgradePartitionsEraseAllManaged(FALSE);
+#endif
 
     /* Reset the transient state data in upgrade PS key. */
+    UpgradeCtxGetPSKeys()->state_of_partitions = UPGRADE_PARTITIONS_ERASED;
     UpgradeCtxGetPSKeys()->version_in_progress.major = 0;
     UpgradeCtxGetPSKeys()->version_in_progress.minor = 0;
     UpgradeCtxGetPSKeys()->config_version_in_progress = 0;
@@ -1487,6 +1519,9 @@ void UpgradeSMErase(void)
     {
         UpgradeSMBlockingOpIsDone();
     }
+    DEBUG_LOG("UpradeSMErase(): end");
+    /*added by Qualcomm patch - 04838455 abort dfu out of case */
+    //PsFloodAndReboot();
 }
 
 void CommitConfirmYes(void)
@@ -1627,6 +1662,11 @@ void UpgradeSMEraseStatus(Message message)
             if (msg->erase_status)
             {
                 /*
+                 * Reset to dispatch the conditionally queued notification of
+                 * UPGRADE_START_DATA_IND on sucessful erase completion.
+                 */
+                UpgradeCtxGet()->isImgUpgradeEraseDone = 0;
+                /*
                  * The SQIF has been erased successfully.
                  * The host is waiting to be told that it can proceed with the
                  * date transfer, postponed from the receipt of the
@@ -1639,6 +1679,11 @@ void UpgradeSMEraseStatus(Message message)
             }
             else
             {
+                /*
+                 * Cancel the conditionally queued notification of
+                 * UPGRADE_START_DATA_IND on erase failure since DFU aborts.
+                 */
+                MessageCancelAll(UpgradeCtxGet()->mainTask, UPGRADE_START_DATA_IND);
                 /* Tell the host that the attempt to erase the SQIF failed. */
                 FatalError(UPGRADE_HOST_ERROR_SQIF_ERASE);
             }

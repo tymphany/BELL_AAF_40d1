@@ -264,6 +264,8 @@ bool UpgradeSMHandleValidated(MessageId id, Message message)
     case UPGRADE_VM_DFU_COPY_VALIDATION_SUCCESS:
         {
             PRINT(("ImageUpgradeSwapTry() in UPGRADE_VM_DFU_COPY_VALIDATION_SUCCESS\n"));
+            uint16 magic = 1;
+            PsStore(EARBUD_DFU_PERMITTED_RESET_KEY, &magic, 1);
             ImageUpgradeSwapTry();
         }
         break;

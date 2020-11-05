@@ -1,12 +1,12 @@
 /*!
-\copyright  Copyright (c) 2019 Qualcomm Technologies International, Ltd.\n
+\copyright  Copyright (c) 2019 - 2020 Qualcomm Technologies International, Ltd.\n
             All Rights Reserved.\n
             Qualcomm Technologies International, Ltd. Confidential and Proprietary.
 \version    
 \file
 \brief
 */
-
+/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #include "tws_topology_procedure_disconnect_handset.h"
 #include "tws_topology_procedures.h"
 #include "tws_topology_client_msgs.h"
@@ -16,13 +16,11 @@
 #include <device_properties.h>
 #include <handset_service.h>
 #include <connection_manager.h>
+#include <gaia_framework_internal.h>
 
 #include <logging.h>
 
 #include <message.h>
-#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
-#include <gaia_framework.h>
-#endif
 
 static void twsTopology_ProcDisconnectHandsetHandleMessage(Task task, MessageId id, Message message);
 void TwsTopology_ProcedureDisconnectHandsetStart(Task result_task,

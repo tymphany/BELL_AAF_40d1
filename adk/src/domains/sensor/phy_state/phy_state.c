@@ -2,7 +2,7 @@
 \copyright  Copyright (c) 2008 - 2019 Qualcomm Technologies International, Ltd.
             All Rights Reserved.
             Qualcomm Technologies International, Ltd. Confidential and Proprietary.
-\version    
+\version
 \file       phy_state.c
 \brief      Manage physical state of an Earbud.
 */
@@ -13,6 +13,8 @@
 #include "adk_log.h"
 #include "proximity.h"
 #include "acceleration.h"
+/*added by Qualcomm patch - 04838455 abort dfu out of case */
+#include "earbud_sm.h"
 
 #include <charger_monitor.h>
 
@@ -21,13 +23,13 @@
 #include <logical_input_switch.h>
 #include <input_event_manager.h>
 #include <ps.h>
+#include <device_upgrade.h>
 #include "ui.h"
 #include "tym_anc_config.h"
 #include "tym_touch_config.h"
 #include "earbud_tym_util.h"
 #include "tym_power_control.h"
 #include "earbud_tym_factory.h"
-#include "earbud_sm.h"
 #include "tym_anc.h"
 #include "earbud_tym_cc_communication.h"
 #include "hfp_profile.h"
@@ -148,6 +150,7 @@ static void appPhyStateEnterOutOfEarAtRest(void)
 {
     DEBUG_LOG("appPhyStateEnterOutOfEarAtRest");
     appPhyStateMsgSendStateChangedInd(PHY_STATE_OUT_OF_EAR_AT_REST, phy_state_event_not_in_motion);
+    appAbortDfuReboot();
 }
 
 /*! \brief Perform actions on exiting PHY_STATE_UNKNOWN state. */
@@ -160,6 +163,8 @@ static void appPhyStateExitInCase(void)
 {
     DEBUG_LOG("appPhyStateExitInCase");
     appPhyStateMsgSendStateChangedInd(PHY_STATE_OUT_OF_EAR, phy_state_event_out_of_case);
+   /*added by Qualcomm patch - 04838455 abort dfu out of case */
+    appAbortDfuReboot();
 #ifdef ENABLE_TYM_PLATFORM /*for exit in case unmute stanc3*/
     if (appPhyStateGetPowerState() == TRUE)
     {
@@ -584,6 +589,7 @@ void appPhyStateUnregisterClient(Task client_task)
 
 bool appPhyStateInit(Task init_task)
 {
+    uint16 ps_len;
     phyStateTaskData* phy_state = PhyStateGetTaskData();
     DEBUG_LOG("appPhyStateInit");
 
@@ -658,6 +664,8 @@ will be received. This means the in-case state can never be entered */
     MessageSendConditionally(init_task, PHY_STATE_INIT_CFM, NULL, &phy_state->lock);
 
 #ifdef ENABLE_TYM_PLATFORM
+    ps_len = PsRetrieve(EARBUD_DFU_PERMITTED_RESET_KEY, NULL, 0);
+    DEBUG_LOG("EARBUD_DFU_PERMITTED_RESET_KEY pslen %d",ps_len);
     appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_user_poweron);
     setSystemReady(TRUE);
     appPhySateAppConfiguration();
@@ -668,8 +676,8 @@ will be received. This means the in-case state can never be entered */
 void appPhyStatePrepareToEnterDormant(void)
 {
 #ifdef ENABLE_TYM_PLATFORM
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
     DEBUG_LOG("appPhyStatePrepareToEnterDormant");
- 
     if(getFactoryModeTopEnable() == TRUE)
     {
         DEBUG_LOG("ByPass Prox/anc register");
@@ -686,9 +694,12 @@ void appPhyStatePrepareToEnterDormant(void)
     //appTouchClientUnregister(&phy_state->task);
     setPSPresetEQ();
     tymCleanOTAFLAG();
+    if(phy_state->sm_regphy == FALSE)
+    {
+        appAbortDfuReboot();
+    }
     if((getFactoryModeEnable() == TRUE) || (getFactoryModeTopEnable() == TRUE))
         setFactoryModeStatus(factory_disable);
-
 #else
     phyStateTaskData* phy_state = PhyStateGetTaskData();
     DEBUG_LOG("appPhyStatePrepareToEnterDormant");
@@ -756,7 +767,7 @@ void appPhyStateSetState(phyStateTaskData* phy_state, phyState new_state)
        PHY_STATE_IN_EAR
         - Otherwise we were in PHY_STATE_IN_CASE, PHY_STATE_IN_EAR or PHY_STATE_OUT_OF_EAR_AT_REST
           and are now either in PHY_STATE_OUT_OF_EAR or a different one of those 3 but
-          having passed through PHY_STATE_OUT_OF_EAR, either way that is the next 
+          having passed through PHY_STATE_OUT_OF_EAR, either way that is the next
           reported state. */
     if ((phy_state->reported_state == PHY_STATE_UNKNOWN) || (phy_state->reported_state == PHY_STATE_OUT_OF_EAR))
     {
@@ -796,7 +807,13 @@ phyState appPhyStateGetState(void)
     phyStateTaskData* phy_state = PhyStateGetTaskData();
     return phy_state->state;
 }
-
+#ifdef ENABLE_TYM_PLATFORM
+void appPhyRegisterSM(void)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    phy_state->sm_regphy = TRUE;
+}
+#endif
 /*! \brief Check whether in/out of ear detection is supported.
     \return bool TRUE if in/out of ear detection is supported. */
 bool appPhyStateIsInEarDetectionSupported(void)

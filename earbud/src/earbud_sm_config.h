@@ -8,8 +8,13 @@
 
 #ifndef EARBUD_SM_CONFIG_H_
 #define EARBUD_SM_CONFIG_H_
-
-
+//add for Qualcomm patch for abnormalOTA
+/*! Timeout for DFU cleanup after handover begins */
+#ifdef ENABLE_TYM_PLATFORM
+#define appConfigDfuTimeoutCleanupPostHandoverMs()  (100)
+#else
+#define appConfigDfuTimeoutCleanupPostHandoverMs()  (D_SEC(5))
+#endif
 /*! Timeout for entering the case after selecting DFU from the user
     interface */
 #define appConfigDfuTimeoutToPlaceInCaseMs()        (D_SEC(60))
@@ -17,7 +22,6 @@
 /*! Timeout for starting DFU mode after a restart caused by an
     upgrade completing. The timeout will only apply if the device
     is out of the case.
-
     The timeout can be set to 0, in which case there is no limit. */
 #ifdef ENABLE_TYM_PLATFORM
 #define appConfigDfuTimeoutToStartAfterRestartMs()  (D_SEC(45))

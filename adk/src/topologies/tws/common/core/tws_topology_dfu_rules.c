@@ -12,7 +12,7 @@
             have two entries. Only one will fire as the functions used to select
             the rule will only activate for primary/secondary address.
 */
-
+/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #include "tws_topology_dfu_rules.h"
 #include "tws_topology_common_primary_rule_functions.h"
 #include "tws_topology_procedure_enable_connectable_peer.h"
@@ -92,11 +92,11 @@ const rule_entry_t twstop_dfu_rules_set[] =
     /* When Earbud put out of the case, terminate DFU */
     RULE(TWSTOP_RULE_EVENT_OUT_CASE,         ruleTwsTopDfuAlways,            TWSTOP_DFU_GOAL_NO_ROLE_FIND_ROLE),
 #endif
-    /*! When a DFU is completed, disable page scan on Secondary that was started as part of Secondary reboot. */
-    RULE(TWSTOP_RULE_EVENT_DFU_ROLE_COMPLETE, ruleTwsTopDfuDisablePageScan,  TWSTOP_DFU_GOAL_SEC_DISABLE_PAGE_SCAN_TO_PEER),
-
     /* When a DFU is ended, for whatever reason, leave DFU and find role if out of case */
     RULE(TWSTOP_RULE_EVENT_DFU_ROLE_COMPLETE,ruleTwsTopOutOfCase,            TWSTOP_DFU_GOAL_NO_ROLE_FIND_ROLE),
+
+    /*! When a DFU is completed, disable page scan on Secondary that was started as part of Secondary reboot. */
+    RULE(TWSTOP_RULE_EVENT_DFU_ROLE_COMPLETE, ruleTwsTopDfuDisablePageScan,  TWSTOP_DFU_GOAL_SEC_DISABLE_PAGE_SCAN_TO_PEER),
 
     /* When a DFU is ended, for whatever reason, change role if in case */
     RULE(TWSTOP_RULE_EVENT_DFU_ROLE_COMPLETE,ruleTwsTopInCase,               TWSTOP_DFU_GOAL_NO_ROLE_IDLE),
@@ -274,6 +274,12 @@ static rule_action_t ruleTwsTopDfuEnableConnectableHandset(void)
     Running this rule set is a key indicator that we are in DFU In Case mode */
 static rule_action_t ruleTwsTopDfuInCase(void)
 {
+    if (UpgradeIsInitialised() && UpgradeIsOutCaseDFU())
+    {
+        TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuInCase, ignore as BDFU is in progress");
+        return rule_action_ignore;
+    }
+
     TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuInCase, DFU IN CASE EVENT RUN Always");
     /* We are here since it is IN_CASE DFU, and its better to update
      * the app_upgrade.APP_STATE_IN_CASE_DFU variable here, so that 
@@ -440,9 +446,9 @@ static rule_action_t ruleTwsTopDfuSecondaryLinkLoss(void)
         return rule_action_ignore;
     }
 
-    TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuSecondaryLinkLoss, run as secondary during DFU and peer got disconnected");
+    TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuSecondaryLinkLoss, ignore as no-role-find-role should run soon");
 
-    return rule_action_run;
+    return rule_action_ignore;
 }
 
 static rule_action_t ruleTwsTopDfuAllowHandsetConnect(void)

@@ -117,6 +117,10 @@ enum earbud_primary_rules_messages
 
     /*! Accept incoming call. */
     CONN_RULES_ACCEPT_INCOMING_CALL,
+#ifdef ENABLE_TYM_PLATFORM    
+    /*! DFU Abort REBOOT */
+    CONN_RULES_DFU_ABORT_REBOOT,
+#endif    
 };
 
 /*! \brief Actions to take after connecting handset. */

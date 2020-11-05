@@ -83,7 +83,7 @@ void UpgradeLoadPSStore(uint16 dataPskey,uint16 dataPskeyStart)
     }
     else
     {
-        memset(UpgradeCtxGetPSKeys(),0x0000,sizeof(UpgradeCtxGetPSKeys()) * sizeof(uint16));
+        memset(UpgradeCtxGetPSKeys(),0x0000,sizeof(UPGRADE_LIB_PSKEY));
     }
 }
 

@@ -46,7 +46,12 @@ const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_ind_mru_handse
 
 const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_delete_handset_if_full_t =
     MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_delete_handset_if_full_t);
+//add for Qualcomm patch for abnormalOTA
+const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_abort_dfu_if_phy_changed_t =
+    MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_abort_dfu_if_phy_changed_t);
 
+const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_dfu_abort_t =
+    MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_dfu_abort_t);
 /*! X-Macro generate earbud SM marshal type descriptor set that can be passed to a (un)marshaller
  *  to initialise it.
  *  */

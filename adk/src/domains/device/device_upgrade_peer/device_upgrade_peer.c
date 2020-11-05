@@ -11,7 +11,7 @@ DESCRIPTION
 NOTES
 
 */
-
+/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #ifdef INCLUDE_DFU_PEER
 
 #include "device_upgrade_peer.h"
@@ -192,7 +192,14 @@ static void DeviceUpgradePeerDisconnected(DeviceUpgradePeerState old_state)
     if(old_state == DEVICE_UPGRADE_PEER_STATE_CONNECTED ||
        old_state == DEVICE_UPGRADE_PEER_STATE_DISCONNECTING)
     {
-        if (theDeviceUpgradePeer->is_primary)
+        /* if we'll be rebooting soon, then it means this disconnect is a permitted one */
+        if (MessagePendingFirst(UpgradeGetTask(), UPGRADE_SHUT_AUDIO, NULL)) {
+            /* so speed up the message delivery since we're ready */
+            MessageCancelAll(UpgradeGetTask(), UPGRADE_SHUT_AUDIO);
+            MessageSend(UpgradeGetTask(), UPGRADE_SHUT_AUDIO, NULL);
+            return;
+        }
+        else if (theDeviceUpgradePeer->is_primary)
         {
             UpgradePeerProcessDataRequest(UPGRADE_PEER_DISCONNECT_IND, NULL, 0);
         }
@@ -979,14 +986,16 @@ static void DeviceUpgradePeerHandleL2capDisconnectInd(const CL_L2CAP_DISCONNECT_
     /* Only change state if sink matches */
     if (ind->sink == theDeviceUpgradePeer->link_sink)
     {
+		//add for Qualcomm patch for abnormalOTA
+        /*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
+        deviceUpgradePeerSetState(DEVICE_UPGRADE_PEER_STATE_DISCONNECTED);
         /* Print if there is a link loss. Currently, we don't handle link loss during upgrade */
         if (ind->status == l2cap_disconnect_link_loss &&
                            !BdaddrIsZero(&theDeviceUpgradePeer->peer_addr))
         {
             DEBUG_LOG("DeviceUpgradePeerHandleL2capDisconnectInd, link-loss");
+            MessageCancelAll(UpgradeGetTask(), UPGRADE_PEER_CONNECT_REQ);
         }
-
-        deviceUpgradePeerSetState(DEVICE_UPGRADE_PEER_STATE_DISCONNECTED);
     }
 }
 

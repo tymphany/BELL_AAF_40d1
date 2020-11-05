@@ -35,7 +35,9 @@ typedef enum
     UPGRADE_INTERNAL_BATTERY_LOW,
 
     /*! send to itself after reboot to commit, it is used to handle no reconnection cases */
-    UPGRADE_INTERNAL_RECONNECTION_TIMEOUT
+    UPGRADE_INTERNAL_RECONNECTION_TIMEOUT,
+    /*added by Qualcomm patch - 04838455 abort dfu out of case */
+    UPGRADE_ABORT_REBOOT
 
 } UpgradeMsgInternal;
 

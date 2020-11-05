@@ -7,11 +7,14 @@
 \brief      Procedure to abort DFU when DFU is done out of case and Handover
             kicks in.
 */
-
+/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #include "tws_topology_procedure_dfu_abort_on_handover.h"
 #include "tws_topology_procedures.h"
 #include "upgrade.h"
 #include "device_upgrade.h"
+#include <gaia_framework_internal.h>
+#include <earbud_gaia_plugin.h>
+#include <earbud_gaia_tws.h>
 #include <logging.h>
 #ifdef HANDOVER_DFU_ABORT_WITHOUT_ERASE
 /* ToDo: Check if the include dependency be burried under device_upgrade.h */
@@ -197,6 +200,8 @@ static void twsTopology_ProcDfuAbortOnHandoverHandleMessage(Task task, MessageId
             if(UpgradeIsHandoverDFUAbortComplete() ||
                 td->retry_count++ >= TwsTopProcDfuAbortOnHandover_DFUAbortPollAttempts())
             {
+                /* make sure upgrade transport gets disconnected */
+                gaiaFrameworkInternal_GaiaDisconnect();
                 twsTopology_ProcDfuAbortOnHandoverReset();
                 Procedures_DelayedCompleteCfmCallback(td->complete_fn,
                                 tws_topology_procedure_dfu_abort_on_handover,

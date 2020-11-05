@@ -6,7 +6,7 @@
 \file       device_upgrade.h
 \brief      Header file for the earbud upgrade management.
 */
-
+/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #ifndef DEVICE_UPGRADE_H_
 #define DEVICE_UPGRADE_H_
 
@@ -110,6 +110,9 @@ extern upgradeTaskData app_upgrade;
 
 #define appUpgradeSetDfuAbortOnHandoverState(x) (app_upgrade.isDfuAbortedOnHandover = (x))
 #define appUpgradeIsDfuAbortOnHandoverDone()    (app_upgrade.isDfuAbortedOnHandover)
+//add for Qualcomm patch for abnormalOTA
+/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
+#define appUpgradeAclCloseTimeoutMs()           (100)
 
 bool appUpgradeEarlyInit(Task init_task);
 

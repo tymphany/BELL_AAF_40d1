@@ -6,7 +6,7 @@
 \file
 \brief      TWS Topology component core.
 */
-
+/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #include "tws_topology.h"
 #include "tws_topology_private.h"
 #include "tws_topology_primary_ruleset.h"
@@ -544,11 +544,11 @@ static void twsTopology_HandlePhyStateChangedInd(PHY_STATE_CHANGED_IND_T* ind)
             break;
        case phy_state_event_in_case:
             if(TwsTopologyGetTaskData()->role == tws_topology_role_dfu)
-            {                                
-                //twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
-                //twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);                
+            {       
                 twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
-                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);  
+                twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);                                                     
+                //twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+                //twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);                 
             }
             break;           
 #else
@@ -1136,6 +1136,37 @@ void TwsTopology_EndDfuRole(void)
     TwsTopologyPrimaryRules_ResetEvent(TWSTOP_RULE_EVENT_DFU_ROLE);
 }
 
+void TwsTopology_EndDfuRole_IfNeeded(void)
+{
+    DEBUG_LOG("TwsTopology_EndDfuRole_IfNeeded, resetting original roles if possible");
+
+    TwsTopologyPrimaryRules_ResetEvent(TWSTOP_RULE_EVENT_DFU_ROLE);
+
+    if (appPhyStateGetState() == PHY_STATE_IN_CASE) {
+        DEBUG_LOG("TwsTopology_EndDfuRole_IfNeeded, in-case so let no_role_idle decide the role");
+        return;
+    }
+
+    /* check primary for handset and peer connection */
+    if (BtDevice_IsMyAddressPrimary() && appDeviceIsPeerConnected()) {
+        TwsTopologyPrimaryRules_ResetEvent(TWSTOP_RULE_EVENT_ROLE_SWITCH);
+        twsTopology_SetRole(tws_topology_role_primary);
+
+        /* ensure we reconnect to the handset, if we aren't already connected */
+        if (!appDeviceIsHandsetConnected()) {
+            twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_HANDSET_LINKLOSS);
+        }
+        return;
+    }
+    /* check secondary for peer connection */
+    else if (!BtDevice_IsMyAddressPrimary() && appDeviceIsPeerConnected()) {
+        TwsTopologySecondaryRules_ResetEvent(TWSTOP_RULE_EVENT_ROLE_SWITCH);
+        twsTopology_SetRole(tws_topology_role_secondary);
+        return;
+    }
+
+    twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_DFU_ROLE_COMPLETE);
+}
 
 void TwsTopology_SelectPrimaryAddress(bool primary)
 {
