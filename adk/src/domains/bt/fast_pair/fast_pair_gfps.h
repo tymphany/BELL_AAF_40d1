@@ -30,7 +30,12 @@
 /*! This enum defines the common enums for FP Characteristics to be used between GATT FP Server interface and State Machine */
 typedef enum 
 {
+    #ifdef ENABLE_TYM_PLATFORM
+    /*Qualcomm Patch: improving fastpairing pairing time*/
+    FAST_PAIR_KEY_BASED_PAIRING,
+    #else
     FAST_PAIR_KEY_BASED_PAIRING = UUID_KEYBASED_PAIRING,
+    #endif
     FAST_PAIR_PASSKEY,
     FAST_PAIR_ACCOUNT_KEY
 } gatt_fp_characteristics_t;

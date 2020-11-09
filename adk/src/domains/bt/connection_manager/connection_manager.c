@@ -665,11 +665,20 @@ bool ConManagerHandleConnectionLibraryMessages(MessageId id,Message message, boo
         {
             CL_DM_BLE_ACCEPT_CONNECTION_PAR_UPDATE_IND_T *ind = (CL_DM_BLE_ACCEPT_CONNECTION_PAR_UPDATE_IND_T *)message;
 
+            #ifdef ENABLE_TYM_PLATFORM
+            /*Qualcomm Patch: improving fastpairing pairing time*/
+            ConnectionDmBleAcceptConnectionParUpdateResponse(TRUE, &ind->taddr,
+                                                             ind->id,
+                                                             ind->conn_interval_min, ind->conn_interval_max + 1,
+                                                             ind->conn_latency,
+                                                             ind->supervision_timeout);
+            #else
             ConnectionDmBleAcceptConnectionParUpdateResponse(TRUE, &ind->taddr,
                                                              ind->id,
                                                              ind->conn_interval_min, ind->conn_interval_max,
                                                              ind->conn_latency,
                                                              ind->supervision_timeout);
+            #endif
             return TRUE;
         }
 

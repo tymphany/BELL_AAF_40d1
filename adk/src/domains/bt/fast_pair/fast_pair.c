@@ -40,6 +40,14 @@
 #include <cryptovm.h>
 #include <stdio.h>
 
+#ifdef ENABLE_TYM_PLATFORM
+/*Qualcomm Patch: improving fastpairing pairing time*/
+#define BOOST_CLK
+
+#ifdef BOOST_CLK
+static void fastPairClkCtlTimer_boostUpClk(void);
+#endif
+#endif
 
 /*!< Fast Pair task */
 fastPairTaskData fast_pair_task_data;
@@ -121,6 +129,13 @@ static void fastPair_EnterIdle(fastPairTaskData *theFastPair)
 static void fastPair_EnterWaitAESKey(void)
 {
     DEBUG_LOG("fastPair_EnterWaitAESKey");
+    
+    #ifdef ENABLE_TYM_PLATFORM
+    /*Qualcomm Patch: improving fastpairing pairing time*/
+    #ifdef BOOST_CLK
+    fastPairClkCtlTimer_boostUpClk();
+    #endif
+    #endif
 }
 
 /*! @brief Enter Wait state for Pairing request from FP seeker.
@@ -317,6 +332,44 @@ bool fastPair_StateMachineHandleEvent(fast_pair_state_event_t event)
     }
     return ret_val;
 }
+
+#ifdef ENABLE_TYM_PLATFORM
+/*Qualcomm Patch: improving fastpairing pairing time*/
+#ifdef BOOST_CLK
+#define TIMER_DELAY_MS 12000
+
+static void fastPairClkCtlTimer_HandleMessage(Task task, MessageId id, Message message);
+
+static const TaskData fastPairClkCtl_task = {fastPairClkCtlTimer_HandleMessage};
+
+static void fastPairClkCtlTimer_HandleMessage(Task task, MessageId id, Message message)
+{
+    UNUSED(task);
+    UNUSED(id);
+    UNUSED(message);
+
+    vm_runtime_profile vm_profile = (vm_runtime_profile)id;
+
+    DEBUG_LOG_ALWAYS("fast pair restore clks (%d)", vm_profile);
+
+    if (vm_profile != -1)
+    {
+        VmRequestRunTimeProfile(vm_profile);
+    }
+}
+
+static void fastPairClkCtlTimer_boostUpClk(void)
+{
+    static vm_runtime_profile vm_profile = -1;
+
+    vm_profile = VmGetRunTimeProfile();
+    VmRequestRunTimeProfile(VM_PERFORMANCE);
+    MessageSendLater( ((Task)&fastPairClkCtl_task) , (MessageId)vm_profile, NULL, TIMER_DELAY_MS);
+}
+
+#endif
+#endif
+
 /*! \brief Set Fast Pair State
     Called to change state.  Handles calling the state entry and exit
     functions for the new and old states.
