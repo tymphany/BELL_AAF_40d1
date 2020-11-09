@@ -727,10 +727,8 @@ static const init_table_entry_t appInitTable[] =
     {TelephonyService_Init, 0, NULL},
 
 #ifdef INCLUDE_FAST_PAIR
-    {appTxPowerInit, 0 , NULL},
-#ifndef DISABLE_BISTO    
+    {appTxPowerInit,        0, NULL},
     {FastPair_Init,         0, NULL},
-#endif /*DISABLE_BISTO */
 #endif
 
 #ifdef INCLUDE_GATT_SERVICE_DISCOVERY
