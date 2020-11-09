@@ -10,7 +10,7 @@ Copyright (c) 2018 Qualcomm Technologies International, Ltd.
 
 #define UUID_FAST_PAIR_SERVICE                      0xFE2C
 
-#ifdef ENABLE_TYM_PLATFORM
+#if 1 /*ifdef ENABLE_TYM_PLATFORM*/
 /*Qualcomm Patch: improving fastpairing pairing time*/
 #define UUID_KEYBASED_PAIRING                       0xFE2C1234836648148EB001DE32100BEA
 #define UUID_PASSKEY                                0xFE2C1235836648148EB001DE32100BEA
