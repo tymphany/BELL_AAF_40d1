@@ -577,10 +577,22 @@ static media_channel* findMediaFromConnectionId (remote_device *device, uint16 c
                      return media;
                  }
                  break;
-                 
+
+                 //ENABLE_TYM_PLATFORM,04844115_04844078_a2dp_r40_1_rev.txt
+            case avdtp_connection_disconnect_pending:
+                /* in this state, it's quite likely that media->connection.active.sink
+                 * has not yet been set. In that case, the CID is likely still
+                 * stored in one of these, so check them first */
+                 if ( (connection_id == media->connection.setup.inbound_cid) ||
+                      (connection_id == media->connection.setup.outbound_cid) ||
+                      (AVDTP_OUTGOING_CONNECTION_ID == media->connection.setup.outbound_cid) )
+                {
+                    return media;
+                }
+                break;
             case avdtp_connection_connected:
             case avdtp_connection_disconnecting:
-            case avdtp_connection_disconnect_pending:
+            //case avdtp_connection_disconnect_pending:
                 /* We no longer store a connection id, so obtain it via the stored sink */
                 if (connection_id == SinkGetL2capCid(media->connection.active.sink))
                 {

@@ -1170,14 +1170,17 @@ bool a2dpHandleCloseCommand (remote_device *device)
 bool a2dpHandleStartCommand (remote_device *device)
 {
     uint16 error_code;
-
+    //ENABLE_TYM_PLATFORM, 04844115_04844078_a2dp_r40_1_rev.txt
+    PRINT(("a2dpHandleStartCommand(%p): stream_state %d\n", device , device->signal_conn.status.stream_state));
     if ( (device->signal_conn.status.stream_state == avdtp_stream_remote_opening) ||
          (device->signal_conn.status.stream_state == avdtp_stream_local_opening) )
     {   /* Return FALSE to indicate that processing of AVDTP_START command will be deferred until later */
         return FALSE;
     }
-    else if ( (device->signal_conn.status.stream_state != avdtp_stream_open) &&
+    /*else if ( (device->signal_conn.status.stream_state != avdtp_stream_open) &&
               (device->signal_conn.status.stream_state != avdtp_stream_local_starting) &&
+              (device->signal_conn.status.stream_state != avdtp_stream_remote_starting) )*/
+    else if ( (device->signal_conn.status.stream_state != avdtp_stream_open) &&
               (device->signal_conn.status.stream_state != avdtp_stream_remote_starting) )
     {
         a2dpSendReject(device, avdtp_start, avdtp_bad_state);
@@ -1221,6 +1224,14 @@ void a2dpHandleAbortCommand (remote_device *device)
     if ( a2dpProcessAbortCommand(device) )
     {   /* If the supplied seid is recognised, we must abort */
         a2dpSendAccept(device, avdtp_abort, AVDTP_NO_PAYLOAD);
+        //ENABLE_TYM_PLATFORM, 04844115_04844078_a2dp_r40_1_rev.txt
+        /* Abort during opening, send CFM to let app know */
+        if ( (device->signal_conn.status.stream_state == avdtp_stream_remote_opening) ||
+             (device->signal_conn.status.stream_state == avdtp_stream_local_opening) )
+        {
+            a2dpMediaOpenCfm(device, NULL, a2dp_aborted);
+        }
+
         a2dpDisconnectAllMedia(device);
         a2dpStreamReset(device);
     }
@@ -1563,10 +1574,24 @@ void a2dpStreamDelayReport (remote_device *device, uint16 delay)
     
     if (device->signal_conn.status.connection_state == avdtp_connection_connected)
     {
-        if ( !sendDelayReport(device, delay) )
+        //ENABLE_TYM_PLATFORM, 04844115_04844078_a2dp_r40_1_rev.txt
+        uint8 *configured_caps = blockGetBase((uint8)device->bitfields.device_id, data_block_configured_service_caps);
+        uint16 size_configured_caps = blockGetSize((uint8)device->bitfields.device_id, data_block_configured_service_caps);
+        if (a2dpIsServiceSupported(AVDTP_SERVICE_DELAY_REPORTING, configured_caps, size_configured_caps) && (device->local_sep.role == a2dp_sink))
         {
-            setDelayReportPending(device, TRUE);
+            if ( !sendDelayReport(device, delay) )
+            {
+                setDelayReportPending(device, TRUE);
+            }
         }
+        else
+        {
+            a2dpMediaAvSyncDelayCfm(device, (uint8)device->local_sep.seid, a2dp_operation_fail);
+        }
+        //if ( !sendDelayReport(device, delay) )
+        //{
+        //    setDelayReportPending(device, TRUE);
+        //}
     }
 }
 
@@ -1581,6 +1606,13 @@ void a2dpStreamAbort (remote_device *device)
 
     if (device->signal_conn.status.connection_state == avdtp_connection_connected)
     {
+        //ENABLE_TYM_PLATFORM, 04844115_04844078_a2dp_r40_1_rev.txt
+        /* Abort during opening, send CFM to let app know */
+        if ( (device->signal_conn.status.stream_state == avdtp_stream_remote_opening) )
+        {
+            a2dpMediaOpenCfm(device, NULL, a2dp_aborted);
+        }
+
         if ( a2dpSendCommand(device, avdtp_abort, NULL, AVDTP_NO_PAYLOAD) )
         {
             a2dpSetStreamState(device, avdtp_stream_local_aborting);

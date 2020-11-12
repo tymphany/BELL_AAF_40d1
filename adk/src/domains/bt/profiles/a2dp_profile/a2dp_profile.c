@@ -2017,9 +2017,24 @@ static void appA2dpHandleA2dpMediaOpenConfirm(avInstanceTaskData *theInst,
             }
             else
             {
+#ifdef ENABLE_TYM_PLATFORM /*porting 04844115_04844078_a2dp_r40_1_rev.diff*/
+                if (cfm->status == a2dp_aborted)
+                {
+                    DEBUG_LOG("appA2dpHandleA2dpMediaOpenConfirm aborted; disconnecting A2DP signalling");
+                    appA2dpSetState(theInst, A2DP_STATE_DISCONNECTING);
+                }
+                /* Receiving A2DP_MEDIA_OPEN_CFM with a2dp_wrong_state in this
+                state means a A2DP MEDIA OPEN cross-over occurred.
+                Stay in CONNECTING_MEDIA_REMOTE_SYNC as There is no need to
+                perform a state transition. */
+                else if (cfm->status != a2dp_wrong_state )
+                {
+                    appA2dpSetState(theInst, A2DP_STATE_CONNECTED_SIGNALLING);
+                }
+#else                
                 appA2dpSetState(theInst, A2DP_STATE_CONNECTED_SIGNALLING);
-
                 A2dpProfile_sendErrorIndication();
+#endif                 
             }
         }
         return;
@@ -2075,17 +2090,49 @@ static void appA2dpHandleA2dpMediaStartIndication(avInstanceTaskData *theInst,
     {
         case A2DP_STATE_CONNECTED_MEDIA_SUSPENDED:
         case A2DP_STATE_CONNECTED_MEDIA_STREAMING_MUTED:
+        case A2DP_STATE_CONNECTED_MEDIA_STARTING_LOCAL_SYNC: /*porting 04844115_04844078_a2dp_r40_1_rev.diff*/
         {
             /* Check if we should still be suspended */
             if ((theInst->a2dp.suspend_state == 0) &&
                 appAvInstanceShouldStartMediaStreamingOnMediaStartInd(theInst))
             {
+#ifdef ENABLE_TYM_PLATFORM /*porting 04844115_04844078_a2dp_r40_1_rev.diff*/
+                if (appA2dpGetState(theInst) == A2DP_STATE_CONNECTED_MEDIA_STARTING_LOCAL_SYNC)
+                {
+                    /* As apps already in the process of starting the MEDIA and
+                        this flag suggets synchronisation is completed so need to
+                        respond to AG. */
+                    DEBUG_LOG("appA2dpHandleA2dpMediaStartIndication: sync_response_rcvd %d", theInst->a2dp.bitfields.sync_response_rcvd);
+                    if (theInst->a2dp.bitfields.sync_response_rcvd)
+                    {
+                        DEBUG_LOG("appA2dpHandleA2dpMediaStartIndication accepting A2dpMediaStart device_id %u", theInst->a2dp.device_id);
+                        TimestampEvent(TIMESTAMP_EVENT_A2DP_START_RSP);
+                        PanicFalse(A2dpMediaStartResponse(theInst->a2dp.device_id, theInst->a2dp.stream_id, TRUE));
+                        /* The sync is complete, waiting for the A2DP_MEDIA_START_CFM. */
+                    }
+                    /* Receiving A2DP_MEDIA_START_IND_T in state
+                    A2DP_STATE_CONNECTED_MEDIA_STARTING_LOCAL_SYNC means a
+                    start cross-over occurred. When entering state
+                    STARTING_LOCAL_SYNC the same actions are performed as
+                    required when entering STARTING_REMOVE_SYNC, so there is
+                    no need to perform a state transition - instead just
+                    change the local state without going through a state
+                    transition. */
+                    theInst->a2dp.state = A2DP_STATE_CONNECTED_MEDIA_STARTING_REMOTE_SYNC;
+                }
+                else
+                {
+                    /* Move to 'connected media starting remote' state to wait for
+                        the other instance to start streaming */
+                    appA2dpSetState(theInst, A2DP_STATE_CONNECTED_MEDIA_STARTING_REMOTE_SYNC);
+                }
+#else
                 /* Attempt to sync the slave, then respond */
 
                 /* Move to 'connected media starting remote' state to wait for
                    the other instance to start streaming */
                 appA2dpSetState(theInst, A2DP_STATE_CONNECTED_MEDIA_STARTING_REMOTE_SYNC);
-
+#endif
                 TimestampEvent(TIMESTAMP_EVENT_A2DP_START_IND);
 
             }
@@ -2103,7 +2150,8 @@ static void appA2dpHandleA2dpMediaStartIndication(avInstanceTaskData *theInst,
             }
         }
         return;
-
+#ifdef ENABLE_TYM_PLATFORM /*porting 04844115_04844078_a2dp_r40_1_rev.diff , remove A2DP_STATE_CONNECTED_MEDIA_STARTING_LOCAL_SYNC*/
+#else
         case A2DP_STATE_CONNECTED_MEDIA_STARTING_LOCAL_SYNC:
         {
             /* Accept streaming start request */
@@ -2122,7 +2170,7 @@ static void appA2dpHandleA2dpMediaStartIndication(avInstanceTaskData *theInst,
             }
         }
         return;
-
+#endif
         case A2DP_STATE_CONNECTED_MEDIA_SUSPENDING_LOCAL:
         {
             /* Accept streaming start request */
@@ -2197,7 +2245,14 @@ static void appA2dpHandleA2dpMediaStartConfirmation(avInstanceTaskData *theInst,
                 else
                     appA2dpSetState(theInst, A2DP_STATE_CONNECTED_MEDIA_STREAMING);
             }
+#ifdef ENABLE_TYM_PLATFORM
+            /* Receiving A2DP_MEDIA_START_CFM with a2dp_wrong_state in these
+             states means a A2DP MEDIA START cross-over occurred.
+             There is no need to perform a state transition. */
+            else if (cfm->status != a2dp_wrong_state )
+#else
             else
+#endif
             {
                 /* Move to suspended state */
                 appA2dpSetState(theInst, A2DP_STATE_CONNECTED_MEDIA_SUSPENDED);

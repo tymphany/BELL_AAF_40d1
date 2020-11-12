@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--Copyright (c) 2019 Qualcomm Technologies International, Ltd.-->
-
+<!--ENABLE_TYM_PLATFORM, porting 04844115_04844078_a2dp_r40_1_rev.diff-->
 <types name="a2dp">
     <include_header name="marshal_common.h"/>
     <include_header name="audio_sync.h"/>
@@ -15,6 +15,7 @@
         <member marshal="false" doc="Number of connection retries">unsigned connect_retries:3</member>
         <member marshal="false" doc="Flag to indicate if connection was locally initiated">unsigned local_initiated:1</member>
         <member marshal="false" doc="Reason for disconnect">unsigned disconnect_reason:4</member>
+        <member marshal="false" doc="Flag to indicate if audio sync response was received">unsigned sync_response_rcvd:1</member>
     </typedef_struct>
 
 <typedef_enum name="avA2dpState" basic="true" doc="AV suspend reason enum">
