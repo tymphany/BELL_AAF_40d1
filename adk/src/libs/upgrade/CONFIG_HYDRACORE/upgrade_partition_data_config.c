@@ -281,7 +281,7 @@ bool UpgradePartitionDataInit(bool *waitForEraseComplete)
         return TRUE;
     }
     /* Ensure the other bank is erased before we start. */
-    if (UPGRADE_PARTITIONS_ERASED == UpgradePartitionsEraseAllManaged(TRUE))
+    if (UPGRADE_PARTITIONS_ERASED == UpgradePartitionsEraseAllManaged())
     {
         *waitForEraseComplete = TRUE;
         return TRUE;

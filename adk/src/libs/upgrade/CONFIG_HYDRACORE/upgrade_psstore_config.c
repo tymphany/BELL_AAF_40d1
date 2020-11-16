@@ -1,7 +1,7 @@
 /****************************************************************************
 Copyright (c) 2014 - 2015 Qualcomm Technologies International, Ltd.
 
-
++QCC512x_QCC302x.SRC.1.0 R49.1 with changes for ADK-297, ADK-638, B-305341, B-305370
 FILE NAME
     upgrade_psstore.c
 
@@ -40,7 +40,8 @@ NOTES
 #include "upgrade_partitions.h"
 
 #include <imageupgrade.h>
-
+/* ADK-297 Upgrade library structures not correctly cleared */
+#include <upgrade_private.h>
 static void loadUpgradeKey(UPGRADE_LIB_PSKEY *key_data, uint16 key, uint16 key_offset);
 
 /*
@@ -83,7 +84,10 @@ void UpgradeLoadPSStore(uint16 dataPskey,uint16 dataPskeyStart)
     }
     else
     {
-        memset(UpgradeCtxGetPSKeys(),0x0000,sizeof(UPGRADE_LIB_PSKEY));
+        /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/        
+        //memset(UpgradeCtxGetPSKeys(),0x0000,sizeof(UpgradeCtxGetPSKeys()) * sizeof(uint16));
+        /* ADK-297 Upgrade library structures not correctly cleared */
+		memset(UpgradeCtxGetPSKeys(),0x0000, sizeof(UPGRADE_LIB_PSKEY));        
     }
 }
 
@@ -134,6 +138,27 @@ bool UpgradePsRunningNewApplication(uint16 dataPskey, uint16 dataPskeyStart)
     }
     return result;
 }
+
+/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/        
+/* B-305341 Handle DFU timeout and abort in the post reboot phase */
+/****************************************************************************
+NAME
+    UpgradePsGetResumePoint
+    
+DESCRIPTION
+    Get the resume point directly from the pskey. This function is useful before
+    the PSStore gets loaded in the RAM.
+    
+RETURNS
+    Value of the resume point.
+*/
+uint16 UpgradePsGetResumePoint(uint16 dataPskey, uint16 dataPskeyStart)
+{
+    UPGRADE_LIB_PSKEY ps_key;
+    loadUpgradeKey(&ps_key, dataPskey, dataPskeyStart);
+    return ps_key.upgrade_in_progress_key;
+}
+/* End B-305341 */
 
 static void loadUpgradeKey(UPGRADE_LIB_PSKEY *key_data, uint16 key, uint16 key_offset)
 {

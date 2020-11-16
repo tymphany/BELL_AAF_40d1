@@ -134,6 +134,12 @@ cm_connection_t *ConManagerAddConnection(const tp_bdaddr *tpaddr, cm_connection_
     \param connection Pointer to connection 
 */
 void conManagerRemoveConnection(cm_connection_t *connection);
+#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+/*! \brief Remove all connections from the connections list when
+           Bluestack confirms all ACL links have been disconnected
+ */
+void conManagerRemoveAllConnection(void);
+#endif
 
 /*! \brief Initialise connections list */
 void ConManagerConnectionInit(void);

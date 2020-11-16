@@ -27,11 +27,13 @@ typedef struct earbud_sm_msg_bdaddr_payload
 {
     bdaddr bd_addr;
 } earbud_sm_msg_bdaddr_payload_t;
-//add for Qualcomm patch for abnormalOTA
-typedef earbud_sm_msg_empty_payload_t earbud_sm_req_dfu_abort_t;
-typedef earbud_sm_msg_empty_payload_t earbud_sm_req_abort_dfu_if_phy_changed_t;
+
 typedef earbud_sm_msg_empty_payload_t earbud_sm_req_dfu_active_when_in_case_t;
 typedef earbud_sm_msg_empty_payload_t earbud_sm_req_dfu_active_when_out_case_t;
+#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+typedef earbud_sm_msg_empty_payload_t earbud_sm_req_dfu_set_mode_when_in_case_t;
+typedef earbud_sm_msg_empty_payload_t earbud_sm_req_dfu_ended_cleanup_t;
+#endif
 typedef earbud_sm_msg_empty_payload_t earbud_sm_req_factory_reset_t;
 typedef earbud_sm_msg_empty_payload_t earbud_sm_ind_dfu_ready_t;
 typedef earbud_sm_msg_empty_payload_t earbud_sm_ind_dfu_start_timeout_t;
@@ -43,8 +45,6 @@ typedef earbud_sm_msg_bdaddr_payload_t earbud_sm_req_delete_handset_if_full_t;
 
 /* Create base list of marshal types the Earbud SM will use. */
 #define MARSHAL_TYPES_TABLE(ENTRY) \
-    ENTRY(earbud_sm_req_dfu_abort_t) \
-    ENTRY(earbud_sm_req_abort_dfu_if_phy_changed_t) \
     ENTRY(earbud_sm_req_dfu_active_when_in_case_t) \
     ENTRY(earbud_sm_req_factory_reset_t) \
     ENTRY(earbud_sm_ind_dfu_ready_t) \
@@ -54,7 +54,9 @@ typedef earbud_sm_msg_bdaddr_payload_t earbud_sm_req_delete_handset_if_full_t;
     ENTRY(earbud_sm_req_delete_handsets_t) \
     ENTRY(earbud_sm_ind_mru_handset_t) \
     ENTRY(earbud_sm_req_dfu_active_when_out_case_t) \
-    ENTRY(earbud_sm_req_delete_handset_if_full_t)
+    ENTRY(earbud_sm_req_delete_handset_if_full_t) \
+    ENTRY(earbud_sm_req_dfu_set_mode_when_in_case_t) \
+    ENTRY(earbud_sm_req_dfu_ended_cleanup_t)
 
 /* X-Macro generate enumeration of all marshal types */
 #define EXPAND_AS_ENUMERATION(type) MARSHAL_TYPE(type),

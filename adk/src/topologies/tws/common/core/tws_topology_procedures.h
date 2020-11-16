@@ -99,7 +99,10 @@ typedef enum
     tws_topology_procedure_dfu_in_case,
     /*! Procedure to abort DFU when handover kicks in. */
     tws_topology_procedure_dfu_abort_on_handover,
-
+#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+    /*! Procedure to abort DFU from topology. */
+    tws_topology_procedure_dfu_abort,
+#endif
     /* Procedure for handling dynamic handover  */
     tws_topology_procedure_handover,
     tws_topology_procedure_dynamic_handover,

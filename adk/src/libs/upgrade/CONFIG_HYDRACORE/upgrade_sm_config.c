@@ -148,6 +148,10 @@ bool UpgradeSMHandleValidated(MessageId id, Message message)
             PRINT(("UPGRADE_HOST_TRANSFER_COMPLETE_RES\n"));
             if(msg !=NULL && msg->action == 0)
             {
+                /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/                  
+                /* B-305370 Avoid aborting DFU on GAIA disconnect once UPGRADE_HOST_TRANSFER_COMPLETE_RES is received with the continue */
+                UpgradeCtxGet()->isXferCompleted = TRUE;
+                
                 /* Send msg to peer device to reboot first. if peer device is
                  * restarted already then move to next phase.
                  */
@@ -264,8 +268,6 @@ bool UpgradeSMHandleValidated(MessageId id, Message message)
     case UPGRADE_VM_DFU_COPY_VALIDATION_SUCCESS:
         {
             PRINT(("ImageUpgradeSwapTry() in UPGRADE_VM_DFU_COPY_VALIDATION_SUCCESS\n"));
-            uint16 magic = 1;
-            PsStore(EARBUD_DFU_PERMITTED_RESET_KEY, &magic, 1);
             ImageUpgradeSwapTry();
         }
         break;
@@ -301,6 +303,18 @@ bool UpgradeSMAbort(void)
     {
         UpgradePeerProcessHostMsg(UPGRADE_PEER_ABORT_REQ, UPGRADE_ABORT);
     }
+    
+    /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+    /* B-305341 Handle DFU timeout and abort in the post reboot phase */
+    /* if we are going to reboot to revert commit, then we are alredy running from alternate bank
+     * so, we shouldn't erase. return False to inform synchronous abort*/
+    if(UpgradeCtxGet()->isImageRevertNeededOnAbort)
+    {
+        PRINT(("UpgradeSMAbort return false to inform synchronous abort and without erase"));
+        return FALSE;
+    }
+    /* End B-305341 */
+    
     /* if we have permission erase immediately and return to the SYNC state
      * to start again if required */
     if (UpgradeSMHavePermissionToProceed(UPGRADE_BLOCKING_IND))
@@ -318,7 +332,8 @@ bool UpgradeSMAbort(void)
         UpgradeSMSetState(UPGRADE_STATE_SYNC);
     }
 
-    return TRUE;
+    //return TRUE;
+    return FALSE;
 }
 
 uint16 UpgradeSMNewImageStatus(void)

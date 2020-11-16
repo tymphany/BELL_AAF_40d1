@@ -879,7 +879,16 @@ static void handsetServiceSm_HandleProfileManagerDisconnectCfm(handset_service_s
             }
             else
             {
-                HS_LOG("handsetServiceSm_HandleProfileManagerDisconnectCfm something connected");
+                /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/                
+                if (BtDevice_GetConnectedProfiles(sm->handset_device) == 0)
+                {
+                    HS_LOG("handsetServiceSm_HandleProfileManagerDisconnectCfm force-close ACL");
+                    ConManagerSendCloseAclRequest(&sm->handset_addr, TRUE);
+                }
+                else
+                {
+                    HS_LOG("handsetServiceSm_HandleProfileManagerDisconnectCfm some profile(s) still connected");
+                }
             }
         }
         else

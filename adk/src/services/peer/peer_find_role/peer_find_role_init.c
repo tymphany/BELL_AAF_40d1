@@ -1466,7 +1466,7 @@ static void peer_find_role_ReleaseAdvDataItems(const le_adv_data_params_t * para
 
     return;
 }
-/*added for Qualcomm patch, qcc512x_qcc302x_r49.1_abcu9334_v2 */
+
 static void peer_find_role_GattConnect(uint16 cid)
 {
     peerFindRoleTaskData *pfr = PeerFindRoleGetTaskData();
@@ -1478,6 +1478,8 @@ static void peer_find_role_GattConnect(uint16 cid)
         case PEER_FIND_ROLE_STATE_DISCOVER_CONNECTABLE:
         case PEER_FIND_ROLE_STATE_DISCOVERED_DEVICE:
         case PEER_FIND_ROLE_STATE_CONNECTING_TO_DISCOVERED:
+            /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/            
+#ifdef ENABLE_TYM_PLATFORM
             DEBUG_LOG_FN_ENTRY("peer_find_role_GattConnect. client cid:0x%x state:%d", cid, state);
 
             peer_find_role_advertising_activity_clear();
@@ -1506,10 +1508,36 @@ static void peer_find_role_GattConnect(uint16 cid)
             {
                 DEBUG_LOG_WARN("peer_find_role_GattConnect. Gatt 'gone' by time received GattConnect.");
             }
+#else            
+            DEBUG_LOG("peer_find_role_GattConnect. client cid:0x%x state:%d", cid, state);
+
+            peer_find_role_advertising_activity_clear();
+
+            PanicFalse(VmGetBdAddrtFromCid(cid, &tpaddr));
+            
+            DEBUG_LOG("peer_find_role_GattConnect. addr:%06x", tpaddr.taddr.addr.lap);
+                        
+            if (peer_find_role_is_peer_le_address(&tpaddr))
+            {
+                pfr->gatt_cid = cid;
+                peer_find_role_set_state(PEER_FIND_ROLE_STATE_CLIENT);
+                
+                /* Store address of the connected peer device */
+                memcpy(&pfr->peer_connection_typed_bdaddr, &tpaddr.taddr, sizeof(typed_bdaddr));
+                
+                TimestampEvent(TIMESTAMP_EVENT_PEER_FIND_ROLE_CONNECTED_CLIENT);
+            }
+            else
+            {
+                peer_find_role_set_state(PEER_FIND_ROLE_STATE_DISCOVER);
+            }
+#endif            
             break;
 
         case PEER_FIND_ROLE_STATE_SERVER_AWAITING_ENCRYPTION:
         case PEER_FIND_ROLE_STATE_SERVER:
+        /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/            
+#ifdef ENABLE_TYM_PLATFORM
             DEBUG_LOG_FN_ENTRY("peer_find_role_GattConnect. server cid:0x%x", cid);
 
             if (VmGetBdAddrtFromCid(cid, &tpaddr))
@@ -1532,6 +1560,25 @@ static void peer_find_role_GattConnect(uint16 cid)
             {
                 DEBUG_LOG_WARN("peer_find_role_GattConnect. Gatt server 'gone' by time received GattConnect.");
             }
+#else            
+            DEBUG_LOG("peer_find_role_GattConnect. server cid:0x%x", cid);
+
+            PanicFalse(VmGetBdAddrtFromCid(cid, &tpaddr));
+            
+            DEBUG_LOG("peer_find_role_GattConnect. addr:%06x", tpaddr.taddr.addr.lap);
+
+            if (peer_find_role_is_peer_le_address(&tpaddr))
+            {
+                pfr->gatt_cid = cid;
+                
+                /* Store address of the connected peer device */
+                memcpy(&pfr->peer_connection_typed_bdaddr, &tpaddr.taddr, sizeof(typed_bdaddr));
+
+                /* Set the server score to "invalid" until this device is prepared
+                    and ready to calculate its score. */
+                peer_find_role_reset_server_score();
+            }
+#endif            
             break;
 
         case PEER_FIND_ROLE_STATE_UNINITIALISED:
@@ -1541,7 +1588,11 @@ static void peer_find_role_GattConnect(uint16 cid)
             break;
 
         default:
+#ifdef ENABLE_TYM_PLATFORM            
             DEBUG_LOG_FN_ENTRY("peer_find_role_GattConnect. cid:0x%x. Not handled in state:%d", cid, state);
+#else
+            DEBUG_LOG("peer_find_role_GattConnect. cid:0x%x. Not handled in state:%d", cid, state);
+#endif            
             break;
     }
 }

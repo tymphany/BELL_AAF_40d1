@@ -1,6 +1,7 @@
 /****************************************************************************
 Copyright (c) 2019-2020 Qualcomm Technologies International, Ltd.
 
+QCC512x_QCC302x.SRC.1.0 R49.1 with changes for ADK-297, ADK-638, B-305341, B-305370
 
 FILE NAME
     upgrade_peer.c
@@ -12,7 +13,7 @@ DESCRIPTION
 NOTES
 
 */
-/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
+
 #include "upgrade_peer_private.h"
 #include "upgrade_msg_host.h"
 #include "upgrade.h"
@@ -54,6 +55,8 @@ static UPGRADE_PEER_CTX_T *UpgradePeerCtxGet(void);
 static void UpgradePeerCtxInit(void);
 static void StopUpgrade(void);
 static void SavePSKeys(void);
+/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+/* ADK-638 Fail safe mechanism for dfu timeout issues */
 static void UpgradePeerLoadPSStore(uint16 dataPskey,uint16 dataPskeyStart);
 
 /**
@@ -224,34 +227,21 @@ static void UpgradePeerCtxDestroy(void)
         }
     }
 }
-/*added by Qualcomm patch - 04838455 abort dfu out of case */
-void UpgradePeerPSClearStore(void)
+
+/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+/* ADK-638 Fail safe mechanism for dfu timeout issues */
+void UpgradePeerPSClearStoreStruct(void)
 {
-    if (upgradePeerInfo == NULL) {
-        UPGRADE_PEER_INFO_T *peerInfo;
-        peerInfo = (UPGRADE_PEER_INFO_T *) PanicUnlessMalloc(sizeof(*peerInfo));
-        memset(peerInfo, 0, sizeof(*peerInfo));
-
-        upgradePeerInfo = peerInfo;
-
-        UpgradePeerLoadPSStore(EARBUD_UPGRADE_CONTEXT_KEY, EARBUD_UPGRADE_PEER_CONTEXT_OFFSET);
+    DEBUG_LOG_INFO("UpgradePeerPSClearStoreStruct");
+    if (upgradePeerInfo != NULL) {
         upgradePeerInfo->UpgradePSKeys.is_dfu_mode = 0;
         upgradePeerInfo->UpgradePSKeys.currentState = 0;
         upgradePeerInfo->UpgradePSKeys.upgradeResumePoint = 0;
-        SavePSKeys();
-
-        free(upgradePeerInfo);
-        upgradePeerInfo = NULL;
+        upgradePeerInfo->UpgradePSKeys.is_secondary_device = 0;
     }
-    else {
-        upgradePeerInfo->UpgradePSKeys.is_dfu_mode = 0;
-        upgradePeerInfo->UpgradePSKeys.currentState = 0;
-        upgradePeerInfo->UpgradePSKeys.upgradeResumePoint = 0;
-        SavePSKeys();
-    }
-
-    DEBUG_LOG_INFO("UpgradePeerPSClearStore");
 }
+/* End ADK-638 */
+
 
 /**
  * To stop the upgrade process.
@@ -260,9 +250,12 @@ static void StopUpgrade(void)
 {
     upgradePeerInfo->SmCtx->isUpgrading = FALSE;
     MessageSend(upgradePeerInfo->appTask, UPGRADE_PEER_DISCONNECT_REQ, NULL);
+    /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+    /* ACBU-9526 addition to ADK-297 */
     /* Clear Pskey to start next upgrade from fresh */
-    memset(&upgradePeerInfo->UpgradePSKeys,0x0000,
-               sizeof(UPGRADE_PEER_LIB_PSKEY));
+     memset(&upgradePeerInfo->UpgradePSKeys, 0x0000, UPGRADE_PEER_PSKEY_USAGE_LENGTH_WORDS * sizeof(uint16));
+    /*memset(&upgradePeerInfo->UpgradePSKeys,0x0000,
+               sizeof(&upgradePeerInfo->UpgradePSKeys) * sizeof(uint16));*/
     SavePSKeys();
     UpgradePeerCtxDestroy();
 }
@@ -274,21 +267,12 @@ static void CleanUpgradePeerCtx(void)
 {
     upgradePeerInfo->SmCtx->isUpgrading = FALSE;
     /* Clear Pskey to start next upgrade from fresh */
-    memset(&upgradePeerInfo->UpgradePSKeys,0x0000,
-               sizeof(UPGRADE_PEER_LIB_PSKEY));
+    /* ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/    
+    /* ADK-297 Upgrade library structures not correctly cleared */
+    memset(&upgradePeerInfo->UpgradePSKeys, 0x0000, UPGRADE_PEER_PSKEY_USAGE_LENGTH_WORDS * sizeof(uint16));    
+    /*memset(&upgradePeerInfo->UpgradePSKeys,0x0000,
+               sizeof(&upgradePeerInfo->UpgradePSKeys) * sizeof(uint16));*/
     SavePSKeys();
-    UpgradePeerCtxDestroy();
-}
-
-/*added by Qualcomm patch - 04838455 abort dfu out of case */
-/**
- * To stop the upgrade process: public.
- */
-void UpgradePeerStopUpgrade(void)
-{
-    upgradePeerInfo->SmCtx->isUpgrading = FALSE;
-    MessageSend(upgradePeerInfo->appTask, UPGRADE_PEER_DISCONNECT_REQ, NULL);
-    UpgradePeerPSClearStore();
     UpgradePeerCtxDestroy();
 }
 
@@ -990,8 +974,12 @@ static void UpgradePeerLoadPSStore(uint16 dataPskey,uint16 dataPskeyStart)
     }
     else
     {
-        memset(&upgradePeerInfo->UpgradePSKeys,0x0000,
-               sizeof(UPGRADE_PEER_LIB_PSKEY));
+        /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/        
+        /* ACBU-9526 addition to ADK-297 */
+		memset(&upgradePeerInfo->UpgradePSKeys,0x0000,
+               UPGRADE_PEER_PSKEY_USAGE_LENGTH_WORDS * sizeof(uint16));        
+        //memset(&upgradePeerInfo->UpgradePSKeys,0x0000,
+        //       sizeof(&upgradePeerInfo->UpgradePSKeys) * sizeof(uint16));
     }
 }
 
@@ -1315,7 +1303,7 @@ DESCRIPTION
 */
 bool UpgradePeerIsStarted(void)
 {
-    return (upgradePeerInfo != NULL && upgradePeerInfo->SmCtx != NULL);
+    return (upgradePeerInfo->SmCtx != NULL);
 }
 
 /****************************************************************************

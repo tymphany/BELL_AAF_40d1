@@ -2,7 +2,7 @@
 \copyright  Copyright (c) 2015 - 2019 Qualcomm Technologies International, Ltd.\n
             All Rights Reserved.\n
             Qualcomm Technologies International, Ltd. Confidential and Proprietary.
-\version    
+\version    QCC512x_QCC302x.SRC.1.0 R49.1 with changes for ADK-297, ADK-638, B-305341, B-305370
 \file       earbud_sm_marshal_defs.c
 \brief      Marshal type definitions for Earbud application.
 */
@@ -22,7 +22,13 @@ const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_dfu_active
 
 const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_dfu_active_when_out_case_t =
     MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_dfu_active_when_out_case_t);
+#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_dfu_set_mode_when_in_case_t =
+    MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_dfu_set_mode_when_in_case_t);
 
+const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_dfu_ended_cleanup_t =
+    MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_dfu_ended_cleanup_t);
+#endif
 const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_factory_reset_t =
     MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_factory_reset_t);
 
@@ -46,12 +52,7 @@ const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_ind_mru_handse
 
 const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_delete_handset_if_full_t =
     MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_delete_handset_if_full_t);
-//add for Qualcomm patch for abnormalOTA
-const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_abort_dfu_if_phy_changed_t =
-    MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_abort_dfu_if_phy_changed_t);
 
-const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_dfu_abort_t =
-    MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_dfu_abort_t);
 /*! X-Macro generate earbud SM marshal type descriptor set that can be passed to a (un)marshaller
  *  to initialise it.
  *  */

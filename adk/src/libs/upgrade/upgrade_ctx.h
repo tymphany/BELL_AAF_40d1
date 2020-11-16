@@ -1,6 +1,7 @@
 /****************************************************************************
 Copyright (c) 2015 Qualcomm Technologies International, Ltd.
 
+QCC512x_QCC302x.SRC.1.0 R49.1 with changes for ADK-297, ADK-638, B-305341, B-305370
 
 FILE NAME
     upgrade_ctx.h
@@ -161,14 +162,29 @@ typedef struct
      *  If set then copy is successful else failed.
      */
     bool ImgUpgradeCopyStatus:1;
-
+    /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/        
     /*! ImageUpgradeErase() is completed
      *  i.e. received MESSAGE_IMAGE_UPGRADE_ERASE_STATUS.
      */
     uint16 isImgUpgradeEraseDone;
 
+    /* B-305370 Avoid aborting DFU on GAIA disconnect once UPGRADE_HOST_TRANSFER_COMPLETE_RES is received with the continue */
+    /*! This flag will be set after receiving UPGRADE_HOST_TRANSFER_COMPLETE_RES
+     *  with continue as the action and will get reset on the DFU reboot.
+     *  If DFU aborts b/w this time then it can create many race conditions so 
+     *  when set, application can avoid Aborting DFU.
+     */
+    uint16 isXferCompleted;
+    /* End B-305370 */
+
     upgrade_reconnect_recommendation_t reconnect_reason;
 
+    /* B-305341 Handle DFU timeout and abort in the post reboot phase */
+    /*! This flag will be set in the post reboot phase and if set, then 
+     *  app should do the reboot after handling abort to revert the image
+     */
+    bool isImageRevertNeededOnAbort:1;
+    /* End B-305341 */
 } UpgradeCtx;
 
 void UpgradeCtxSet(UpgradeCtx *ctx);

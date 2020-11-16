@@ -1,6 +1,7 @@
 /****************************************************************************
 Copyright (c) 2014 - 2015, 2020 Qualcomm Technologies International, Ltd.
 
+QCC512x_QCC302x.SRC.1.0 R49.1 with changes for ADK-297, ADK-638, B-305341, B-305370
 
 FILE NAME
     upgrade.c
@@ -8,7 +9,7 @@ FILE NAME
 DESCRIPTION
     Upgrade library API implementation.
 */
-/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
+
 #include <string.h>
 #include <stdlib.h>
 
@@ -28,9 +29,6 @@ DESCRIPTION
 #include "upgrade_msg_vm.h"
 #include "upgrade_msg_internal.h"
 #include "upgrade_host_if_data.h"
-//add for Qualcomm patch for abnormalOTA
-/*added by Qualcomm patch - 04838455 abort dfu out of case */
-#include "upgrade_peer.h"
 #ifdef HANDOVER_DFU_ABORT_WITHOUT_ERASE
 #include <imageupgrade.h>
 #endif
@@ -39,7 +37,8 @@ static void SMHandler(Task task, MessageId id, Message message);
 static void SendUpgradeInitCfm(Task task, upgrade_status_t status);
 static void RequestApplicationReconnectIfNeeded(void);
 static bool isPsKeyStartValid(uint16 dataPskeyStart);
-
+/* B-305341 Handle DFU timeout and abort in the post reboot phase */
+static void UpgradeHandleCommitRevert(uint16 dataPskey, uint16 dataPskeyStart);
 /****************************************************************************
 NAME
     UpgradeInit
@@ -98,8 +97,20 @@ void UpgradeInit(Task appTask,uint16 dataPskey,uint16 dataPskeyStart,
         UpgradeCtxSet(NULL);
         return;
     }
+    /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+     /* B-305341 Handle DFU timeout and abort in the post reboot phase */
+     /* By default, we do not need to reboot on abort because we are running from boot bank only.
+        In case if we abort at commit time(after warm reboot), we need to reboot and revert back
+        to boot bank. at that time, this flag will be set to TRUE */
+     UpgradeCtxGet()->isImageRevertNeededOnAbort = FALSE;
+     /* B-305370 Avoid aborting DFU on GAIA disconnect once UPGRADE_HOST_TRANSFER_COMPLETE_RES is received with the continue*/
+     UpgradeCtxGet()->isXferCompleted = FALSE;
+     /* End B-305370 */
 
-    UpgradeLoadPSStore(dataPskey,dataPskeyStart);
+     UpgradeHandleCommitRevert(dataPskey, dataPskeyStart);
+     /* End B-305341 */
+     
+	 UpgradeLoadPSStore(dataPskey,dataPskeyStart);
 
     /* @todo Need to deal with two things here
      * Being called when the PSKEY has already been set-up
@@ -284,7 +295,7 @@ DESCRIPTION
 */
 void UpgradeTransportConnectRequest(Task transportTask, bool need_data_cfm, bool request_multiple_blocks)
 {
-    PRINT(("UPGRADE: UpgradeTransportConnect 0x%p, %d, %d\n",
+    PRINT(("UPGRADE: UpgradeTransportConnect 0x%p, %d, %d\n", 
         (void *)transportTask, need_data_cfm, request_multiple_blocks));
     UpgradeHostIFTransportConnect(transportTask, need_data_cfm, request_multiple_blocks);
 }
@@ -466,7 +477,7 @@ RETURNS
 */
 void UpgradeHashAllSectionsUpdateStatus(Message message)
 {
-
+    
     UNUSED(message);
     PRINT(("UpgradeHashAllSectionsUpdateStatus(%p)\n", message));
 #ifdef MESSAGE_IMAGE_UPGRADE_HASH_ALL_SECTIONS_UPDATE_STATUS
@@ -624,7 +635,13 @@ RETURNS
 void UpgradeSendStartUpgradeDataInd(void)
 {
     PRINT(("UpgradeSendStartUpgradeDataInd \n"));
+#ifndef HOSTED_TEST_ENVIRONMENT
+    MessageSendConditionally(UpgradeCtxGet()->mainTask,
+                            UPGRADE_START_DATA_IND, NULL,
+                            (uint16 *)&UpgradeCtxGet()->isImgUpgradeEraseDone);
+#else
     MessageSend(UpgradeCtxGet()->mainTask, UPGRADE_START_DATA_IND, NULL);
+#endif
 }
 
 /************************************************************************************
@@ -641,9 +658,9 @@ RETURNS
 void UpgradeSendEndUpgradeDataInd(upgrade_end_state_t state)
 {
     UPGRADE_END_DATA_IND_T *upgradeEndDataInd = (UPGRADE_END_DATA_IND_T *)PanicUnlessMalloc(sizeof(UPGRADE_END_DATA_IND_T));
-
+    
     upgradeEndDataInd->state = state;
-
+    
     PRINT(("UpgradeSendEndUpgradeDataInd state %d \n", state));
 
     MessageSend(UpgradeCtxGet()->mainTask, UPGRADE_END_DATA_IND, upgradeEndDataInd);
@@ -744,9 +761,8 @@ static void RequestApplicationReconnectIfNeeded(void)
         UPGRADE_RESTARTED_IND_T *restarted = (UPGRADE_RESTARTED_IND_T*)
                                                 PanicUnlessMalloc(sizeof(*restarted));
         restarted->reason = reconnect;
-        //add for Qualcomm patch for abnormalOTA
-        /*added by Qualcomm patch - 04838455 abort dfu out of case */
-        UpgradeCtxGet()->reconnect_reason = reconnect;
+        /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+        UpgradeCtxGet()->reconnect_reason = reconnect;        
         MessageSend(UpgradeCtxGet()->mainTask, UPGRADE_RESTARTED_IND, restarted);
     }
 
@@ -773,6 +789,30 @@ static bool isPsKeyStartValid(uint16 dataPskeyStart)
         return TRUE;
 }
 
+/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+/* B-305341 Handle DFU timeout and abort in the post reboot phase */
+/****************************************************************************
+NAME
+    UpgradeHandleCommitRevert
+
+DESCRIPTION
+    Check to detect reverted commit or unexpected reset of device during post reboot phase and clear the pskeys if detected.
+*/
+static void UpgradeHandleCommitRevert(uint16 dataPskey, uint16 dataPskeyStart)
+{
+    bool result = ImageUpgradeSwapTryStatus();
+    uint16 resumePoint = UpgradePsGetResumePoint(dataPskey, dataPskeyStart);
+    DEBUG_LOG_WARN("UpgradeHandleCommitRevert ImageUpgradeSwapTryStatus() returns %d and resume point is %d",result, resumePoint);
+
+    /* If resume point is post reboot and we are running from the boot bank then, we need to abort the DFU. */
+    if(!result && resumePoint == UPGRADE_RESUME_POINT_POST_REBOOT)
+    {
+        /* Clear the PsKeys */
+        PsStore(dataPskey, 0, 0);
+    }
+}
+/* End B-305341 */
+
 void UpgradeApplicationValidationStatus(bool pass)
 {
     MESSAGE_MAKE(msg, UPGRADE_VM_EXE_FS_VALIDATION_STATUS_T);
@@ -788,13 +828,13 @@ bool UpgradeIsDataTransferMode(void)
         return FALSE;
 }
 
-
+   
 /****************************************************************************
 NAME
     UpgradeImageSwap
 
 DESCRIPTION
-     This function will eventually call the ImageUpgradeSwapTry() trap to initiate a full chip reset,
+     This function will eventually call the ImageUpgradeSwapTry() trap to initiate a full chip reset, 
       load and run images from the other image bank.
 
 RETURNS
@@ -823,8 +863,21 @@ void UpgradeAbortDuringDeviceDisconnect(void)
     DEBUG_LOG("UpgradeAbortDuringDeviceDisconnect() IsPeerDFUAborted: %d\n", isPeerDFUAborted);
     /* Check if Peer DFU is already aborted. If yes, then no need to abort
     * again. If no, then initiate the abort */
-    if(!isPeerDFUAborted)
+    /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/    
+    /* B-305341 Handle DFU timeout and abort in the post reboot phase */
+    if(!isPeerDFUAborted)   
+    {
         UpgradeSMAbort();
+        if(UpgradeCtxGet()->isImageRevertNeededOnAbort)
+        {
+            DEBUG_LOG("UpgradeAbortDuringDeviceDisconnect device to reboot in UPGRADE_WAIT_FOR_REBOOT time");
+            MessageSendLater(UpgradeGetUpgradeTask(), UPGRADE_INTERNAL_DELAY_REVERT_REBOOT, NULL,
+                                                       UPGRADE_WAIT_FOR_REBOOT);
+        }
+        //enable_tym_platform,app timeout
+        UpgradeCtxGet()->funcs->SendErrorInd(UPGRADE_HOST_ERROR_APP_NOT_READY);
+    }
+    /* End B-305341 */
 }
 
 void UpgradeHandleAbortDuringUpgrade(void)
@@ -1091,33 +1144,15 @@ void UpgradeSetPriRebootDone(bool val)
     UpgradeCtxGet()->dfuPriRebootDone = !val;
     DEBUG_LOG("UpgradeSetPriRebootDone dfuPriRebootDone : %u", val);
 }
-/*added by Qualcomm patch - 04838455 abort dfu out of case */
-//add for Qualcomm patch for abnormalOTA
-void UpgradeForceAbortAndCleanup(void)
+
+/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+bool upgradeIsPostRebootPhase(void)
 {
-    bool is_primary_device;
-    UpgradePeerGetDFUInfo(&is_primary_device, NULL);
-
-    /* Tell GAIA and error has happened */
-    if (is_primary_device) {
-        FatalError(UPGRADE_HOST_ERROR_APP_NOT_READY);
-    }
-
-    /* grant permission for blocking ops here,
-     * even if an erase will never happen (as intended),
-     * so long as UPGRADE_ALLOW_ERASE_AFTER_UPGRADE is not defined */
-    UpgradePermit(upgrade_perm_assume_yes);
-    UpgradeSMAbort();
-    UpgradePermit(upgrade_perm_always_ask);
-
-    /* cleanup peer upgrade structures */
-    if (UPGRADE_PEER_IS_STARTED) {
-        UpgradePeerStopUpgrade();
-    }
-    else {
-        UpgradePeerPSClearStore();
-    }
-
-    /* Notify application to cleanup */
-    UpgradeCleanupOnAbort();
+    return (UpgradeCtxGet()->reconnect_reason == upgrade_reconnect_required_for_confirm);
 }
+/* B-305370 Avoid aborting DFU on GAIA disconnect once UPGRADE_HOST_TRANSFER_COMPLETE_RES is received with the continue */
+uint16 upgradeIsXferCompleted(void)
+{
+    return UpgradeCtxGet()->isXferCompleted;
+}
+/* End B-305370 */

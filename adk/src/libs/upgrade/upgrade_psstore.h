@@ -1,6 +1,7 @@
 /****************************************************************************
 Copyright (c) 2014 - 2015 Qualcomm Technologies International, Ltd.
 
+QCC512x_QCC302x.SRC.1.0 R49.1 with changes for ADK-297, ADK-638, B-305341, B-305370
 
 FILE NAME
     upgrade_psstore.h
@@ -129,5 +130,19 @@ bool UpgradePSSpaceForCriticalOperations(void);
             application; FALSE otherwise.
 */
 bool UpgradePsRunningNewApplication(uint16 dataPskey, uint16 dataPskeyStart);
+/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+/* B-305341 Handle DFU timeout and abort in the post reboot phase */
+/*!
+    @brief UpgradePsGetResumePoint
+    
+    Get the resume point directly from the PSStore. This function is useful before
+    the PSStore gets loaded in the RAM
 
+    @param dataPskey Number of the user pskey to use for ugprade data.
+    @param dataPskeyStart Offset in dataPskey from which the upgrade library can use.
+    
+    @return Value of the resume point.
+*/
+uint16 UpgradePsGetResumePoint(uint16 dataPskey, uint16 dataPskeyStart);
+/* End B-305341 */
 #endif /* UPGRADE_PSSTORE_H_ */

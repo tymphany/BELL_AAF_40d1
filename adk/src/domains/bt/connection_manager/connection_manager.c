@@ -480,6 +480,9 @@ static void ConManagerHandleClDmAclCloseCfm(const CL_DM_ACL_CLOSE_CFM_T *cfm)
                if requester still needs a confirmation message sent */
             if ((cfm->flags & (DM_ACL_FLAG_FORCE|DM_ACL_FLAG_ALL)) == (DM_ACL_FLAG_FORCE|DM_ACL_FLAG_ALL))
             {
+#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+                conManagerRemoveAllConnection();
+#endif
                 conManagerCheckForForcedDisconnect(&tpaddr);
             }
             break;

@@ -1,4 +1,3 @@
-/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
 #include "tws_topology_private.h"
 #include "tws_topology_config.h"
 #include "tws_topology.h"
@@ -8,8 +7,7 @@
 #include <bt_device.h>
 #include <logging.h>
 #include <message.h>
-#include <earbud_sm.h>
-#include <earbud_sm_private.h>
+
 
 
 /*! handover return status */
@@ -61,11 +59,6 @@ static void twsTopology_ProcHandoverReset(void)
     td->handover_retry_count = 0;
     HandoverProfile_ClientUnregister(TwsTopProcHandoverGetTask());
     memset(&TwsTopologyGetTaskData()->handover_info,0,sizeof(handover_data_t));
-
-    /* cleanup now that handover is done */
-    if (MessageCancelAll(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP)) {
-        MessageSend(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_CLEANUP, NULL);
-    }
 }
 
 static handover_result_t twsTopology_ProcGetStatus(handover_profile_status_t status)

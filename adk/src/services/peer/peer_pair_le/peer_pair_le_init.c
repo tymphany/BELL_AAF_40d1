@@ -6,7 +6,7 @@
 \file       
 \brief      Initialisation functions for the Peer Pairing over LE service
 */
-/*added for Qualcomm patch, qcc512x_qcc302x_r49.1_abcu9334_v2 */
+
 #include <bdaddr.h>
 #include <connection.h>
 #include <limits.h>
@@ -498,9 +498,10 @@ static void peer_pair_le_handle_server_keys_written(const GATT_ROOT_KEY_SERVER_K
     peer_pair_le_convert_grks_key_to_key(root_keys.ir, &written->ir);
     peer_pair_le_convert_grks_key_to_key(root_keys.er, &written->er);
     PanicFalse(ConnectionSetRootKeys(&root_keys));
-	
-	LocalAddr_ReconfigureBleGeneration();
-
+/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/    
+#ifdef ENABLE_TYM_PLATFORM
+    LocalAddr_ReconfigureBleGeneration();
+#endif
     ConnectionSmGetLocalIrk(&irk);
     DEBUG_LOG("Local IRK :%04x %04x %04x %04x",irk.irk[0],irk.irk[1],irk.irk[2],irk.irk[3]);
 
@@ -735,14 +736,19 @@ static void peer_pair_le_GattConnect(uint16 cid)
     tp_bdaddr tpaddr;
     
     PEER_PAIR_LE_STATE state = peer_pair_le_get_state();
-
-    DEBUG_LOG_FN_ENTRY("peer_pair_le_GattConnect. state 0x%x cid:0x%x", state, cid);
-
+/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/    
+#ifdef ENABLE_TYM_PLATFORM
+    DEBUG_LOG_FN_ENTRY("peer_pair_le_GattConnect. state 0x%x cid:0x%x", state, cid);  
+#else
+    DEBUG_LOG("peer_pair_le_GattConnect. state 0x%x cid:0x%x", state, cid);
+#endif
     switch(state)
     {
         case PEER_PAIR_LE_STATE_SELECTING:
         case PEER_PAIR_LE_STATE_DISCOVERY:
         case PEER_PAIR_LE_STATE_PAIRING_AS_SERVER:
+/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/    
+#ifdef ENABLE_TYM_PLATFORM
             if (VmGetBdAddrtFromCid(cid, &tpaddr))
             {
                 ppl->gatt_cid = cid;
@@ -752,7 +758,7 @@ static void peer_pair_le_GattConnect(uint16 cid)
                     DEBUG_LOG_INFO("peer_pair_le_GattConnect: %04x %02x %06x != %04x %02x %06x",
                         ppl->peer.addr.nap, ppl->peer.addr.uap, ppl->peer.addr.lap,
                         tpaddr.taddr.addr.nap, tpaddr.taddr.addr.uap, tpaddr.taddr.addr.lap);
-                        
+
                     Panic();
                 }
 
@@ -764,7 +770,27 @@ static void peer_pair_le_GattConnect(uint16 cid)
             else
             {
                 DEBUG_LOG_WARN("peer_pair_le_GattConnect. Gatt 'gone' by time received GattConnect.");
+            }            
+#else
+            DEBUG_LOG("peer_pair_le_GattConnect. cid:0x%x", cid);
+
+            ppl->gatt_cid = cid;
+            PanicFalse(VmGetBdAddrtFromCid(cid, &tpaddr));
+            
+            if (!BtDevice_BdaddrTypedIsSame(&tpaddr.taddr, &ppl->peer))
+            {
+                DEBUG_LOG("peer_pair_le_GattConnect: %04x %02x %06x != %04x %02x %06x",
+                    ppl->peer.addr.nap, ppl->peer.addr.uap, ppl->peer.addr.lap,
+                    tpaddr.taddr.addr.nap, tpaddr.taddr.addr.uap, tpaddr.taddr.addr.lap);
+                    
+                Panic();
             }
+
+            if (PEER_PAIR_LE_STATE_PAIRING_AS_SERVER != state)
+            {
+                peer_pair_le_set_state(PEER_PAIR_LE_STATE_PAIRING_AS_SERVER);
+            }
+#endif            
             break;
 
         case PEER_PAIR_LE_STATE_UNINITIALISED:
@@ -773,7 +799,12 @@ static void peer_pair_le_GattConnect(uint16 cid)
             break;
 
         default:
-            DEBUG_LOG_WARN("peer_pair_le_GattConnect. cid:0x%x. Not in correct state:%d", cid, state);
+        /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/    
+#ifdef ENABLE_TYM_PLATFORM  
+            DEBUG_LOG_WARN("peer_pair_le_GattConnect. cid:0x%x. Not in correct state:%d", cid, state);          
+#else
+            DEBUG_LOG("peer_pair_le_GattConnect. cid:0x%x. Not in correct state:%d", cid, state);
+#endif            
             break;
     }
 }

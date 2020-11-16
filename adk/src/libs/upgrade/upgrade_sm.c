@@ -1,6 +1,7 @@
 /****************************************************************************
 Copyright (c) 2014 - 2018, 2020 Qualcomm Technologies International, Ltd.
 
+QCC512x_QCC302x.SRC.1.0 R49.1 with changes for ADK-297, ADK-638, B-305341, B-305370
 
 FILE NAME
     upgrade_sm.c
@@ -10,7 +11,7 @@ DESCRIPTION
 NOTES
 
 */
-/*added for Qualcomm patch, qcc512x_ACBU_9312_aaf49.1_v2 */
+
 #include <stdlib.h>
 
 #include <print.h>
@@ -78,6 +79,8 @@ static void PsFloodAndReboot(void);
 static void InformAppsCompleteGotoSync(void);
 static void UpgradeSendUpgradeStatusInd(Task task, upgrade_state_t state, uint32 delay);
 
+static void UpgradeCleanupOnAbort(void);
+
 static bool asynchronous_abort = FALSE;
 
 const upgrade_response_functions_t Upgrade_fptr = {
@@ -132,7 +135,13 @@ void UpgradeSMInit(void)
 
     case UPGRADE_RESUME_POINT_POST_REBOOT:
         PRINT(("UpgradeSMInit() in UPGRADE_RESUME_POINT_POST_REBOOT\n"));
-        UpgradeSMSetState(UPGRADE_STATE_COMMIT_HOST_CONTINUE);
+        /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+        /* B-305341 Handle DFU timeout and abort in the post reboot phase */
+        /* Any abort in the post reboot phase should be follwed by reboot
+         * to restore the running image from boot bank. */
+        UpgradeCtxGet()->isImageRevertNeededOnAbort = TRUE;
+        /* End B-305341 */
+		UpgradeSMSetState(UPGRADE_STATE_COMMIT_HOST_CONTINUE);
         MessageSendLater(UpgradeGetUpgradeTask(), UPGRADE_INTERNAL_RECONNECTION_TIMEOUT, NULL,
                 D_SEC(UPGRADE_WAIT_FOR_RECONNECTION_TIME_SEC));
         break;
@@ -157,11 +166,6 @@ void UpgradeSMHandleMsg(MessageId id, Message message)
     bool handled=FALSE;
 
     PRINT(("curr state 0x%x msg id 0x%x\n", GetState(), id));
-    /*added by Qualcomm patch - 04838455 abort dfu out of case */
-    if(id == UPGRADE_ABORT_REBOOT)
-    {
-        PsFloodAndReboot();
-    }    
 
     switch(GetState())
     {
@@ -497,12 +501,22 @@ bool HandleAborting(MessageId id, Message message)
         else
 #endif
         {
-            UpgradeSMAbort();
-#ifndef UPGRADE_ALLOW_ERASE_AFTER_UPGRADE
-            DEBUG_LOG("HandleAborting: sending UPGRADE_HOST_ABORT_CFM, erase skipped");
-            /* Send CFM as ABORT_REQ handling is skipped i.e. erase bypassed. */
-            UpgradeCtxGet()->funcs->SendShortMsg(UPGRADE_HOST_ABORT_CFM);
-#endif
+            /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+            asynchronous_abort = UpgradeSMAbort();
+            DEBUG_LOG("DefaultHandler UPGRADE_HOST_ABORT_REQ recvd, UpgradeSMAbort() returned %d\n", asynchronous_abort);
+            if (!asynchronous_abort)
+            {
+                PRINT(("UPGRADE_HOST_ABORT_REQ: sending UPGRADE_HOST_ABORT_CFM\n"));
+                UpgradeCtxGet()->funcs->SendShortMsg(UPGRADE_HOST_ABORT_CFM);
+            }
+            /* B-305341 Handle DFU timeout and abort in the post reboot phase */
+            if(UpgradeCtxGet()->isImageRevertNeededOnAbort)
+            {
+                DEBUG_LOG("HandleAborting UPGRADE_HOST_ABORT_REQ device to reboot in UPGRADE_WAIT_FOR_REBOOT time");
+                MessageSendLater(UpgradeGetUpgradeTask(), UPGRADE_INTERNAL_DELAY_REVERT_REBOOT, NULL,
+                                                           UPGRADE_WAIT_FOR_REBOOT);
+            }
+            /* End B-305341 */            
         }
         break;
     case UPGRADE_HOST_SYNC_REQ:
@@ -525,13 +539,14 @@ bool HandleDataReady(MessageId id, Message message)
         {
             if (UpgradePartitionDataInit(&WaitForEraseComplete))
             {
+                /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
                 /*
                  * Notify application of UPGRADE_START_DATA_IND on erase
                  * completion to prevent apps P1 being blocked owing to blocking
                  * trap calls of PsStore used to store upgrade pskey info
                  * (i.e. is_out_case_dfu, is_secondary_device and is_dfu_mode)
                  */
-                UpgradeCtxGet()->isImgUpgradeEraseDone = (uint16)WaitForEraseComplete;
+                UpgradeCtxGet()->isImgUpgradeEraseDone = (uint16)WaitForEraseComplete;                
                 UpgradeSendStartUpgradeDataInd();
                 if (!WaitForEraseComplete)
                 {
@@ -1021,7 +1036,9 @@ bool HandleCommitConfirm(MessageId id, Message message)
                 UpgradeSavePSKeys();
                 PRINT(("P&R: UPGRADE_RESUME_POINT_PRE_REBOOT saved\n"));
                 UpgradeSMSetState(UPGRADE_STATE_SYNC);
-                BootSetMode(BootGetMode());
+                /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+                /* B-305341 Handle DFU timeout and abort in the post reboot phase */
+                /* BootSetMode(BootGetMode()); */
                 break;
 
             /** default:
@@ -1089,7 +1106,13 @@ bool HandleCommit(MessageId id, Message message)
             UpgradeCtxGetPSKeys()->upgrade_in_progress_key = UPGRADE_RESUME_POINT_ERASE;
             UpgradeSavePSKeys();
             PRINT(("P&R: UPGRADE_RESUME_POINT_ERASE saved\n"));
-
+            /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/            
+            /* B-305341 Handle DFU timeout and abort in the post reboot phase */
+            /* After the commit, current bank is the new boot bank so,
+             * we do not need to reboot. */
+            UpgradeCtxGet()->isImageRevertNeededOnAbort = FALSE;
+            /* End B-305341 */
+            
             /* We erase all partitions at this point.
              * We have taken the hit of disrupting audio etc. by doing a reboot
              * to get here.
@@ -1311,11 +1334,12 @@ static void upgradeSmDefaultHandlerHandleUpgradeHostSyncReq(const UPGRADE_HOST_S
 /* Send a message to Device upgrade to be sent to application for calling 
  * DFU specific routine for cleanup process
  */
-/*added by Qualcomm patch - 04838455 abort dfu out of case */
-void UpgradeCleanupOnAbort(void)
+static void UpgradeCleanupOnAbort(void)
 {
     DEBUG_LOG("UpgradeCleanupOnAbort()");
-    MessageSend(UpgradeCtxGet()->mainTask, UPGRADE_CLEANUP_ON_ABORT, NULL);
+    //MessageSend(UpgradeCtxGet()->mainTask, UPGRADE_CLEANUP_ON_ABORT, NULL);
+    /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/    
+    MessageSendLater(UpgradeCtxGet()->mainTask, UPGRADE_CLEANUP_ON_ABORT, NULL, 2000);
 }
 
 /*
@@ -1363,24 +1387,29 @@ bool DefaultHandler(MessageId id, Message message, bool handled)
             asynchronous_abort = UpgradeSMAbort();
             PRINT(("UPGRADE_HOST_ABORT_REQ: UpgradeSMAbort() returned %d\n", asynchronous_abort));
             DEBUG_LOG("DefaultHandler UPGRADE_HOST_ABORT_REQ recvd, UpgradeSMAbort() returned %d\n", asynchronous_abort);
-            /*added by Qualcomm patch - 04838455 abort dfu out of case */
-            DEBUG_LOG("RP : Going to reboot earbud in 5s");
-
-            MessageCancelAll(UpgradeGetUpgradeTask(), UPGRADE_ABORT_REBOOT);
-            MessageSendLater(UpgradeGetUpgradeTask(), UPGRADE_ABORT_REBOOT, NULL, 5000);
             if (!asynchronous_abort)
             {
                 PRINT(("UPGRADE_HOST_ABORT_REQ: sending UPGRADE_HOST_ABORT_CFM\n"));
                 UpgradeCtxGet()->funcs->SendShortMsg(UPGRADE_HOST_ABORT_CFM);
             }
-#ifndef UPGRADE_ALLOW_ERASE_AFTER_UPGRADE
-            else {
-                DEBUG_LOG("DefaultHandler: sending UPGRADE_HOST_ABORT_CFM, erase skipped");
-                UpgradeCtxGet()->funcs->SendShortMsg(UPGRADE_HOST_ABORT_CFM);
+            /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/  
+            /* B-305341 Handle DFU timeout and abort in the post reboot phase */
+            if(UpgradeCtxGet()->isImageRevertNeededOnAbort)
+            {
+                DEBUG_LOG("DefaultHandler UPGRADE_HOST_ABORT_REQ device to reboot in UPGRADE_WAIT_FOR_REBOOT time");
+                MessageSendLater(UpgradeGetUpgradeTask(), UPGRADE_INTERNAL_DELAY_REVERT_REBOOT, NULL, UPGRADE_WAIT_FOR_REBOOT);
             }
-#endif
+            /* End B-305341 */
+            /* ADK-638 Fail safe mechanism for dfu timeout issues */
+            UpgradeCleanupOnAbort();                       
             break;
-
+            /* B-305341 Handle DFU timeout and abort in the post reboot phase */
+            case UPGRADE_INTERNAL_DELAY_REVERT_REBOOT:
+            /* Reboot the device to revert the commit. On detecting the boot bank after reboot, upgrade library will clear the PSKeys */
+            DEBUG_LOG_INFO("DefaultHandler UPGRADE_INTERNAL_DELAY_REVERT_REBOOT rebooting the device");
+            BootSetMode(BootGetMode());
+            break;
+            /* End B-305341 */
         case UPGRADE_HOST_VERSION_REQ:
             PRINT(("UPGRADE_HOST_VERSION_REQ\n"));
             if (UpgradeCtxGet()->funcs->SendVersionCfm != NULL)
@@ -1481,6 +1510,10 @@ DESCRIPTION
 */
 void UpgradeSMErase(void)
 {
+    /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+    UpgradePartitionsState old_ipk;
+
+    DEBUG_LOG("UpgradeSMErase(): begin");    
     /* If a partition is currently open, close it now.
        Otherwise the f/w will think it is in use and not erase it. */
     UpgradePartitionDataCtx *ctx = UpgradeCtxGetPartitionData();
@@ -1492,15 +1525,17 @@ void UpgradeSMErase(void)
         }
     }
 
-    /* UpgradeSMErase any partitions that require it. */
-#ifdef UPGRADE_ALLOW_ERASE_AFTER_UPGRADE
-    UpgradeCtxGetPSKeys()->state_of_partitions = UpgradePartitionsEraseAllManaged(TRUE);
-#else
-    UpgradeCtxGetPSKeys()->state_of_partitions = UpgradePartitionsEraseAllManaged(FALSE);
-#endif
-
+    /*
+     * Store upgrade_in_progress_key since pskey is stored prior to assessment
+     * whether the alternate bank is required to be erased.
+     */
+    old_ipk = UpgradeCtxGetPSKeys()->upgrade_in_progress_key;
+ 
     /* Reset the transient state data in upgrade PS key. */
     UpgradeCtxGetPSKeys()->state_of_partitions = UPGRADE_PARTITIONS_ERASED;
+
+
+    /* Reset the transient state data in upgrade PS key. */
     UpgradeCtxGetPSKeys()->version_in_progress.major = 0;
     UpgradeCtxGetPSKeys()->version_in_progress.minor = 0;
     UpgradeCtxGetPSKeys()->config_version_in_progress = 0;
@@ -1513,15 +1548,21 @@ void UpgradeSMErase(void)
     UpgradePartitionsUpgradeStarted();
     UpgradeSavePSKeys();
     PRINT(("P&R: UPGRADE_RESUME_POINT_START saved\n"));
+    /* UpgradeSMErase any partitions that require it. */
+    /*
+     * Restore upgrade_in_progress_key as alternate bank is now actually
+     * assessed for erase.
+     */
+    UpgradeCtxGetPSKeys()->upgrade_in_progress_key = old_ipk;
+    /* Synchronize to psstore saved state (above). */
+    UpgradeCtxGetPSKeys()->upgrade_in_progress_key = UPGRADE_RESUME_POINT_START;
 
     /* Let application know that erase is done */
     if (UpgradeSMCheckEraseComplete())
     {
         UpgradeSMBlockingOpIsDone();
     }
-    DEBUG_LOG("UpradeSMErase(): end");
-    /*added by Qualcomm patch - 04838455 abort dfu out of case */
-    //PsFloodAndReboot();
+    DEBUG_LOG("UpgradeSMErase(): end");    
 }
 
 void CommitConfirmYes(void)
@@ -1661,11 +1702,12 @@ void UpgradeSMEraseStatus(Message message)
              */
             if (msg->erase_status)
             {
+                /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/                
                 /*
                  * Reset to dispatch the conditionally queued notification of
                  * UPGRADE_START_DATA_IND on sucessful erase completion.
                  */
-                UpgradeCtxGet()->isImgUpgradeEraseDone = 0;
+                UpgradeCtxGet()->isImgUpgradeEraseDone = 0;                
                 /*
                  * The SQIF has been erased successfully.
                  * The host is waiting to be told that it can proceed with the
@@ -1679,11 +1721,12 @@ void UpgradeSMEraseStatus(Message message)
             }
             else
             {
+                /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/                           
                 /*
                  * Cancel the conditionally queued notification of
                  * UPGRADE_START_DATA_IND on erase failure since DFU aborts.
                  */
-                MessageCancelAll(UpgradeCtxGet()->mainTask, UPGRADE_START_DATA_IND);
+                MessageCancelAll(UpgradeCtxGet()->mainTask, UPGRADE_START_DATA_IND);                
                 /* Tell the host that the attempt to erase the SQIF failed. */
                 FatalError(UPGRADE_HOST_ERROR_SQIF_ERASE);
             }
