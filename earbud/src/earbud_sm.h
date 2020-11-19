@@ -238,6 +238,8 @@ typedef struct
     bool peer_dfu_in_progress:1;        /*!< Set this flag when Peer DFU started */
     bool enter_dfu_in_case:1;           /*! Flag used to indicate that device has entered in-case in DFU mode. */
 #ifdef ENABLE_TYM_PLATFORM
+    /*added for Qualcomm patch ACBU-9599_ADK-739.diff */
+    bool dfu_committed:1;               /*! Flag used to briefly store the DFU commit status on upgrade completion */
     bool UpgradeStarted:1;
     bool pairing_req:1;
 #endif
@@ -470,8 +472,5 @@ bool appSmHandleConnectionLibraryMessages(MessageId id, Message message, bool al
 void appDisconnectAll(void);
 void appExitHandsetPairing(void);
 void appSmDfuPowerOff(void);
-#endif
-#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-void appSmAbortIncaseDfu(void);
 #endif
 #endif /* EARBUD_SM_H_ */

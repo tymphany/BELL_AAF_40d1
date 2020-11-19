@@ -22,13 +22,6 @@ DESCRIPTION
     upgrade automatically.
  */
 #define UPGRADE_WAIT_FOR_RECONNECTION_TIME_SEC 60
-/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/    
-/* B-305341 Handle DFU timeout and abort in the post reboot phase */
-/*!
-    @brief Time wait before going for defined reboot as part of DFU process
- */
-#define UPGRADE_WAIT_FOR_REBOOT D_SEC(1)
-/* End B-305341 */
 
 /*!
     @brief Enumeration of the states in the machine.

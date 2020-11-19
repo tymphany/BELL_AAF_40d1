@@ -160,9 +160,7 @@ static void appPhyStateExitInCase(void)
 {
     DEBUG_LOG("appPhyStateExitInCase");
     appPhyStateMsgSendStateChangedInd(PHY_STATE_OUT_OF_EAR, phy_state_event_out_of_case);
-/*#ifdef ENABLE_TYM_PLATFORM //added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue
-    appSmAbortIncaseDfu();
-#endif*/
+
 #ifdef ENABLE_TYM_PLATFORM /*for exit in case unmute stanc3*/
     if (appPhyStateGetPowerState() == TRUE)
     {

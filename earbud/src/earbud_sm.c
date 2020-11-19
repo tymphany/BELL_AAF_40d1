@@ -64,7 +64,7 @@
 #include <message.h>
 
 #ifdef ENABLE_TYM_PLATFORM
-#include "upgrade.h" /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+#include <imageupgrade.h> /*ENABLE_TYM_PLATFORM added for Qualcomm patch ACBU-9599_ADK-739.diff */
 #include "earbud_tym_factory.h"
 #include "earbud_tym_util.h"
 #include "tym_power_control.h"
@@ -72,6 +72,7 @@
 #include "earbud_tym_sync.h"
 #include "earbud_tym_cc_communication.h"
 #include "upgrade_gaia_plugin.h"
+#include "upgrade_msg_host.h" /*added for OTA error message*/
 #endif
 
 
@@ -121,6 +122,9 @@ static void appSmNotifyUpgradeStarted(void);
 static void appSmSetPeerDfuFlag(bool flag);
 static void appSmStartDfuTimer(void);
 #endif /* INCLUDE_DFU */
+
+/*ENABLE_TYM_PLATFORM added for Qualcomm patch ACBU-9599_ADK-739.diff */
+static bool appSmDfuCheckIfResetPermitted(void);
 
 static void appSmHandleDfuEnded(bool error);
 static unsigned earbudSm_GetCurrentApplicationContext(void);
@@ -704,8 +708,7 @@ static void appEnterInCaseDfu(void)
 
     if(secondary)
     {
-        /* ADK-638 Fail safe mechanism for dfu timeout issues */
-        /* UpgradePeerSetDFUMode(TRUE); */
+        UpgradePeerSetDFUMode(TRUE);
 
         /*! \todo assuming that when we have entered case as secondary, 
             it is appropriate to cancel DFU timeouts 
@@ -1234,6 +1237,24 @@ static void appSmUpdateDisconnectingLinks(void)
     }
 }
 
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */
+static bool appSmDfuCheckIfResetPermitted(void)
+{
+    bool status = ImageUpgradeSwapTryStatus();
+
+    if (!status || !PsRetrieve(EARBUD_DFU_PERMITTED_RESET_KEY, NULL, 0)) {
+        DEBUG_LOG("appSmDfuResetWasPermitted, looks like an abrupt reset, so cleanup %u", status);
+        appSmHandleDfuEnded(TRUE);
+        UpgradeSMRevertState();
+        return FALSE;
+    }
+
+    DEBUG_LOG("appSmDfuResetWasPermitted, permitted reset");
+    PsStore(EARBUD_DFU_PERMITTED_RESET_KEY, NULL, 0);
+    return TRUE;
+}
+#endif
+
 /*! \brief Handle notification of (dis)connections. */
 static void appSmHandleConManagerConnectionInd(CON_MANAGER_CONNECTION_IND_T* ind)
 {
@@ -1299,6 +1320,17 @@ static void appSmHandleConManagerConnectionInd(CON_MANAGER_CONNECTION_IND_T* ind
     /* Check if message was sent due to link-loss */
     if (ind->reason == hci_error_conn_timeout)
     {
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */        
+        /* Reboot on peer link loss during DFU */
+        if ((UpgradeIsInitialised() && UpgradeIsInProgress()) || TwsTopology_GetRole() == tws_topology_role_dfu) {
+            DEBUG_LOG_DEBUG("appSmHandleConManagerConnectionInd, link loss with handset or peer during DFU");
+            //appPowerReboot();
+            tymSyncdata(btStatusCmd, happenErr);
+            UpgradeSendError(UPGRADE_HOST_ERROR_UPDATE_FAILED);
+            appPowerDfuReboot();
+        }
+#endif        
+        
         /* Generate link-loss events */
         if (appDeviceIsPeer(&ind->bd_addr))
         {
@@ -1868,20 +1900,7 @@ static void appSm_HandleMarshalledMsgChannelRxInd(PEER_SIG_MARSHALLED_MSG_CHANNE
             UpgradePeerSetDFUMode(TRUE);
             UpgradePeerSetDeviceRolePrimary(FALSE);
             break;
-            
-#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/	
-    		/* ADK-638 Fail safe mechanism for dfu timeout issues */
-        case MARSHAL_TYPE(earbud_sm_req_dfu_set_mode_when_in_case_t):
-            DEBUG_LOG_DEBUG("foreground upgrade started, set dfu mode pskey");
-            UpgradePeerSetDFUMode(TRUE);
-            break;
-
-        case MARSHAL_TYPE(earbud_sm_req_dfu_ended_cleanup_t):
-            DEBUG_LOG_DEBUG("failsafe cleanup on secondary when dfu ended");        
-            appSmHandleDfuEnded(FALSE);
-            break;
-        	/* End ADK-638 */
-#endif		
+            	
         case MARSHAL_TYPE(earbud_sm_ind_dfu_ready_t):
             DEBUG_LOG_DEBUG("earbud_sm_ind_dfu_ready_indication received from Peer");
             break;
@@ -2352,10 +2371,18 @@ static void appSmHandleDfuEnded(bool error)
     /* As we are ending DFU, clear the DFU state variables */
     SmGetTaskData()->dfu_has_been_restarted = FALSE;
     SmGetTaskData()->peer_dfu_in_progress = FALSE;
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */
+    SmGetTaskData()->dfu_committed = FALSE;
+#endif    
     appUpgradeStoreAppInCaseDFUMode(FALSE);
 
     DEBUG_LOG_DEBUG("appSmHandleDfuEnded, Clear the is_out_case_dfu PSKEY value");
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */    
+    UpgradePSClearStoreNoDelete();
+    UpgradePeerPSClearStore();    
+#else    
     UpgradeSetIsOutCaseDFU(FALSE);
+#endif    
     DEBUG_LOG_DEBUG("appSmHandleDfuEnded, Reset the reboot reason flag.");
     appSetUpgradeRebootReason(SM_UPGRADED_NONE);
 
@@ -2376,16 +2403,6 @@ static void appSmHandleDfuEnded(bool error)
             gaiaFrameworkInternal_GaiaDisconnect();
         }
     }
-#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-	/* ADK-638 Fail safe mechanism for dfu timeout issues */
-    DEBUG_LOG("appSmHandleDfuEnded clear PSkeys");
-    UpgradePSClearStore();
-    UpgradePeerPSClearStoreStruct();
-    if (BtDevice_IsMyAddressPrimary())
-    {
-        earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_dfu_ended_cleanup_t));
-    }
-#endif
     /* End ADK-638 */    
 #ifdef ENABLE_TYM_PLATFORM
     if(error == FALSE)
@@ -2454,24 +2471,21 @@ static void appSmHandleUpgradeDisconnected(void)
 
         appSmStartDfuTimer();
     }
-#ifdef ENABLE_TYM_PLATFORM
-    else if ((sm->peer_dfu_in_progress == TRUE) || (sm->dfu_in_progress == TRUE) ) {
-        //UpgradeDisconnected abort DFU
-        DEBUG_LOG_DEBUG("appSmHandleUpgradeDisconnected aborting DFU");
-        bool is_primary_device;
-        UpgradePeerGetDFUInfo(&is_primary_device, NULL);
-        if(is_primary_device)
-        {
-            appUpgradeAbortDuringDeviceDisconnect();
-        }
-        MessageSendLater(SmGetTask(), SM_INTERNAL_TIMEOUT_DFU_ENTRY, NULL, 100);
-    }
-#endif
-#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-    /* B-305370 Avoid aborting DFU on GAIA disconnect once UPGRADE_HOST_TRANSFER_COMPLETE_RES is received with the continue */
-    DEBUG_LOG_DEBUG("appSmHandleUpgradeDisconnected upgradeIsXferCompleted %d", upgradeIsXferCompleted());
-    if(sm->peer_dfu_in_progress && !upgradeIsXferCompleted())
-#endif        
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */    
+    else if (UpgradeIsInitialised() && UpgradeIsInProgress() && !sm->dfu_committed)
+    {
+        DEBUG_LOG_DEBUG("appSmHandleUpgradeDisconnected, GAIA disconnected during DFU before commit");
+        //appPowerReboot();
+        DEBUG_LOG("$$$ appSmHandleUpgradeDisconnected - TYM Upgrade Abort");
+        tymSyncdata(btStatusCmd, happenErr);
+        UpgradeSendError(UPGRADE_HOST_ERROR_UPDATE_FAILED);
+        appPowerDfuReboot();
+        return;
+    }    
+#endif    
+    /* Abort the upgrade of Initiator and Peer device if GAIA app disconnection
+     * indication comes */
+    if(sm->peer_dfu_in_progress)
     {
         appUpgradeAbortDuringDeviceDisconnect();
         /* Set this to FALSE, since Peer DFU has aborted now */
@@ -3344,11 +3358,19 @@ void appSmHandleMessage(Task task, MessageId id, Message message)
         /* Messages from UPGRADE */
         case APP_UPGRADE_REQUESTED_TO_CONFIRM:
             appSetUpgradeRebootReason(SM_UPGRADED_DEFINED_REBOOT);
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */            
+            appSmDfuCheckIfResetPermitted();            
+#endif            
             break;
 
         case APP_UPGRADE_REQUESTED_IN_PROGRESS:
-            appSmEnterDfuOnStartup(TRUE);
+            //appSmEnterDfuOnStartup(TRUE);
             appSetUpgradeRebootReason(SM_UPGRADED_ABRUPT_RESET);
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */                 
+            if (appSmDfuCheckIfResetPermitted()) {
+                appSmEnterDfuOnStartup(TRUE);
+            }            
+#endif
             break;
 
         case APP_UPGRADE_ACTIVITY:
@@ -3359,6 +3381,12 @@ void appSmHandleMessage(Task task, MessageId id, Message message)
         case APP_UPGRADE_STARTED:
             appSmNotifyUpgradeStarted();
             break;
+            
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */            
+        case APP_UPGRADE_COMMITTING:
+            SmGetTaskData()->dfu_committed = TRUE;
+            break;
+#endif
 
         case APP_UPGRADE_COMPLETED:
             appSmHandleDfuEnded(FALSE);
@@ -3429,25 +3457,18 @@ void appSmHandleMessage(Task task, MessageId id, Message message)
             break;
 
         case SM_INTERNAL_TIMEOUT_DFU_ENTRY:
-            DEBUG_LOG_DEBUG("appSmHandleMessage SM_INTERNAL_TIMEOUT_DFU_ENTRY");
-#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-            /* B-305341 Handle DFU timeout and abort in the post reboot phase */
-            if(appGetUpgradeRebootReason() == SM_UPGRADED_DEFINED_REBOOT)
-            {
-                bool is_primary_device;
-                UpgradePeerGetDFUInfo(&is_primary_device, NULL);
-                if(is_primary_device)
-                {
-                     appUpgradeAbortDuringDeviceDisconnect();
-                }
-            }
-            else
-            {
-                EarbudSm_HandleDfuStartTimeoutNotifySecondary();
-                appSmHandleDfuEnded(TRUE);
-            }
-            /* End B-305341 */
-#else            
+            
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */
+            DEBUG_LOG_DEBUG("appSmHandleMessage SM_INTERNAL_TIMEOUT_DFU_ENTRY, rebooting");
+            //appPowerReboot();
+            tymSyncdata(btStatusCmd, happenErr);
+            UpgradeSendError(UPGRADE_HOST_ERROR_UPDATE_FAILED);
+            appPowerDfuReboot();
+
+            //EarbudSm_HandleDfuStartTimeoutNotifySecondary();
+            //appSmHandleDfuEnded(TRUE);            
+#else       
+            DEBUG_LOG_DEBUG("appSmHandleMessage SM_INTERNAL_TIMEOUT_DFU_ENTRY");     
             EarbudSm_HandleDfuStartTimeoutNotifySecondary();
             appSmHandleDfuEnded(TRUE);
 #endif            
@@ -3729,12 +3750,6 @@ static void appSmNotifyUpgradeStarted(void)
             /*! Also, set the DFU mode for Secondary device to be in sync.  */
             earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_dfu_active_when_out_case_t));
         }
-        /* ADK-638 Fail safe mechanism for dfu timeout issues */
-        else if(BtDevice_IsMyAddressPrimary()) /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-        {
-            earbudSm_SendCommandToPeer(MARSHAL_TYPE(earbud_sm_req_dfu_set_mode_when_in_case_t));
-        }
-	    /* End ADK-638 */
         /*for support not in case, report error */     
         //UpgradeGaiaPlugin_OutCase();
         //return;                 
@@ -3918,11 +3933,10 @@ void appDisconnectAll(void)
 /*for OTA issue*/
 void appSmDfuPowerOff(void)
 {
-    if(SmGetTaskData()->dfu_in_progress || SmGetTaskData()->peer_dfu_in_progress)   
+    if(UpgradeIsInProgress())  
     {
        MessageSend(SmGetTask(), CONN_RULES_DFU_ABORT, NULL); 
     }
-    //appSmAbortIncaseDfu();
 }
 #endif
 
@@ -3932,25 +3946,4 @@ static void earbudSm_RegisterMessageGroup(Task task, message_group_t group)
     TaskList_AddTask(SmGetTaskData()->client_tasks, task);
 }
 
-#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-void appSmAbortIncaseDfu(void)
-{
-    DEBUG_LOG("appSmAbortIncaseDfu: appUpgradeIsAppInCaseDFUState=%x, dfu_in_progress=%x ,peer_dfu_in_progress=%x",appUpgradeIsAppInCaseDFUState(),SmGetTaskData()->dfu_in_progress,SmGetTaskData()->peer_dfu_in_progress);
-    DEBUG_LOG("appSmAbortIncaseDfu: enter_dfu_in_case=%x, enter_dfu_mode=%x ,dfu_has_been_restarted=%x,dfu_reboot_reason=%x",SmGetTaskData()->enter_dfu_in_case,SmGetTaskData()->enter_dfu_mode,SmGetTaskData()->dfu_has_been_restarted,SmGetTaskData()->dfu_reboot_reason);
-    if (appUpgradeIsAppInCaseDFUState() && (SmGetTaskData()->dfu_in_progress || SmGetTaskData()->peer_dfu_in_progress))
-    {
-        if(SmGetTaskData()->dfu_has_been_restarted)
-        {
-            DEBUG_LOG("appSmAbortIncaseDfu: dfu_has_been_restarted");
-            //gaiaFrameworkInternal_GaiaDisconnect();
-        }
-        else
-        {
-            DEBUG_LOG("appSmAbortIncaseDfu: !dfu_has_been_restarted. Reboot earbuds in 10s");
-            MessageSendLater(SmGetTask(), SM_INTERNAL_REBOOT, NULL,10000);
-        }
-    }
-
-}
-#endif
 MESSAGE_BROKER_GROUP_REGISTRATION_MAKE(EARBUD_ROLE, earbudSm_RegisterMessageGroup, NULL);

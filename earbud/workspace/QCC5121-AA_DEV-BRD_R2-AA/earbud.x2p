@@ -951,6 +951,4 @@
     <file path="../../src/peripherals/tym_power_control.c"/>
     <file path="../../../adk/src/domains/bt/manufacturer_data/manufacturer_data.c"/>
     <file path="../../../adk/src/domains/bt/manufacturer_data/manufacturer_data.h"/>
-    <file path="../../../adk/src/topologies/tws/common/procedures/tws_topology_procedure_dfu_abort.c"/>
-    <file path="../../../adk/src/topologies/tws/common/procedures/tws_topology_procedure_dfu_abort.h"/>
 </project>

@@ -34,6 +34,9 @@ typedef enum {
     APP_UPGRADE_STARTED,                    /*!< An upgrade is now in progress. Started or continued. */
     APP_UPGRADE_COMPLETED,                  /*!< An upgrade has been completed */
     APP_UPGRADE_CLEANUP_ON_ABORT,           /*!<An upgrade is aborted, clean up DFU specific entities */
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */ 
+    APP_UPGRADE_COMMITTING,                 /*!< Upgrade commit is in progress, inform the app SM */
+#endif    
 } av_headet_upgrade_messages;
 
 /*! Types of upgrade context used with appUpgradeSetContext and appUpgradeGetContext */
@@ -111,6 +114,10 @@ extern upgradeTaskData app_upgrade;
 #define appUpgradeSetDfuAbortOnHandoverState(x) (app_upgrade.isDfuAbortedOnHandover = (x))
 #define appUpgradeIsDfuAbortOnHandoverDone()    (app_upgrade.isDfuAbortedOnHandover)
 
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */
+/* Timeout expected for force-closing the peer ACL, before DFU reboot proceeds */
+#define appUpgradeAclCloseTimeoutMs()           (100)
+#endif
 bool appUpgradeEarlyInit(Task init_task);
 
 bool appUpgradeInit(Task init_task);

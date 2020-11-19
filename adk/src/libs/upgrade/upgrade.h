@@ -1,7 +1,6 @@
 /****************************************************************************
 Copyright (c) 2014 - 2015, 2020 Qualcomm Technologies International, Ltd.
 
-QCC512x_QCC302x.SRC.1.0 R49.1 with changes for ADK-297, ADK-638, B-305341, B-305370
 
 FILE NAME
     upgrade.h
@@ -102,6 +101,10 @@ library through the gaia library (gaia.h).
    So reusing EARBUD_UPGRADE_CONTEXT_KEY by giving offset of 26 to avoid overlap.
  */
 #define EARBUD_UPGRADE_PEER_CONTEXT_OFFSET      26  /*!< Offset with that key to area for upgrade peer library */
+
+/*ENABLE_TYM_PLATFORM added for Qualcomm patch ACBU-9599_ADK-739.diff */
+/* USR8 key used here to check for abrupt reset during DFU */
+#define EARBUD_DFU_PERMITTED_RESET_KEY          8
 
 /*!<
  * Upgrade data packet received into Source Buffer from Host is drained as an
@@ -1304,29 +1307,17 @@ uint16 *UpgradeIsPriRebootDone(void);
            else TRUE, reboot is completed.
 */
 void UpgradeSetPriRebootDone(bool val);
-/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-/* B-305370 Avoid aborting DFU on GAIA disconnect once UPGRADE_HOST_TRANSFER_COMPLETE_RES is received with the continue */
-/*!
-    @brief Check if UPGRADE_HOST_TRANSFER_COMPLETE_RES is received from host with continue action.
-     Returns bool TRUE if UPGRADE_HOST_TRANSFER_COMPLETE_RES is received with continue action.
-*/
-uint16 upgradeIsXferCompleted(void);
-/* End B-305370 */
 
-/* ADK-638 Fail safe mechanism for dfu timeout issues */
-
-void UpgradePeerPSClearStoreStruct(void);
 /*!
     @brief Cancel the Peer DFU Start if image upgrade copy is not successful
         
     Returns None
 */
 void UpgradePeerCancelDFU(void);
-/*! @brief Check if its post reboot commit phase.
 
-    Returns bool TRUE if its post reboot commit phase else FALSE.
-*/
-bool upgradeIsPostRebootPhase(void);
-
-
+/*ENABLE_TYM_PLATFORM added for Qualcomm patch ACBU-9599_ADK-739.diff */ 
+bool UpgradePSClearStoreNoDelete(void);
+void UpgradePeerPSClearStore(void);
+void UpgradeSMRevertState(void);
+void UpgradeSendError(uint16 errorCode);
 #endif /* UPGRADE_H_ */

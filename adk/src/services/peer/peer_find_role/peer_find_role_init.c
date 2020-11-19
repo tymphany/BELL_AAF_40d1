@@ -438,16 +438,15 @@ static void peer_find_role_handle_phy_state(const PHY_STATE_CHANGED_IND_T *phy)
     DEBUG_LOG("peer_find_role_handle_phy_state. New physical state:%d", phy->new_state);
 
     pfr->scoring_info.phy_state = phy->new_state;
-#ifdef ENABLE_TYM_PLATFORM
+/*#ifdef ENABLE_TYM_PLATFORM, Qualcomm patch ACBU-9599_ADK-739.diff, remove it 
     if(phy->event == phy_state_event_user_poweroff)
-    {
-        /*re-init tws task*/
+    {        
         if(twsTopology_IsRunning() == FALSE)
         {
             TwsTopology_Start(SmGetTask());
         }  
     }    
-#endif    
+#endif*/    
 }
 
 

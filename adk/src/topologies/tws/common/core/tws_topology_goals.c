@@ -51,10 +51,7 @@
 #include "tws_topology_procedure_primary_static_handover_in_case.h"
 #include "tws_topology_procedure_secondary_static_handover.h"
 #include "tws_topology_procedure_dfu_in_case.h"
-#ifdef ENABLE_TYM_PLATFORM
-/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-#include "tws_topology_procedure_dfu_abort.h"
-#endif
+
 #include "tws_topology_procedure_dynamic_handover.h"
 #include "tws_topology_procedure_dynamic_handover_failure.h"
 #include "tws_topology_procedure_enable_le_connectable_handset.h"
@@ -190,10 +187,6 @@ const goal_entry_t goals[] =
     GOAL(tws_topology_goal_dfu_in_case, tws_topology_procedure_dfu_in_case,
                 &proc_dfu_in_case_fns, tws_topology_goal_none),
                 
-#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/                
-    GOAL(tws_topology_goal_dfu_abort, tws_topology_procedure_dfu_abort,
-                 &proc_dfu_abort_fns, tws_topology_goal_none),
-#endif
     SCRIPT_GOAL(tws_topology_goal_disconnect_peer_find_role, tws_topology_procedure_disconnect_peer_find_role,
                 &disconnect_peer_find_role_script, tws_topology_goal_none),
 
@@ -552,11 +545,7 @@ void TwsTopology_HandleGoalDecision(Task task, MessageId id, Message message)
         case TWSTOP_DFU_GOAL_PRIMARY:
             GoalsEngine_ActivateGoal(td->goal_set, tws_topology_goal_dfu_primary, task, id, message, 0);
             break;
-#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/         
-        case TWSTOP_DFU_GOAL_ABORT_DFU:
-            GoalsEngine_ActivateGoal(td->goal_set, tws_topology_goal_dfu_abort, task, id, NULL, 0);
-            break;
-#endif
+
         case TWSTOP_SECONDARY_GOAL_STATIC_HANDOVER:
             GoalsEngine_ActivateGoal(td->goal_set, tws_topology_goal_secondary_static_handover, task, id, message, 0);
             break;

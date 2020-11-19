@@ -194,3 +194,18 @@ bool UpgradePSClearStore(void)
     return FALSE;
 }
 
+/*ENABLE_TYM_PLATFORM added for Qualcomm patch ACBU-9599_ADK-739.diff */
+bool UpgradePSClearStoreNoDelete(void)
+{
+    upgrade_version version;
+    version = UpgradeCtxGetPSKeys()->version;
+    if (UpgradeIsInitialised())
+    {
+        memset(UpgradeCtxGetPSKeys(),0x0000,sizeof(UPGRADE_LIB_PSKEY));
+        UpgradeSavePSKeys();
+        UpgradeCtxGetPSKeys()->version = version;//revert version enable_tym_platform
+        return TRUE;
+    }
+    return FALSE;
+}
+

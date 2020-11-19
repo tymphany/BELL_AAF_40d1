@@ -836,6 +836,11 @@ void appPowerRebootWaitSec(int sec)
     MessageSendLater(PowerGetTask(),APP_POWER_REQUEST_REBOOT, NULL, D_SEC(sec));
 }
 
+void appPowerDfuReboot(void)
+{
+    MessageSendLater(PowerGetTask(),APP_POWER_REQUEST_REBOOT, NULL, 800);
+}
+
 bool appUserPowerOffAction(void)
 {
     powerTaskData *thePower = PowerGetTaskData();

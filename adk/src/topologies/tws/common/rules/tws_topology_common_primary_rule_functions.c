@@ -87,14 +87,7 @@ rule_action_t ruleTwsTopPriPeerPairedOutCase(void)
         return rule_action_ignore;
     }
 #endif
-
-#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-    if (TwsTopology_IsGoalActive(tws_topology_goal_no_role_find_role))
-    {
-        TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerPairedOutCase, ignore as already finding role");
-        return rule_action_ignore;
-    }
-#endif    
+    
 
     TWSTOP_PRIMARY_RULE_LOG("ruleTwsTopPriPeerPairedOutCase, run as peer paired and out of case");
     return rule_action_run;

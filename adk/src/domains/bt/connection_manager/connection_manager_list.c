@@ -384,18 +384,6 @@ void conManagerRemoveConnection(cm_connection_t *connection)
         conManagerResetConnection(connection);
     }
 }
-#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-/******************************************************************************/
-void conManagerRemoveAllConnection(void)
-{
-    cm_connection_t* connection;
-
-    for_all_connections(connection)
-    {
-        conManagerRemoveConnection(connection);
-    }
-}
-#endif
 
 /******************************************************************************/
 void ConManagerConnectionInit(void)

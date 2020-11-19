@@ -73,10 +73,6 @@ enum tws_topology_dfu_rules_goals
     TWSTOP_DFU_GOAL_CONNECT_PEER_PROFILES,
 
     TWSTOP_DFU_GOAL_CONNECT_HANDSET_ON_RESET,
-/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-#ifdef ENABLE_TYM_PLATFORM    
-    TWSTOP_DFU_GOAL_ABORT_DFU,
-#endif    
         /*! Value used when there is no DFU goal */
     TWSTOP_DFU_GOAL_NOP,
 };

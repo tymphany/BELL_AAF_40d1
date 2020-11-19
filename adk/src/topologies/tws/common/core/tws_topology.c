@@ -51,7 +51,6 @@
 /*! Instance of the TWS Topology. */
 twsTopologyTaskData tws_topology = {0};
 #ifdef ENABLE_TYM_PLATFORM
-void twsTopology_HandleDFUPowerOn(void);
 void twsTopology_HandleDFUPowerOff(void);
 #endif
 void twsTopology_RulesSetEvent(rule_events_t event)
@@ -514,11 +513,7 @@ static void twsTopology_HandlePhyStateChangedInd(PHY_STATE_CHANGED_IND_T* ind)
                 {    
                     twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
                     twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);
-                }
-                else
-                {
-                    twsTopology_HandleDFUPowerOn();                    
-                }    
+                }   
             }
             break;
         case phy_state_event_user_poweroff:
@@ -782,6 +777,41 @@ static void twsTopology_HandleStateProxyInitialStateReceived(void)
     twsTopology_CheckHdmaRequired();
 }
 
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */
+
+static void twsTopology_HandlePhyStateChangedInd_PostDFUReboot(PHY_STATE_CHANGED_IND_T* ind)
+{
+    DEBUG_LOG("twsTopology_HandlePhyStateChangedInd_PostDFUReboot ev %u", ind->event);
+
+    switch (ind->event)
+    {
+        case phy_state_event_out_of_case:
+            /* Reset the In case rule event set out of case rule event */
+            TwsTopologyDfuRules_ResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+            TwsTopologyDfuRules_SetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+            break;
+        case phy_state_event_in_case:
+            /* Reset the out of case rule event set in case rule event */
+            TwsTopologyDfuRules_ResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+            TwsTopologyDfuRules_SetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+            break;
+        case phy_state_event_user_poweroff:/*bell UI*/
+            if(UpgradeIsOutCaseDFU())
+            {
+                TwsTopologyDfuRules_ResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+                TwsTopologyDfuRules_SetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);/* outcase OTA send in case to abort */
+            }
+            else
+            {        
+                TwsTopologyDfuRules_ResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+                TwsTopologyDfuRules_SetEvent(TWSTOP_RULE_EVENT_START_TRIG);/* incase OTA send out case to abort */
+            }
+            break;    
+        default:
+        break;
+    }
+}
+#endif
 
 /*! \brief TWS Topology message handler.
  */
@@ -792,6 +822,22 @@ static void twsTopology_HandleMessage(Task task, MessageId id, Message message)
     if (!twsTopology_IsRunning())
     {
         DEBUG_LOG("twsTopology_HandleMessage. Not yet started. Message %d(0x%x)",id,id);
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */
+       if (twsTopology_GetRole() == tws_topology_role_dfu)
+       {
+           switch (id)
+           {
+               case PHY_STATE_CHANGED_IND:
+                   DEBUG_LOG("twsTopology_HandleMessage. Handling only phy_state changes in DFU mode.");
+                   twsTopology_HandlePhyStateChangedInd_PostDFUReboot((PHY_STATE_CHANGED_IND_T*)message);
+                   break;
+
+               default:
+                   break;
+           }
+       }
+#endif       
+       
         switch (id)
         {
             case CL_SDP_REGISTER_CFM:
@@ -1214,31 +1260,18 @@ void TwsTopology_DfuStartInCase(void)
     twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);//before in case status
 }
 
-void twsTopology_HandleDFUPowerOn(void)
-{
-    if (appUpgradeIsOutofCaseDfu())//out-case
-    {   
-        twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG); //in-case
-        twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);  //out-case
-    }
-    else//in-case,abort-dfu
-    {
-        twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);//incase
-        twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);//outcase
-    }
-}
 
 void twsTopology_HandleDFUPowerOff(void)
 {
-    if (appUpgradeIsOutofCaseDfu())//out-case
-    {   
-        twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_START_TRIG); //outcase
-        twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);  //incase
-    }
-    else//in-case,abort-dfu
+    if(UpgradeIsOutCaseDFU())
     {
-        twsTopology_RulesResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);//incase
-        twsTopology_RulesSetEvent(TWSTOP_RULE_EVENT_START_TRIG);//outcase
+        TwsTopologyDfuRules_ResetEvent(TWSTOP_RULE_EVENT_START_TRIG);
+        TwsTopologyDfuRules_SetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);/* outcase OTA send in case to abort */
+    }
+    else
+    {        
+        TwsTopologyDfuRules_ResetEvent(TWSTOP_RULE_EVENT_CANCEL_TRIG);
+        TwsTopologyDfuRules_SetEvent(TWSTOP_RULE_EVENT_START_TRIG);/* incase OTA send out case to abort */
     }
 }
 

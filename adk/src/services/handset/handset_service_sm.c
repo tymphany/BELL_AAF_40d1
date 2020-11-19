@@ -886,8 +886,20 @@ static void handsetServiceSm_HandleProfileManagerDisconnectCfm(handset_service_s
                     ConManagerSendCloseAclRequest(&sm->handset_addr, TRUE);
                 }
                 else
-                {
-                    HS_LOG("handsetServiceSm_HandleProfileManagerDisconnectCfm some profile(s) still connected");
+                {                    
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */
+                    if (BtDevice_GetConnectedProfiles(sm->handset_device) == 0)
+                    {
+                        HS_LOG("handsetServiceSm_HandleProfileManagerDisconnectCfm force-close ACL");
+                        ConManagerSendCloseAclRequest(&sm->handset_addr, TRUE);
+                    }
+                    else
+                    {
+                        HS_LOG("handsetServiceSm_HandleProfileManagerDisconnectCfm some profile(s) still connected");
+                    }
+#else
+                    HS_LOG("handsetServiceSm_HandleProfileManagerDisconnectCfm some profile(s) still connected");                    
+#endif                    
                 }
             }
         }

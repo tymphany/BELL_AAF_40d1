@@ -32,8 +32,15 @@ This is a minimal implementation of upgrade.
 #include <upgrade.h>
 #include <ps.h>
 #ifdef ENABLE_TYM_PLATFORM
+/*added for Qualcomm patch ACBU-9599_ADK-739.diff */
+#include <connection_manager.h>
+#include <bt_device.h>
+#include <bredr_scan_manager_protected.h>
+#include <power_manager.h>
+
 #include "earbud_tym_sync.h"
 #include "earbud_tym_cc_communication.h"
+#include "upgrade_msg_host.h" /*added for OTA error message*/
 #endif
 
 /*!< Task information for UPGRADE support */
@@ -103,6 +110,12 @@ static void appUpgradeNotifyStart(void)
     TaskList_MessageSendId(TaskList_GetFlexibleBaseTaskList(UpgradeGetClientList()), APP_UPGRADE_STARTED);
 }
 
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */
+static void appUpgradeNotifyCommiting(void)
+{
+    TaskList_MessageSendId(TaskList_GetFlexibleBaseTaskList(UpgradeGetClientList()), APP_UPGRADE_COMMITTING);
+}
+#endif
 
 static void appUpgradeNotifyCompleted(void)
 {
@@ -277,6 +290,9 @@ static void appUpgradeHandleUpgradeStatusInd(const UPGRADE_STATUS_IND_T *sts)
 
         case upgrade_state_commiting:
             DEBUG_LOG("appUpgradeHandleUpgradeStatusInd. commiting(%d)",sts->state);
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */            
+            appUpgradeNotifyCommiting();
+#endif            
             break;
 
         case upgrade_state_done:
@@ -373,6 +389,17 @@ static void appUpgradeMessageHandler(Task task, MessageId id, Message message)
 
             /* Message sent to application to request any audio to get shut */
         case UPGRADE_SHUT_AUDIO:
+            DEBUG_LOG("appUpgradeMessageHandler. UPGRADE_SHUT_AUDIO");
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */
+            bdaddr peer_addr;
+            if (appDeviceGetPeerBdAddr(&peer_addr) && ConManagerIsConnected(&peer_addr)) {
+                DEBUG_LOG("appUpgradeMessageHandler, peer ACL exists, so disconnect cleanly before reboot");
+                BredrScanManager_ScanDisable(UpgradeGetTask());
+                ConManagerSendCloseAclRequest(&peer_addr, TRUE);
+                MessageSendLater(UpgradeGetTask(), UPGRADE_SHUT_AUDIO, NULL, appUpgradeAclCloseTimeoutMs());
+                break;
+            }            
+#endif            
             appUpgradeHandleUpgradeShutAudio();
             break;
 
@@ -401,7 +428,12 @@ static void appUpgradeMessageHandler(Task task, MessageId id, Message message)
             if(((UPGRADE_END_DATA_IND_T*)message)->state == upgrade_end_state_abort)
             {
                 DEBUG_LOG("$$$ TYM Upgrade Abort");
+                DEBUG_LOG("appUpgradeMessageHandler. UPGRADE_END_DATA_IND, DFU aborted");                
                 tymSyncdata(btStatusCmd,happenErr);
+                /*added for Qualcomm patch ACBU-9599_ADK-739.diff */
+                //appPowerReboot();
+                UpgradeSendError(UPGRADE_HOST_ERROR_UPDATE_FAILED);                
+                appPowerDfuReboot();
             }
 #endif
             break;
@@ -430,6 +462,11 @@ static void appUpgradeMessageHandler(Task task, MessageId id, Message message)
             DEBUG_LOG("appUpgradeMessageHandler. MESSAGE_IMAGE_UPGRADE_HASH_ALL_SECTIONS_UPDATE_STATUS");
             UpgradeHashAllSectionsUpdateStatus(message);
             break;
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */            
+        case BREDR_SCAN_MANAGER_DISABLE_CFM:
+            DEBUG_LOG("appUpgradeMessageHandler. BREDR_SCAN_MANAGER_DISABLE_CFM");
+            break;
+#endif            
             /* Catch-all panic for unexpected messages */
         default:
             if (UPGRADE_UPSTREAM_MESSAGE_BASE <= id && id <  UPGRADE_UPSTREAM_MESSAGE_TOP)

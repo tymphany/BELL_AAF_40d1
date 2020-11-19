@@ -1402,16 +1402,6 @@ void a2dpHandleL2capDisconnect(Sink sink, l2cap_disconnect_status status)
                 {   /* If signalling channel has gone, remove any remaining media channels */
                     if ( status != l2cap_disconnect_transferred && a2dpDisconnectAllMedia( device ) )
                     {   /* Media channels being disconnected.  Mark signalling as disconnected but postpone removal of data structure and app indication */
-                        //#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-                         /* If the L2CAP disconnect happened while media opening send notification */
-                        if (device->signal_conn.status.stream_state == avdtp_stream_local_opening)
-                        {
-                            a2dpMediaOpenCfm(device, NULL, a2dp_operation_fail);
-                        }
-                        /* Media channels being disconnected.  Mark signalling as disconnected but */
-                        /* postpone removal of data structure and app indication */
-                        //#endif
-
                         signalling->status.connection_state = avdtp_connection_idle;
                     }
                     else

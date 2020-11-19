@@ -223,6 +223,7 @@ void appUserPowerOn(void);
 void appPowerRebootWaitSec(int sec);
 bool appUserStandbyModeRequest(void);
 bool appUserPowerOffAction(void);
+void appPowerDfuReboot(void);
 #endif
 
 #endif /* POWER_MANAGER_H_ */

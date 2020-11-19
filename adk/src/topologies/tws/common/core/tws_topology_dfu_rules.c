@@ -29,8 +29,8 @@
 #include "tws_topology_config.h"
 #include <logging.h>
 #include "tws_topology_goals.h"
-
-
+#include "upgrade_msg_host.h" /*added for OTA error message*/
+#include "earbud_tym_sync.h" /*report OTA err to charging case*/
 #pragma unitsuppress Unused
 
 /*! \{
@@ -75,14 +75,13 @@ DEFINE_RULE(ruleTwsTopDfuKickPeerConnect);
 /*! \brief TWS Topology rules deciding behaviour in a Dfu role. */
 const rule_entry_t twstop_dfu_rules_set[] =
 {
-/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
 #ifdef ENABLE_TYM_PLATFORM
     /* When Earbud is put dfu in case mode, disconnect HFP */
     RULE(TWSTOP_RULE_EVENT_CANCEL_TRIG,        ruleTwsTopDfuInCase,             TWSTOP_DFU_GOAL_IN_CASE),
     /* When Earbud put out of the case, disconnect handset (BR/EDR) profiles and links (BR/EDR and/or LE) when DFU transport is BLE. */
     RULE(TWSTOP_RULE_EVENT_START_TRIG,         ruleTwsTopDfuLEPriAbortCleanup,  TWSTOP_DFU_GOAL_LE_PRI_ABORT_CLEANUP),
     /* When Earbud put out of the case, terminate DFU */
-    RULE(TWSTOP_RULE_EVENT_START_TRIG,         ruleTwsTopDfuAlways,            TWSTOP_DFU_GOAL_ABORT_DFU),
+    RULE(TWSTOP_RULE_EVENT_START_TRIG,         ruleTwsTopDfuAlways,            TWSTOP_DFU_GOAL_NO_ROLE_FIND_ROLE),
 #else
     /* When Earbud is put dfu in case mode, disconnect HFP */
     RULE(TWSTOP_RULE_EVENT_IN_CASE,          ruleTwsTopDfuInCase,             TWSTOP_DFU_GOAL_IN_CASE),
@@ -91,7 +90,7 @@ const rule_entry_t twstop_dfu_rules_set[] =
     RULE(TWSTOP_RULE_EVENT_OUT_CASE,         ruleTwsTopDfuLEPriAbortCleanup,  TWSTOP_DFU_GOAL_LE_PRI_ABORT_CLEANUP),
 
     /* When Earbud put out of the case, terminate DFU */
-    RULE(TWSTOP_RULE_EVENT_OUT_CASE,         ruleTwsTopDfuAlways,            TWSTOP_DFU_GOAL_ABORT_DFU),
+    RULE(TWSTOP_RULE_EVENT_OUT_CASE,         ruleTwsTopDfuAlways,            TWSTOP_DFU_GOAL_NO_ROLE_FIND_ROLE),
 #endif
     /*! When a DFU is completed, disable page scan on Secondary that was started as part of Secondary reboot. */
     RULE(TWSTOP_RULE_EVENT_DFU_ROLE_COMPLETE, ruleTwsTopDfuDisablePageScan,  TWSTOP_DFU_GOAL_SEC_DISABLE_PAGE_SCAN_TO_PEER),
@@ -145,14 +144,10 @@ const rule_entry_t twstop_dfu_rules_set[] =
 static rule_action_t ruleTwsTopDfuConnectHandsetOnReset(void)
 {
     bdaddr handset_addr;
-/*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+
 #ifdef ENABLE_TYM_PLATFORM
-    if (upgradeIsPostRebootPhase())
-    {
-        TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuConnectHandsetOnReset, ignore as its the post reboot DFU commit phase.");
-        return rule_action_ignore;
-    }
     //don't use power status for in case OTA
+    TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuConnectHandsetOnReset, can't check power status is-caseOTA");
 #endif
     if (appPhyStateGetState() == PHY_STATE_IN_CASE)
     {
@@ -290,6 +285,17 @@ static rule_action_t ruleTwsTopDfuInCase(void)
      * to avoid setting of app_upgrade.APP_STATE_IN_CASE_DFU incorrectly
      * during non-required scenarios such as during Handover.
      */
+#ifdef ENABLE_TYM_PLATFORM /*added for Qualcomm patch ACBU-9599_ADK-739.diff */   
+    if (UpgradeIsInitialised() && UpgradeIsOutCaseDFU())
+    {
+        TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuInCase, put in case during BDFU");
+        //appPowerReboot();
+        tymSyncdata(btStatusCmd, happenErr);
+        UpgradeSendError(UPGRADE_HOST_ERROR_UPDATE_FAILED);
+        appPowerDfuReboot();
+        return rule_action_ignore;
+    }
+#endif         
     if(!appUpgradeIsAppInCaseDFUMode() && !UpgradeIsInProgress())
         appUpgradeStoreAppInCaseDFUState(TRUE);
 
@@ -303,7 +309,15 @@ static rule_action_t ruleTwsTopDfuInCase(void)
 static rule_action_t ruleTwsTopDfuAlways(void)
 {
     TWSTOP_DFU_RULE_LOG("ruleTwsTopDfuAlways, run Always");
-
+    /* Reboot on physical state change during DFU */
+    if ((UpgradeIsInitialised() && UpgradeIsInProgress()) || TwsTopology_GetRole() == tws_topology_role_dfu) {
+        DEBUG_LOG_DEBUG("ruleTwsTopDfuAlways, taken out of case during FDFU");
+        //appPowerReboot();
+        tymSyncdata(btStatusCmd, happenErr);
+        UpgradeSendError(UPGRADE_HOST_ERROR_UPDATE_FAILED);
+        appPowerDfuReboot();
+        return rule_action_ignore;
+    }
     return rule_action_run;
 }
 

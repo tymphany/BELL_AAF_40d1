@@ -1,7 +1,6 @@
 /****************************************************************************
 Copyright (c) 2004 - 2015 Qualcomm Technologies International, Ltd.
 
-QCC512x_QCC302x.SRC.1.0 R49.1 with changes for ADK-297, ADK-638, B-305341, B-305370
 
 FILE NAME
     upgrade_msg_internal.h
@@ -34,14 +33,10 @@ typedef enum
 
     /*! internal message to set the state machine to battery low */
     UPGRADE_INTERNAL_BATTERY_LOW,
-    /*ENABLE_TYM_PLATFORM added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
+
     /*! send to itself after reboot to commit, it is used to handle no reconnection cases */
-    /* B-305341 Handle DFU timeout and abort in the post reboot phase */
-    UPGRADE_INTERNAL_RECONNECTION_TIMEOUT,
- 
-    /*! Internal message used to delay the reboot of devices to revert commit */
-    UPGRADE_INTERNAL_DELAY_REVERT_REBOOT
-    /* End B-305341 */
+    UPGRADE_INTERNAL_RECONNECTION_TIMEOUT
+
 } UpgradeMsgInternal;
 
 #endif /* UPGRADE_MSG_INTERNAL_H_ */

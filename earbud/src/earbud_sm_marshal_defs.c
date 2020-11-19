@@ -22,13 +22,7 @@ const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_dfu_active
 
 const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_dfu_active_when_out_case_t =
     MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_dfu_active_when_out_case_t);
-#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/
-const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_dfu_set_mode_when_in_case_t =
-    MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_dfu_set_mode_when_in_case_t);
 
-const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_dfu_ended_cleanup_t =
-    MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_dfu_ended_cleanup_t);
-#endif
 const marshal_type_descriptor_t marshal_type_descriptor_earbud_sm_req_factory_reset_t =
     MAKE_MARSHAL_TYPE_DEFINITION_BASIC(earbud_sm_req_factory_reset_t);
 

@@ -91,9 +91,7 @@ typedef enum
     tws_topology_goal_dfu_secondary,
 
     tws_topology_goal_dfu_in_case,
-#ifdef ENABLE_TYM_PLATFORM /*added Qualcomm patch QTILVM_TYM_RHA_Changes_r40_1_v2 for OTA issue*/    
-    tws_topology_goal_dfu_abort,
-#endif    
+   
     /*! Goal to disconnect the peer and begin role selection, could
         be used on handset linkloss to determine best Earbud to reconnect. */
     tws_topology_goal_disconnect_peer_find_role,
