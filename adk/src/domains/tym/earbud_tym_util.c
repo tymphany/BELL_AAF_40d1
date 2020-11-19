@@ -19,6 +19,7 @@
 #include "earbud_tym_acoustic_data.h"
 #include "earbud_tym_sync.h"
 #include "tym_anc.h"
+#include "hfp_profile.h"
 /* ------------------------ Defines ------------------------ */
 #define FACTORY_SAMPLE_RATE         44100
 
@@ -177,6 +178,7 @@ void configTYMRestoreDefault(void)
     PsStore(PSID_BTNAME, 0, 0);
     PsStore(PSID_APPCONFIG, 0, 0);
     PsStore(PSID_ANC_LEVEL, 0, 0);
+    appHfpMicGainRestoreDefault();
 }
 
 void storeAppConfigData(void)

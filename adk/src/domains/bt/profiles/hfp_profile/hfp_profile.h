@@ -308,6 +308,7 @@ typedef struct
 
 #ifdef ENABLE_TYM_PLATFORM
 void appHfpSetVA(uint8 enable);
+void appHfpMicGainRestoreDefault(void);
 
 #define appHfpIsVAEnable() \
     (appGetHfp()->bitfields.va_enable)

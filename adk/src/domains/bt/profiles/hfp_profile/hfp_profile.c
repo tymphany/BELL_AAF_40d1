@@ -1707,8 +1707,12 @@ static void appHfpHandleHfpVolumeSyncMicrophoneGainIndication(const HFP_VOLUME_S
         case HFP_STATE_CONNECTED_ACTIVE:
         case HFP_STATE_DISCONNECTING:
         {
+#ifdef ENABLE_TYM_PLATFORM
+            DEBUG_LOG("Don't change microphone gain");
+#else            
             /* Set input gain */
             appGetHfp()->mic_volume = ind->mic_gain;
+#endif            
 
             /* Store new configuration */
             appHfpConfigStore();
@@ -3230,6 +3234,12 @@ bool HfpProfile_IsScoConnecting(void)
 void appHfpSetVA(uint8 enable)
 {
     appGetHfp()->bitfields.va_enable = (enable & 0x1);
+}
+
+void appHfpMicGainRestoreDefault(void)
+{
+    appGetHfp()->mic_volume = HFP_MICROPHONE_GAIN;
+    appHfpHandleInternalConfigWriteRequest();
 }
 #endif
 
