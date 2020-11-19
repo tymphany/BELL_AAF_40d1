@@ -59,7 +59,7 @@ typedef enum device_upgrade_internal_messages
 */
 #ifdef ENABLE_TYM_PLATFORM
 //AutoBuild BumpVersion
-#define BellFW_LVer 37
+#define BellFW_LVer 38
 
 #define BellFW_HVer 0
 
