@@ -120,10 +120,7 @@ static void noCasePairProcess(uint8 context)
             {    
                 tymAnc->onceAnc = 0;
                 /*if enter pairing to cancel va enable*/
-                if (appHfpIsVAEnable())
-                {
-                    LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_hfp_voice_dial_cancel);
-                }    
+                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_hfp_voice_dial_cancel);  
                 Prompts_CancelPairingContinue();    
                 Ui_InjectUiInput(ui_input_prompt_pairing_continue);
                 LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_sm_pair_handset);
