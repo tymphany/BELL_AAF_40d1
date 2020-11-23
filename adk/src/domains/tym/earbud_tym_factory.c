@@ -992,7 +992,7 @@ void factory_recoverycommport(void *dataptr)
     UNUSED(dataptr); 
     tymSendDatatoHost((uint8 *)"1",sizeof("1"));
     setFactoryModeStatus(factory_disable);
-    earbudCC_RecoveryCommPort();            
+    earbudCC_RecoveryCommPort1s();            
 }
 
 /*! \brief  factory enter anc tuning  */

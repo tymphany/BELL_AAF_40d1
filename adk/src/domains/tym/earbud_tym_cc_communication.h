@@ -23,6 +23,7 @@ typedef enum statusOutputMsg {
     statusExecuteCmd,
     statusEndCmd,
     statusLeaveUSBCheck,
+    statusChangeUART,
 }statusOutputMsg_t;
 
 
@@ -41,6 +42,7 @@ void reportPowerOnStatus(void);
 void reportSleepStandbyStatus(bool sleep);
 /*! \brief Handle gaia disconnect */
 void tymCleanOTAFLAG(void);
+void earbudCC_RecoveryCommPort1s(void);
 #endif
 
 

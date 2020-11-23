@@ -227,6 +227,9 @@ static void _statusOutputMessageHandler ( Task pTask, MessageId pId, Message pMe
         case statusLeaveUSBCheck:
             statusCommunicationMessage(pId,(statusSendCmd_T *)pMessage);    
             break;
+        case statusChangeUART:
+            earbudCC_RecoveryCommPort();
+            break;    
         case CHARGER_MESSAGE_DETACHED:
             stopCommunicationToChargingCase();
             break;
@@ -465,6 +468,10 @@ void earbudCC_RecoveryCommPort(void)
     setCommunPort(CH_UART);
 }
 
+void earbudCC_RecoveryCommPort1s(void)
+{
+    MessageSendLater((TaskData *)&_statusReportTask, statusChangeUART, NULL, D_SEC(1));
+}
 /*! \brief Handle debug mode change USB port. */
 void earbudCC_ChangeUSBPort(void)
 {
