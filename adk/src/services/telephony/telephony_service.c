@@ -16,7 +16,10 @@
 #include "voice_sources_list.h"
 
 #include <panic.h>
+#ifdef ENABLE_TYM_PLATFORM
 #include <logging.h>
+#include "bt_device.h"
+#endif
 
 static void telephonyService_CallStateNotificationMessageHandler(Task task, MessageId id, Message message);
 static void telephonyService_HandleUiInput(Task task, MessageId ui_input, Message message);
@@ -107,11 +110,17 @@ static void telephonyService_HandleUiInput(Task task, MessageId ui_input, Messag
             break;
 
         case ui_input_hfp_voice_dial:
+#ifdef ENABLE_TYM_PLATFORM            
+            if(appDeviceIsHandsetConnected())
+                VoiceSources_InitiateVoiceDial(source);
+#else                
             VoiceSources_InitiateVoiceDial(source);
+#endif            
             break;
 #ifdef ENABLE_TYM_PLATFORM
         case ui_input_hfp_voice_dial_cancel:
-            VoiceSources_CancelVoiceDial(source);
+            if(appDeviceIsHandsetConnected())
+                VoiceSources_CancelVoiceDial(source);
             break;
 #endif
         default:

@@ -123,7 +123,9 @@ static void noCasePairProcess(uint8 context)
                 LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_hfp_voice_dial_cancel);  
                 Prompts_CancelPairingContinue();    
                 Ui_InjectUiInput(ui_input_prompt_pairing_continue);
-                LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_sm_pair_handset);
+                //LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_sm_pair_handset);
+                //wait a2pd resume finish
+                MessageSendLater(LogicalInputSwitch_GetTask(), APP_BUTTON_HANDSET_PAIRING, NULL, D_SEC(1.5));
             }
         }    
                     

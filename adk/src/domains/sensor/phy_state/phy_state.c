@@ -1165,7 +1165,8 @@ void appPhyStateCustomIdTapx2(uint8 act)
     if(id == uifunc_anc_amb) /* switch between ambient and ANC */
     {
         //MessageSend(LogicalInputSwitch_GetTask(), APP_BUTTON_TAP_ANC, NULL);
-        appPhyTapANCEvent();
+        if (appHfpIsVAEnable() == FALSE) /*wait VA finish*/
+            appPhyTapANCEvent();
     }
     else if(id == uifunc_google_notification) /* google bisto notification */
     {
@@ -1274,8 +1275,11 @@ void appPhyStateHold2s(void)
     }
     else
     {
-        /*trigger handset build-in va*/
-        LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_hfp_voice_dial);
+        if(appHfpIsConnected())
+        {    
+            /*trigger handset build-in va*/
+            LogicalInputSwitch_SendPassthroughLogicalInput(ui_input_hfp_voice_dial);
+        }
     }
 }
 

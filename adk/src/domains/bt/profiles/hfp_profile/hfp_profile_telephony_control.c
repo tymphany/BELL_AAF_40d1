@@ -13,7 +13,7 @@
 #include <message.h>
 #include <panic.h>
 #include <stdlib.h>
-
+#include <logging.h>
 #include "hfp_profile.h"
 #include "hfp_profile_voice_source_device_mapping.h"
 #include "voice_sources_telephony_control_interface.h"
@@ -218,8 +218,12 @@ static void hfpProfile_InitiateVoiceDial(voice_source_t source)
             if(ScoFwdIsConnected())
             {
                 /* we send the command across the SCO FWD OTA channel asking the master to
-                    trigger the CALL VOICE */
-                ScoFwdCallVoice();
+                    trigger the CALL VOICE */                      
+#ifdef ENABLE_TYM_PLATFORM
+                DEBUG_LOG("master call voice dial");
+#else                       
+                ScoFwdCallVoice();                
+#endif                
                 break;
             }
             /* if SCO FWD is not connected we can try to enstablish SLC and proceed */
@@ -259,7 +263,11 @@ static void hfpProfile_CancelVoiceDial(voice_source_t source)
             {
                 /* we send the command across the SCO FWD OTA channel asking the master to
                     trigger the CALL VOICE */
+#ifdef ENABLE_TYM_PLATFORM
+                DEBUG_LOG("master call cancel voice dial");
+#else                    
                 ScoFwdCallVoice();
+#endif                
                 break;
             }
             /* if SCO FWD is not connected we can try to enstablish SLC and proceed */
