@@ -194,11 +194,20 @@ void retrieveAppConfigData(void)
 {
     tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
     int pslen = PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t));
+    int retwords;
     uint16 appUiData[pslen];  
     if(PsRetrieve(PSID_APPCONFIG, 0, 0) != 0)
     {    
-        PsRetrieve(PSID_APPCONFIG, appUiData, PS_SIZE_ADJ(sizeof(tym_sync_app_configuration_t)));
-        memcpy(app_set, appUiData, sizeof(tym_sync_app_configuration_t)); 
+        retwords = PsRetrieve(PSID_APPCONFIG, appUiData, pslen);
+        if(retwords == pslen)
+        {    
+            memcpy(app_set, appUiData, sizeof(tym_sync_app_configuration_t)); 
+        }
+        else/* for old firmware no wear detect update*/
+        {
+            memcpy(app_set, appUiData, retwords * sizeof(uint16_t)); 
+            app_set->wear_detect = 1;
+        }        
     }
 }
 

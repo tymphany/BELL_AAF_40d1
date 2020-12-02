@@ -26,6 +26,7 @@
 #include "hfp_profile.h"
 #include "earbud_sm.h"
 #include "earbud_tym_util.h"
+#include "proximity.h"
 
 /* ------------------------ Defines ------------------------ */
 
@@ -163,13 +164,19 @@ static void moditifySpeechLevel(uint8 context)
 /*! handle earbud sync app configuration. */
 static void handleSync_AppConfig(tym_sync_app_configuration_t* tym_app_configuration)
 {
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
     tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    uint8 old_wear_detect = app_set->wear_detect;
     /*To do*/
     if(memcmp(app_set, tym_app_configuration, sizeof(tym_sync_app_configuration_t)) != 0)
     {
         DEBUG_LOG("Ui custom %d %d %d %d",tym_app_configuration->custom_ui[0],tym_app_configuration->custom_ui[1],tym_app_configuration->custom_ui[2],tym_app_configuration->custom_ui[3]);
         memcpy(app_set, tym_app_configuration, sizeof(tym_sync_app_configuration_t));
         storeAppConfigData();
+        if((app_set->wear_detect == 0) && (old_wear_detect != app_set->wear_detect))
+        {
+            MessageSend(&phy_state->task, PROXIMITY_MESSAGE_IN_PROXIMITY, NULL);
+        }    
     }
 }
 

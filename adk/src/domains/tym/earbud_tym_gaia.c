@@ -108,6 +108,8 @@ void bell_gaia_set_ambient_ext_anc(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_get_ambient_ext_anc(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_get_prompt_language(GAIA_UNHANDLED_COMMAND_IND_T *command);
 void bell_gaia_get_charging_status(GAIA_UNHANDLED_COMMAND_IND_T *command);
+void bell_gaia_get_wear_detect(GAIA_UNHANDLED_COMMAND_IND_T *command);
+void bell_gaia_set_wear_detect(GAIA_UNHANDLED_COMMAND_IND_T *command);
  /* -------------------------------------------------------------------------
  * ------- Private functions ------------------------------------------------
  * --------------------------------------------------------------------------
@@ -962,6 +964,48 @@ void bell_gaia_get_charging_status(GAIA_UNHANDLED_COMMAND_IND_T *command)
     }      
 }
 
+void bell_gaia_get_wear_detect(GAIA_UNHANDLED_COMMAND_IND_T *command)
+{
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    uint16 payload_len = 1;
+    uint8 payload[payload_len];
+
+    if(command->size_payload == 0)
+    {
+        payload[0] = app_set->wear_detect;
+        tym_gaia_send_response(command->command_id, GAIA_STATUS_SUCCESS, payload_len, payload);
+    }
+    else
+    {
+        tym_gaia_send_simple_response(command->command_id,GAIA_STATUS_INVALID_PARAMETER);
+    }       
+}
+
+void bell_gaia_set_wear_detect(GAIA_UNHANDLED_COMMAND_IND_T *command)
+{
+    phyStateTaskData* phy_state = PhyStateGetTaskData();
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    if(command->size_payload == 1)
+    {
+        if((command->payload[0] == 0x0) || (command->payload[0] == 0x01))
+        {
+            app_set->wear_detect = command->payload[0];
+            if(app_set->wear_detect == 0) /*disable wear detect */
+                MessageSend(&phy_state->task, PROXIMITY_MESSAGE_IN_PROXIMITY, NULL);
+            storeAppConfigData();
+            tymSyncAppConfiguration(app_set);
+            /* send response */
+            tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
+        }else
+            tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_INVALID_PARAMETER);
+
+    }
+    else
+    {
+        tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_INVALID_PARAMETER);
+    }        
+}
+
  /* -------------------------------------------------------------------------
  * ------- Public functions  ------------------------------------------------
  * --------------------------------------------------------------------------
@@ -1064,6 +1108,12 @@ bool _bell_GAIAMessageHandle(Task task, const GAIA_UNHANDLED_COMMAND_IND_T *mess
             break;
         case BELL_GAIA_GET_EQ_CONTROL_COMMAND:
             bell_gaia_get_eq_contorl(command);
+            break;
+        case BELL_GAIA_GET_WEAE_DETECT_COMMAND:
+            bell_gaia_get_wear_detect(command);
+            break;
+        case BELL_GAIA_SET_WEAR_DETECT_COMMAND:
+            bell_gaia_set_wear_detect(command);
             break;
         case BELL_GAIA_NO_OPERATION_COMMAND:
             bell_gaia_no_operation(command);

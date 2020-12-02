@@ -24,7 +24,7 @@
 #include "earbud_tym_util.h"
 #include "earbud_tym_sensor.h"
 #include "earbud_tym_psid.h"
-
+#include "earbud_tym_sync.h"
 /* ------------------------ Defines ------------------------ */
 
 #define xprint(x)            DEBUG_LOG(x)
@@ -86,6 +86,16 @@ void detectWearable(proximityTaskData *proximity)
     uint8 ltr_data_buffer[2];
     uint8 ps_status;
     uint16 ps_val;
+    tym_sync_app_configuration_t *app_set = TymGet_AppSetting();
+    
+    if(app_set->wear_detect == 0)
+    {
+        xprint("pseudo Wear");
+        proximity->state->proximity = proximity_state_in_proximity;
+        TaskList_MessageSendId(proximity->clients, PROXIMITY_MESSAGE_IN_PROXIMITY);
+        return;  
+    }    
+    
     if(!_i2c_ltr2678_read(LTR2678_PS_STATUS,ltr_data_buffer,1))
         return;
     ps_val = _ltr2678_ps_read();

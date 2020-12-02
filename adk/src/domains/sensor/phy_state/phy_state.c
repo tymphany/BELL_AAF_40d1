@@ -924,6 +924,7 @@ void appPhySateAppConfiguration(void)
         app_set->enable_auto_wear = 1; //default no wear pause
         app_set->enable_auto_play = 0; //add default value auto play is zero
         app_set->ambient_ext_anc = 1;//default ambient set stanc3 on
+        app_set->wear_detect = 1;//default wear detect enable
 #ifdef DISABLE_BISTO        
         app_set->smartassistant = smartasst_disable;//smartasst_bisto;//smartasst_bisto;//default bisto
         app_set->custom_ui[uiseq_left_swipe] = uifunc_track;

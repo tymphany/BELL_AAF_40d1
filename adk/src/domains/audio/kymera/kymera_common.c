@@ -907,6 +907,8 @@ uint8 get_cur_preset_eq(void)
 void set_cur_preset_eq(uint8 eq)
 {
     cur_preset_eq = eq;
+    /*update PSKEY*/
+    setPSPresetEQ();
 }
 #endif
 
