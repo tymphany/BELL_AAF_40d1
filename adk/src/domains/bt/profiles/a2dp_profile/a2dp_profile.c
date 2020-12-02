@@ -47,6 +47,7 @@
 #include "tym_anc.h"
 #include "audio_curation.h"
 #include "ui_prompts.h"
+#include "peer_find_role.h"
 #endif
 /*! Code assertion that can be checked at run time. This will cause a panic. */
 #define assert(x) PanicFalse(x)
@@ -1135,7 +1136,12 @@ static void appA2dpSetState(avInstanceTaskData *theInst, avA2dpState a2dp_state)
             appA2dpEnterConnectedMediaStreamingMuted(theInst);
             break;
         case A2DP_STATE_CONNECTED_MEDIA_SUSPENDING_LOCAL:
+#ifdef ENABLE_TYM_PLATFORM /*only master can suspend local*/
+            if(PeerFindRole_GetFixedRole() == peer_find_role_fixed_role_primary)
+                appA2dpEnterConnectedMediaSuspendingLocal(theInst);
+#else            
             appA2dpEnterConnectedMediaSuspendingLocal(theInst);
+#endif            
             break;
         case A2DP_STATE_CONNECTED_MEDIA_SUSPENDED:
             appA2dpEnterConnectedMediaSuspended(theInst);
