@@ -255,7 +255,11 @@ static void appA2dpSyncHandleA2dpSyncActivateResponse(avInstanceTaskData *theIns
 
     A2DP_SYNC_LOG("appA2dpSyncHandleA2dpSyncActivateResponse(%p) state(0x%x) sync_id(%d)",
                    theInst, local_state, res->sync_id);
-
+#ifdef ENABLE_TYM_PLATFORM  /*for sync response*/                   
+    /* Set the flag as received the AUDIO_SYNC_CONNECT_RES */
+    theInst->a2dp.bitfields.sync_response_rcvd = TRUE;
+    DEBUG_LOG("appA2dpSyncHandleA2dpSyncConnectResponse: sync_response_rcvd %d", theInst->a2dp.bitfields.sync_response_rcvd);
+#endif
     switch (local_state)
     {
     case A2DP_STATE_CONNECTED_MEDIA_STARTING_LOCAL_SYNC:

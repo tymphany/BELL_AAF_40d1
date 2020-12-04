@@ -840,6 +840,11 @@ static void appA2dpEnterConnectedMediaStartingLocalSync(avInstanceTaskData *theI
 
     /* Set operation locks */
     appA2dpSetTransitionLockBit(theInst);
+#ifdef ENABLE_TYM_PLATFORM  /*for sync response*/
+    /* Reset the flag as sending AUDIO_SYNC_ACTIVATE_IND */
+    theInst->a2dp.bitfields.sync_response_rcvd = FALSE;
+    DEBUG_LOG("appA2dpEnterConnectedMediaStartingLocalSync: sync_response_rcvd %d", theInst->a2dp.bitfields.sync_response_rcvd);
+#endif
 
     /* Send a request for any registered audio_sync instance to also become
        'active' and then wait for the response. */
