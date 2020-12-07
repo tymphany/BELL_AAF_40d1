@@ -1965,7 +1965,11 @@ static void appSm_HandlePairingActivity(const PAIRING_ACTIVITY_T* pha)
 static void appSmHandleInternalTimeoutIdle(void)
 {
     DEBUG_LOG_DEBUG("appSmHandleInternalTimeoutIdle");
+#ifdef ENABLE_TYM_PLATFORM
+    DEBUG_LOG_DEBUG("Don't check SmState,avoid panic reboot");
+#else    
     PanicFalse(APP_STATE_OUT_OF_CASE_IDLE == appSmGetState());
+#endif    
     appSmSetState(APP_STATE_OUT_OF_CASE_SOPORIFIC);
 }
 
