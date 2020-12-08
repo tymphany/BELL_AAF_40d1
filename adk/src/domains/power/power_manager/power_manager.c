@@ -810,6 +810,7 @@ bool appPowerInit(Task init_task)
     Ui_RegisterUiInputConsumer(PowerGetTask(), power_ui_inputs, ARRAY_DIM(power_ui_inputs));
 #ifdef ENABLE_TYM_PLATFORM
     tymGPIOInit();
+    getPSPresetEQ();
     thePower->user_power = TRUE;
 #endif
     return TRUE;

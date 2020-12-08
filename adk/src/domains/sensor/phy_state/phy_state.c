@@ -608,6 +608,7 @@ will be received. This means the in-case state can never be entered */
     MessageSend(&phy_state->task, CHARGER_MESSAGE_DETACHED, NULL);
 #endif
 #ifdef ENABLE_TYM_PLATFORM
+    appPhySateAppConfiguration();
     if(getFactoryModeTopEnable() == TRUE)
     {
         DEBUG_LOG("ByPass Prox/anc register");
@@ -661,7 +662,6 @@ will be received. This means the in-case state can never be entered */
 #ifdef ENABLE_TYM_PLATFORM
     appPhyStateMsgSendStateChangedInd(appPhyStateGetState(), phy_state_event_user_poweron);
     setSystemReady(TRUE);
-    appPhySateAppConfiguration();
 #endif
     return TRUE;
 }
