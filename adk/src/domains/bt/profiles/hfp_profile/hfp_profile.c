@@ -1262,6 +1262,13 @@ static void appHfpHandleHfpAudioConnectConfirmation(const HFP_AUDIO_CONNECT_CFM_
 
                 /* Update link policy now SCO is active */
                 appLinkPolicyUpdatePowerTable(appHfpGetAgBdAddr());
+#ifdef ENABLE_TYM_PLATFORM /*for teams app switch to ANC */
+                if (appPhyStateGetPowerState() == TRUE) /*power-on status start hfp*/
+                {
+                    tymHfpBusy = TRUE;
+                    Ui_InjectUiInput(ui_input_bell_ui_hfp_act_anc_on);
+                }        
+#endif
 
 #ifdef INCLUDE_AV
                 /* Check if AG only supports HV1 SCO packets, if so then disconnect A2DP & AVRCP */
@@ -1380,7 +1387,13 @@ static void appHfpHandleHfpAudioDisconnectIndication(const HFP_AUDIO_DISCONNECT_
                     /* Move to connected state */
                     appHfpSetState(HFP_STATE_CONNECTED_IDLE);
                 }
-
+#ifdef ENABLE_TYM_PLATFORM /* for teams app finish recovery to ANC */
+                if ((appPhyStateGetPowerState() == TRUE) && (tymHfpBusy == TRUE)) /*power-on status start hfp*/
+                {
+                    tymHfpBusy = FALSE;
+                    Ui_InjectUiInput(ui_input_bell_ui_hfp_deactive_recovery);
+                }
+#endif
                 /* Clear SCO sink */
                 appGetHfp()->sco_sink = 0;
 

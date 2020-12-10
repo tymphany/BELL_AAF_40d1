@@ -244,7 +244,7 @@ static void handlePowerClientEvents(MessageId id)
 static bool checkHfpIsActvie(void)
 {
     bool active = FALSE;
-    if((appHfpIsCallIncoming() == TRUE) || (appHfpIsCallActive() == TRUE) || (appHfpIsCallOutgoing() == TRUE))
+    if((appHfpIsCallIncoming() == TRUE) || (appHfpIsCallActive() == TRUE) || (appHfpIsCallOutgoing() == TRUE) || (appHfpIsScoActive() == TRUE))
         active = TRUE;
         
     return active;        
