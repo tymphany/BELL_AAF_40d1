@@ -1787,6 +1787,9 @@ static void appAvrcpHandleSetAbsoluteVolumeInd(avInstanceTaskData *theInst, AVRC
         if(send_response)
         {
             AvrcpSetAbsoluteVolumeResponse(ind->avrcp, avctp_response_accepted, AudioSources_GetVolume(audio_source_a2dp_1).value);
+#ifdef ENABLE_TYM_PLATFORM     /*for phone volume sync to 12/16*/       
+            Volume_SendAudioSourceVolumeUpdateRequest(audio_source_a2dp_1, event_origin_local, AudioSources_GetVolume(audio_source_a2dp_1).value);
+#endif            
         }
     }
     else

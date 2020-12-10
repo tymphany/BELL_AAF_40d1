@@ -18,9 +18,14 @@
     If FALSE, it will transcode one channel to SBC mono and forward. */
 #define appConfigAacStereoForwarding() TRUE
 
+#ifdef ENABLE_TYM_PLATFORM
+/*! Default volume gain in dB */
+/* (-13 + 45) * 127 / 42 =  96.76 .... for 12/16..96/127*/
+#define appConfigDefaultVolumedB() (-13)
+#else
 /*! Default volume gain in dB */
 #define appConfigDefaultVolumedB() (-10)
-
+#endif
 /*! Delay to use when we want to send a A2DP media start response but the
     A2DP audio chain is not ready yet. */
 #define appConfigA2dpSyncSendMediaStartResponseDelayMs() (5)
