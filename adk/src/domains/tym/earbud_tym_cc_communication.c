@@ -293,11 +293,15 @@ void startCommunicationToChargingCase(void)
     {
         procCmd.startstop = 1;    
         procCmd.askBattery = 0;    
-        MessageCancelFirst((TaskData *)&_statusReportTask, statusAskBattery); 
+        /*modify for speed up illumated when insert earbud into case*/
+        MessageCancelAll((TaskData *)&_statusReportTask, statusAskBattery); 
         if(procCmd.btStatus == btPairing)
             MessageSendLater((TaskData *)&_statusReportTask, statusAskBattery, 0, 500);
         else
+        {    
             MessageSend((TaskData *)&_statusReportTask, statusAskBattery, 0);
+            MessageSendLater((TaskData *)&_statusReportTask, statusAskBattery, 0, 500);            
+        }
     }
 }
 
