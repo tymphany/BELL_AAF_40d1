@@ -199,11 +199,13 @@ bool UpgradePSClearStoreNoDelete(void)
 {
     upgrade_version version;
     version = UpgradeCtxGetPSKeys()->version;
+    uint16 config_version = UpgradeCtxGetPSKeys()->config_version;
     if (UpgradeIsInitialised())
     {
         memset(UpgradeCtxGetPSKeys(),0x0000,sizeof(UPGRADE_LIB_PSKEY));
+        UpgradeCtxGetPSKeys()->version = version; //revert version enable_tym_platform,Qualcomm patch case 04965797
+        UpgradeCtxGetPSKeys()->config_version = config_version;
         UpgradeSavePSKeys();
-        UpgradeCtxGetPSKeys()->version = version;//revert version enable_tym_platform
         return TRUE;
     }
     return FALSE;
