@@ -43,6 +43,7 @@ typedef struct processCmd{
     uint8  askBattery;
     uint8  btStatus;
     uint8  debugmode;
+    uint8  speedup;
 }processCmd_s;
 
 typedef struct
@@ -192,7 +193,17 @@ void statusCommunicationMessage(MessageId pId,statusSendCmd_T *cmdId)
             reportBattStatus();
         }
     	procCmd.askBattery = ((procCmd.askBattery + 1) % POLLING_BATT_NUM);
-        MessageSendLater((TaskData *)&_statusReportTask, statusAskBattery, 0, POLLING_BATTERY_TIME);
+    	if(procCmd.speedup != 0)
+    	{
+    	    procCmd.speedup++;
+    	    if(procCmd.speedup > 2)
+    	        procCmd.speedup = 0;
+    	    MessageSendLater((TaskData *)&_statusReportTask, statusAskBattery, 0, 500);
+    	}
+    	else
+    	{        
+            MessageSendLater((TaskData *)&_statusReportTask, statusAskBattery, 0, POLLING_BATTERY_TIME);
+        }
     }
 #if 0  /*tmp remove change USB port when leave USB 5v*/
     else if(pId == statusLeaveUSBCheck)    
@@ -294,13 +305,13 @@ void startCommunicationToChargingCase(void)
         procCmd.startstop = 1;    
         procCmd.askBattery = 0;    
         /*modify for speed up illumated when insert earbud into case*/
-        MessageCancelAll((TaskData *)&_statusReportTask, statusAskBattery); 
+        MessageCancelFirst((TaskData *)&_statusReportTask, statusAskBattery); 
         if(procCmd.btStatus == btPairing)
             MessageSendLater((TaskData *)&_statusReportTask, statusAskBattery, 0, 500);
         else
         {    
-            MessageSend((TaskData *)&_statusReportTask, statusAskBattery, 0);
-            MessageSendLater((TaskData *)&_statusReportTask, statusAskBattery, 0, 500);            
+            procCmd.speedup = 1;
+            MessageSend((TaskData *)&_statusReportTask, statusAskBattery, 0);          
         }
     }
 }
@@ -323,6 +334,7 @@ void stopCommunicationToChargingCase(void)
     if(procCmd.startstop == 1)
     {
         procCmd.startstop = 0;    
+        procCmd.speedup = 0;
         MessageCancelAll((TaskData *)&_statusReportTask, statusSendCmd);
         MessageCancelAll((TaskData *)&_statusReportTask, statusAskBattery);    
     }
