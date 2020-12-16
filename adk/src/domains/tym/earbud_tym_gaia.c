@@ -792,7 +792,7 @@ void bell_gaia_set_findme(GAIA_UNHANDLED_COMMAND_IND_T *command)
         DEBUG_LOG("FindMe %x\n",command->payload[0]);
         if(command->payload[0] == 0x00 || command->payload[0] == 0x01)
         {
-            appKymeraSetPromptVol(command->payload[0]);
+			//appKymeraSetPromptVol(command->payload[0]);
             Ui_InjectUiInput(ui_input_prompt_stop_findme + command->payload[0]);
             tym_gaia_send_simple_response(command->command_id, GAIA_STATUS_SUCCESS);
         }else{

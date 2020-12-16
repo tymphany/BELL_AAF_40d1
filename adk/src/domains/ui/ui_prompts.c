@@ -35,6 +35,7 @@
 #include "audio_sources.h"
 #include "audio_curation.h"
 #include "kymera_adaptation.h"
+#include "kymera_private.h"
 int a2dp_volume_backup;
 #endif
 #include "system_clock.h"
@@ -108,6 +109,12 @@ static void uiPrompts_PlayPrompt(uint16 prompt_index, rtime_t time_to_play, cons
     
     if((prompt_index == 0) || (prompt_index == 8))// power-on, findme force play prompt
         force_play_prompt = TRUE;
+	/*fixed BEL0677. FindMe Tone in left bud is not loud as FindMe tone in right bud*/
+    if(prompt_index == 8)//findMe set max volume flag
+        appKymeraSetPromptVol(1);
+    else
+        appKymeraSetPromptVol(0);         
+        
     if (the_prompts.prompt_playback_enabled || (force_play_prompt == TRUE))//force play
 #else
     if (the_prompts.prompt_playback_enabled)
