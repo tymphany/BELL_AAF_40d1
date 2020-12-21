@@ -11,6 +11,9 @@
 #include "kymera_config.h"
 #include "kymera_aec.h"
 #include "system_clock.h"
+#ifdef ENABLE_TYM_PLATFORM
+#include "audio_curation.h"
+#endif
 
 #define VOLUME_CONTROL_SET_AUX_TTP_VERSION_MSB 0x2
 #define BUFFER_SIZE_FACTOR 4
@@ -278,6 +281,7 @@ void appKymeraTonePromptStop(void)
 
     DEBUG_LOG("appKymeraTonePromptStop, state %u", appKymeraGetState());
 
+
     switch (appKymeraGetState())
     {
         case KYMERA_STATE_SCO_ACTIVE:
@@ -295,7 +299,7 @@ void appKymeraTonePromptStop(void)
             if (theKymera->prompt_source)
             {
                 appKymeraPromptSourceClose(theKymera->prompt_source);
-                theKymera->prompt_source = NULL;
+                theKymera->prompt_source = NULL;                
             }
 
             if (theKymera->chain_tone_handle)
@@ -352,6 +356,7 @@ void appKymeraTonePromptStop(void)
     }
 #ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,for sync of prompt*/    
     kymera_tone_state = kymera_tone_idle;
+    audioCurationClearLockBit(0x02);       
 #endif    
     appKymeraClearToneLock(theKymera);
 

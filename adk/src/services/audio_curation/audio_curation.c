@@ -251,10 +251,10 @@ static bool checkHfpIsActvie(void)
             
 }
 
-void audioCurationClearLockBit(void)
+void audioCurationClearLockBit(uint16 bit)
 {
     tymAncTaskData *tymAnc = TymAncGetTaskData();  
-    tymAnc->lock = 0; 
+    tymAnc->lock &= (~bit); 
 }
 #endif
 
@@ -766,7 +766,7 @@ static void switchAncWaitPrompt(MessageId ui_input)
     if(StateProxy_IsInEar())
     {
         tymAnc->ui_input = ui_input;
-        tymAnc->lock = 1;
+        tymAnc->lock = 0x03;
         MessageSendConditionally(audioCuration_UiTask(), ui_input_bell_ui_prompt_finish_anc, NULL, &tymAnc->lock);        
     }
     else

@@ -60,7 +60,7 @@ bool AudioCuration_Init(Task init_task);
 void BellUiAncControl(MessageId ui_input);
 void setupAmbientLevel(void);
 void setupSpeechLevel(void);
-void audioCurationClearLockBit(void);
+void audioCurationClearLockBit(uint16 bit);
 #endif
 /*@}*/
 

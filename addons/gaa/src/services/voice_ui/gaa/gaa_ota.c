@@ -247,6 +247,9 @@ static void gaa_OtaSetState(GAA_OTA_STATE_T state)
 {
     if (gaa_ota->state != state)
     {
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
+        DEBUG_LOG("gaa_OtaSetState: %d -> %d", gaa_ota->state, state);
+#endif
         gaa_ota->state = state;
     }
 }
@@ -644,28 +647,15 @@ static void gaa_OtaHandleUpgradeHostErrorWarnInd(uint16 size_data, uint8 *data)
         byte_index += gaa_Get2Bytes(data, byte_index, &length);
         byte_index += gaa_Get2Bytes(data, byte_index, &msg->errorCode);
         DEBUG_LOG("gaa_OtaHandleUpgradeHostErrorWarnInd 0x%04x", msg->errorCode);
-#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch*/
-        switch(gaa_ota->state)
-        {
-            case GAA_OTA_STATE_REBOOT_CONNECT:
-            case GAA_OTA_STATE_REBOOT_SYNC:
-            case GAA_OTA_STATE_REBOOT_START:
-            case GAA_OTA_STATE_REBOOT_COMMIT:
-                //add case 04866605 patch
-                //gaa_OtaSetState(GAA_OTA_STATE_READY);                
-                gaa_OtaSetState(GAA_OTA_STATE_ABORT);
-                DEBUG_LOG("Setting OTA state to GAA_OTA_STATE_ABORT");
-                break;
-
-            default:
-                break;
-        }
+#ifdef ENABLE_TYM_PLATFORM /*add Qualcomm patch,qtilvm_r49-1_adk-2307*/
+        gaa_OtaSendUpgradeHostErrorWarnRsp(msg->errorCode);
         /*
          * Send an indication to the GSound library according to the
          * error_code and expect it to call GSoundTargetOtaAbort if it
          * needs to.
          */
         gaa_OtaSendError(gaa_OtaTranslateUpgradeHostErrorCode((UpgradeHostErrorCode) msg->errorCode));        
+        free(msg);
 #else
         if (msg->errorCode >= UPGRADE_HOST_ERROR_INTERNAL_ERROR_DEPRECATED)
         {
@@ -694,11 +684,12 @@ static void gaa_OtaHandleUpgradeHostErrorWarnInd(uint16 size_data, uint8 *data)
              */
             gaa_OtaSendError(gaa_OtaTranslateUpgradeHostErrorCode((UpgradeHostErrorCode) msg->errorCode));
         }
-#endif
+
         gaa_OtaSendUpgradeHostErrorWarnRsp(msg->errorCode);
         //add case 04866605 patch
         gaa_OtaSendShortMessage(UPGRADE_HOST_ABORT_REQ);
         free(msg);
+#endif
     }
 }
 

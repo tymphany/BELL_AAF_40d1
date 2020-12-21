@@ -311,7 +311,7 @@ static void uiPrompts_HandleMessage(Task task, MessageId id, Message message)
     {
         DEBUG_LOG("UI_INTERNAL_CLEAR_LAST_PROMPT");
 #ifdef ENABLE_TYM_PLATFORM          
-        audioCurationClearLockBit();  
+        audioCurationClearLockBit(0x01);  
 #endif        
         the_prompts.last_prompt_played_index = PROMPT_NONE;
     }
