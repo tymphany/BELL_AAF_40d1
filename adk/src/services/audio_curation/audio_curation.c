@@ -39,6 +39,7 @@ static void BellUiHfpAviceSwitchAnc(void);
 static void BellUiHfpDeActiveRecovery(void);
 static void BellUiANCRecovery(void);
 static void switchAncWaitPrompt(MessageId ui_input);
+void BellUiAncLowLevelControl(MessageId ui_input);
 #endif
 
 
@@ -384,6 +385,7 @@ static void handleUiDomainInput(MessageId ui_input)
         case ui_input_bell_ui_anc_off_noprompt:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_anc_off_noprompt");        
             BellUiAncControl(ui_input);
+            BellUiAncLowLevelControl(ui_input);
             break;    
         case ui_input_bell_ui_anc_off:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_anc_off");
@@ -479,6 +481,7 @@ static void handleUiDomainInput(MessageId ui_input)
         case ui_input_bell_ui_pp_ambient:
             DEBUG_LOG("handleUiDomainInput, ui_input_bell_ui_pp_ambient");
             BellUiAncControl(ui_input);
+            BellUiAncLowLevelControl(ui_input);
             break;            
         case ui_input_bell_ui_switch_preset_bank0:
         case ui_input_bell_ui_switch_preset_bank1:
@@ -499,7 +502,8 @@ static void handleUiDomainInput(MessageId ui_input)
             BellUiHfpDeActiveRecovery();
             break;
          case ui_input_bell_ui_prompt_finish_anc:
-            BellUiAncControl(tymAnc->ui_input);
+            //BellUiAncControl(tymAnc->ui_input);
+            BellUiAncLowLevelControl(tymAnc->ui_input);
             break;   
 #endif
         default:
@@ -765,6 +769,7 @@ static void switchAncWaitPrompt(MessageId ui_input)
     tymAncTaskData *tymAnc = TymAncGetTaskData();    
     if(StateProxy_IsInEar())
     {
+        BellUiAncControl(ui_input);
         tymAnc->ui_input = ui_input;
         tymAnc->lock = 0x03;
         MessageSendConditionally(audioCuration_UiTask(), ui_input_bell_ui_prompt_finish_anc, NULL, &tymAnc->lock);        
@@ -772,6 +777,7 @@ static void switchAncWaitPrompt(MessageId ui_input)
     else
     {
         BellUiAncControl(ui_input);
+        BellUiAncLowLevelControl(ui_input);
     }   
 }
 
@@ -788,28 +794,28 @@ void BellUiAncControl(MessageId ui_input)
         case ui_input_bell_ui_anc_on:   
             tymAnc->curAncMode = ancon;
             tymAnc->onceAnc = 1;
-            BellUiAncOn();
+            //BellUiAncOn();
             bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 1);
             break;
         case ui_input_bell_ui_anc_off_noprompt:
             tymAnc->curAncMode = ancoff;    
-            BellUiAncOff();
+            //BellUiAncOff();
             bell_gaia_anc_notify_event(BELL_GAIA_ANC_NOTIFY, 0);             
             break;
         case ui_input_bell_ui_ambient_on:
             tymAnc->curAncMode = ambient;
             tymAnc->onceAnc = 1;
-            BellUiAmbientOn();
+            //BellUiAmbientOn();
             bell_gaia_anc_notify_event(BELL_GAIA_AMBIENT_NOTIFY, 1);
             break;
         case ui_input_bell_ui_speech_on:
             tymAnc->curAncMode = speech;
             tymAnc->onceAnc = 1;
-            BellUiSpeechOn();
+            //BellUiSpeechOn();
             bell_gaia_anc_notify_event(BELL_GAIA_SPEECH_NOTIFY, 1);
             break;
         case ui_input_bell_ui_pp_ambient:
-            BellUiPPAmbient();
+            //BellUiPPAmbient();
             break;
         case ui_input_bell_ui_quick_attention_on:
             tymAnc->onceAnc = 1;
@@ -817,7 +823,7 @@ void BellUiAncControl(MessageId ui_input)
             {
                 tymAnc->prevAncMode = tymAnc->curAncMode;
                 tymAnc->curAncMode = ambient;
-                BellUiAmbientOn();
+                //BellUiAmbientOn();
                 bell_gaia_anc_notify_event(BELL_GAIA_AMBIENT_NOTIFY, 1);
             }
             break;
@@ -826,7 +832,7 @@ void BellUiAncControl(MessageId ui_input)
             {
                 tymAnc->curAncMode = tymAnc->prevAncMode;
                 tymAnc->prevAncMode = ambient;
-                BellUiANCRecovery();
+                //BellUiANCRecovery();
             }
             break;    
         case ui_input_bell_ui_anc_off:
@@ -835,7 +841,7 @@ void BellUiAncControl(MessageId ui_input)
         default:
             tymAnc->curAncMode = ancoff;
             tymAnc->onceAnc = 1;
-            BellUiAncOff();
+            //BellUiAncOff();
             break;
 
     }
@@ -852,5 +858,45 @@ void BellUiAncControl(MessageId ui_input)
         bell_gaia_anc_notify_event(BELL_GAIA_SPEECH_NOTIFY, 0);
     }
 }
+
+void BellUiAncLowLevelControl(MessageId ui_input)
+{
+    tymAncTaskData *tymAnc = TymAncGetTaskData();    
+    switch(ui_input)
+    {
+        case ui_input_bell_ui_anc_on:   
+            BellUiAncOn();
+            break;
+        case ui_input_bell_ui_anc_off_noprompt:
+            BellUiAncOff();           
+            break;
+        case ui_input_bell_ui_ambient_on:
+            BellUiAmbientOn();
+            break;
+        case ui_input_bell_ui_speech_on:
+            BellUiSpeechOn();
+            break;
+        case ui_input_bell_ui_pp_ambient:
+            BellUiPPAmbient();
+            break;
+        case ui_input_bell_ui_quick_attention_on:
+            BellUiAmbientOn();   
+            break;
+        case ui_input_bell_ui_quick_attention_off:
+            if(tymAnc->prevAncMode == ambient)
+            {
+                BellUiANCRecovery();
+            }
+            break;    
+        case ui_input_bell_ui_anc_off:
+        case ui_input_bell_ui_ambient_off:
+        case ui_input_bell_ui_speech_off:
+        default:
+            BellUiAncOff();
+            break;
+
+    }    
+}
+
 #endif
 
