@@ -354,7 +354,7 @@ static void uiPrompts_HandleMessage(Task task, MessageId id, Message message)
                 Ui_InjectUiInput(ui_input_prompt_poweroff);
             }
             //wait 1 second, wait master send power off prompts, if not send ,force 1 seconds power off.
-            MessageSendLater(&the_prompts.task, APP_POWER_USERPOWEROFF_RESPOND_IND, NULL, D_SEC(1));
+            MessageSendLater(&the_prompts.task, APP_POWER_USERPOWEROFF_RESPOND_IND, NULL, D_SEC(2));
         }
         else
         {

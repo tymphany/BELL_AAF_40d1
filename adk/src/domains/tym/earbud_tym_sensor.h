@@ -27,6 +27,7 @@ typedef enum{
     restoreDefaultPad,
     sleepPad,
     standbyPad,
+    normalDebouncePad,
 }touchpadmode_e;
 
 #endif/*__EARBUD_TYM_SENSOR_H__*/

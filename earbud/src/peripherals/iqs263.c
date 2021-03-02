@@ -478,6 +478,7 @@ static void _iqsProcessMessageHandler ( Task pTask, MessageId pId, Message pMess
     UNUSED(pTask);
     UNUSED(pMessage);
     bool noCasePairing = FALSE;
+    tymTouchTaskData *tymtouch = TymTouchGetTaskData();
     uint8 touchPadMode = tymGetTouchPadMode();
     touchConfig *tconfig = appConfigTouch();
         
@@ -563,7 +564,12 @@ static void _iqsProcessMessageHandler ( Task pTask, MessageId pId, Message pMess
             _processTAPEvent();
         }
         tconfig->tapCnt = 0;
-    }               
+    }
+    else if( pId == iqs263_padmode_debounce)
+    {
+        if(tymtouch->touchPadMode == normalDebouncePad)
+            tymtouch->touchPadMode = normalPad;
+    }                           
 }
 
 /*! \brief hold End Operation */
@@ -740,8 +746,8 @@ void updateTouchPadMode(void)
     {
         if(tymGetBTStatus() == btPairing)
         {
-            tymtouch->touchPadMode = restoreDefaultPad;
             //restoreDefault pad
+            tymtouch->touchPadMode = restoreDefaultPad;
         }    
         else
         {
@@ -752,7 +758,8 @@ void updateTouchPadMode(void)
     else if(inEar == TRUE) //normal
     {
         //normal pad
-        tymtouch->touchPadMode = normalPad;
+        tymtouch->touchPadMode = normalDebouncePad;//normalPad;
+        MessageSendLater ( (TaskData *)&iqsProcessTask, iqs263_padmode_debounce, 0, D_SEC(2));
     }        
     else
     {
