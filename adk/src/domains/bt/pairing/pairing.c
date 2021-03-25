@@ -990,10 +990,15 @@ static void pairing_HandleClSmSecurityModeConfigConfirm(const CL_SM_SEC_MODE_CON
 */
 static void pairing_HandleClPinCodeIndication(const CL_SM_PIN_CODE_IND_T *ind)
 {
+#ifdef ENABLE_TYM_PLATFORM    /*added PinCode pairing with 0000*/
+    uint8 pin[4] ={0}, pin_length = 4;
+    ConnectionSmPinCodeResponse(&ind->taddr, pin_length, pin); //set pin code with 0000    
+#else
     DEBUG_LOG("pairing_HandleClPinCodeIndication - not supported");
 
     /* Respond to the PIN code request with empty pin code */
     ConnectionSmPinCodeResponse(&ind->taddr, 0, (uint8 *)"");
+#endif    
 }
 
 
