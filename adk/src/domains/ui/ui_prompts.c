@@ -412,6 +412,15 @@ void UiPrompts_SetNoRepeatPeriod(const Delay no_repeat_period_in_ms)
 void UiPrompts_NotifyUiIndication(uint16 prompt_index, rtime_t time_to_play)
 {
     const ui_prompt_data_t *config = uiPrompts_GetDataForPrompt(prompt_index);
+#ifdef ENABLE_TYM_PLATFORM /*fixed left earbud heard power off prompt when right earbud enter power off in the charging case*/
+    powerTaskData *thePower = PowerGetTaskData();   
+
+    if(prompt_index == 1)//power off
+    {
+        if(thePower->poweroff_ongoing == FALSE)/*It's not power off on-going don't play power off*/
+            return;
+    }    
+#endif    
     uiPrompts_PlayPrompt(prompt_index, time_to_play, config);
 }
 
